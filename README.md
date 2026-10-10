@@ -1,12 +1,12 @@
-<h1 align="center">NASAQ (نَسَق)</h1>
+<h1 align="center">NASAQ</h1>
 
-<p align="center"><strong>An opinionated, macOS-flavoured, Arabic-aware desktop layer for <a href="https://omarchy.org">Omarchy</a>.</strong><br>
-<a href="README.ar.md">اقرأ بالعربية</a></p>
+<p align="center"><strong>An opinionated, macOS-flavoured desktop layer for <a href="https://omarchy.org">Omarchy</a>.</strong><br>
+Also available in <a href="README.ar.md">Arabic</a>.</p>
 
 <p align="center">
 <a href="https://github.com/ghazi-alsaif/nasaq/releases"><img src="https://img.shields.io/github/v/release/ghazi-alsaif/nasaq?label=release&color=2e7d4f" alt="Release"></a>
 <a href="https://omarchy.org"><img src="https://img.shields.io/badge/Omarchy-4.0.4%2B-3b6d8c" alt="Omarchy"></a>
-<a href="#languages"><img src="https://img.shields.io/badge/UI-English%20%7C%20%D8%A7%D9%84%D8%B9%D8%B1%D8%A8%D9%8A%D8%A9-3b6d8c" alt="Languages"></a>
+<a href="#languages"><img src="https://img.shields.io/badge/UI-English%20%7C%20Arabic-3b6d8c" alt="Languages"></a>
 <a href="LICENSE"><img src="https://img.shields.io/github/license/ghazi-alsaif/nasaq?color=6b7280" alt="License"></a>
 </p>
 
@@ -18,7 +18,7 @@
 - **Nothing under `/usr/share/omarchy` is touched.** NASAQ lives in `~/.config/omarchy/plugins`, `~/.config/hypr/nasaq-*.lua`, `~/.local/bin` and `~/.config/omarchy/nasaq`. A post-update check warns you if an Omarchy update changed something NASAQ builds on.
 - **Reversible.** The installer backs up every file it changes. `uninstall.sh` puts them back.
 - **One settings window.** `SUPER + ALT + N` opens NASAQ Settings: 12 pages with real controls for every feature, including a Plugins page that turns any shell plugin on or off, whether NASAQ's, Omarchy's or a community one.
-- **Arabic first, English default.** The interface ships in English and can be switched to Arabic, with right-to-left layout. Shortcuts keep working under the Arabic keyboard layout, OCR reads Arabic, and the desktop knows the Hijri date and prayer times.
+- **Built for more than one language.** The interface ships in English, with Arabic as the first additional language, including right-to-left layout. Translations are plain JSON files, so another language is one file away. Shortcuts keep working under non-Latin keyboard layouts, and OCR reads whichever languages you install.
 
 ## The name
 
@@ -37,7 +37,7 @@ Left: the Omarchy menu, pinned app launchers, and the **workspace numbers**. The
 
 <p align="center"><img src="docs/screenshots/island.png" alt="Dynamic Island" width="420"></p>
 
-The island in the top centre is a living element, in the spirit of Apple's Dynamic Island. Collapsed, it shows the time and the countdown to the next prayer. Click it and it expands into a card with the Gregorian and Hijri dates, the five prayer times for your city, the weather, what is playing, and a stopwatch and Pomodoro timer. Volume and brightness OSDs, and notifications, appear by morphing the island itself rather than as separate pop-ups.
+The island in the top centre is a living element, in the spirit of Apple's Dynamic Island. Collapsed, it shows the time, and optionally a countdown to the next prayer. Click it and it expands into a card with the date (Gregorian, and Hijri if you want it), the weather, what is playing, and a stopwatch and Pomodoro timer. Volume and brightness OSDs, and notifications, appear by morphing the island itself rather than as separate pop-ups.
 
 ### Notifications and Notification Center
 
@@ -57,20 +57,20 @@ A notification grows out of the island, with the app icon, title and body, then 
 
 ### Desktop widgets
 
-A column of glass widgets sits on the desktop behind your windows (see the screenshot at the top): a large clock with the Gregorian and Hijri dates, the prayer card with the next prayer highlighted and a progress bar to it, weather for your city, an Up Next card fed by iCal calendar links, a system card with CPU, memory and temperatures, Now Playing with media controls, and a Tasks / Notes card. `SUPER + ALT + D` hides and shows the column.
+A column of glass widgets sits on the desktop behind your windows (see the screenshot at the top): a large clock with the date, weather for your city, an optional prayer-times card, an Up Next card fed by iCal calendar links, a system card with CPU, memory and temperatures, Now Playing with media controls, and a Tasks / Notes card. `SUPER + ALT + D` hides and shows the column.
 
 Make the column yours, in Settings > Widgets:
 
 - Every card has an on/off switch. The column closes the gap where a card is off.
 - Drag the handle next to a card to put the cards in any order.
 - The Tasks / Notes card stretches to the bottom of the screen when it is last. Anywhere else it keeps a fixed height.
-- The prayer countdown and prayer row in the Dynamic Island have their own switch, so prayer times are entirely optional.
+- Prayer times, in the column and in the Dynamic Island, are off with one switch if you do not need them.
 
 ### Spotlight
 
 ![Spotlight](docs/screenshots/spotlight.png)
 
-`ALT + SPACE` opens Spotlight. Type to find apps (ranked by how often and how recently you open them), open windows, and files, with a Quick Look pane on the right that previews images, text and documents and shows size and date. Spotlight also does arithmetic, currency and unit conversion, and web search. Start a line with `?` or `؟` and the rest is a question for your default Omarchy agent (Claude, Codex, OpenCode, Copilot or Gemini, whichever `omarchy default agent` points at). The answer appears inline.
+`ALT + SPACE` opens Spotlight. Type to find apps (ranked by how often and how recently you open them), open windows, and files, with a Quick Look pane on the right that previews images, text and documents and shows size and date. Spotlight also does arithmetic, currency and unit conversion, and web search. Start a line with `?` and the rest is a question for your default Omarchy agent (Claude, Codex, OpenCode, Copilot or Gemini, whichever `omarchy default agent` points at). The answer appears inline.
 
 ### Mission Control
 
@@ -106,7 +106,7 @@ The Plugins page lists every plugin the shell knows about, grouped as NASAQ, Oma
 
 ![Shortcuts page](docs/screenshots/settings-shortcuts.png)
 
-The Shortcuts page lists all shortcuts, Omarchy's and NASAQ's. Each can be changed to a different key or turned off, without editing Lua by hand and without losing Omarchy's updates: NASAQ writes a small remap layer that is loaded before Omarchy's defaults. The Arabic-layout switch regenerates every letter shortcut on key codes, so `SUPER + W`, `SUPER + Q` and friends keep working while the keyboard is in Arabic.
+The Shortcuts page lists all shortcuts, Omarchy's and NASAQ's. Each can be changed to a different key or turned off, without editing Lua by hand and without losing Omarchy's updates: NASAQ writes a small remap layer that is loaded before Omarchy's defaults. The keyboard-layout switch regenerates every letter shortcut on key codes, so `SUPER + W`, `SUPER + Q` and friends keep working while a non-Latin layout (Arabic, for example) is active.
 
 ### More
 
@@ -139,16 +139,16 @@ The Shortcuts page lists all shortcuts, Omarchy's and NASAQ's. Each can be chang
 | `SUPER + CTRL + ALT + L` | Translate selection |
 | `SUPER + CTRL + ALT + SHIFT + L` | Translate a screen region (OCR) |
 | `SUPER + ALT + A` | Fix speakers |
-| `?` or `؟` in Spotlight | Ask the default agent |
+| `?` in Spotlight | Ask the default agent |
 
 All of Omarchy's own shortcuts stay as they are, and any of them can be changed from the Shortcuts page.
 
 ## Requirements
 
 - Omarchy 4.0.4 or newer, which brings Hyprland 0.56+ and Quickshell 0.3+. NASAQ uses Hyprland's Lua configuration and Omarchy's plugin system.
-- Optional packages the installer offers: `tesseract-data-ara` (Arabic OCR), `cava` (audio visualiser), `nwg-displays` (graphical display layout), `kitty` and `ptyxis` (scratchpad terminals).
+- Optional packages the installer offers: `tesseract-data-ara` (OCR data for Arabic; add other `tesseract-data-*` packages for your languages), `cava` (audio visualiser), `nwg-displays` (graphical display layout), `kitty` and `ptyxis` (scratchpad terminals).
 - Optional: one of the Omarchy agents (`claude`, `codex`, `opencode`, `copilot`, `gemini`) for Spotlight questions and translation.
-- Prayer times come from [AlAdhan](https://aladhan.com), weather from [Open-Meteo](https://open-meteo.com), currency rates from [open.er-api.com](https://open.er-api.com). All are free and need no key.
+- Optional prayer times come from [AlAdhan](https://aladhan.com), weather from [Open-Meteo](https://open-meteo.com), currency rates from [open.er-api.com](https://open.er-api.com). All are free and need no key.
 
 ## Install
 
@@ -169,7 +169,7 @@ The installer:
 
 `./install.sh --yes` accepts every optional step. When it finishes, press `SUPER + ALT + N`.
 
-Set your city for prayer times and weather in Settings > Widgets. Pick the interface language in Settings > General.
+Set your city for weather (and prayer times, if you use them) in Settings > Widgets. Pick the interface language in Settings > General.
 
 ## Update
 
@@ -193,14 +193,14 @@ cd ~/.local/share/nasaq && ./uninstall.sh --purge  # also removes NASAQ's settin
 | `~/.config/omarchy/plugins/nasaq.*` | the 21 plugins |
 | `~/.config/omarchy/nasaq/` | settings.json, island.json, windows.json, help |
 | `~/.config/omarchy/nasaq/secrets.json` | private calendar links (never exported or snapshotted) |
-| `~/.config/hypr/nasaq-*.lua` | generated Hyprland layers (binds, rules, corners, scratchpads, Arabic binds, remaps) |
+| `~/.config/hypr/nasaq-*.lua` | generated Hyprland layers (binds, rules, corners, scratchpads, layout binds, remaps) |
 | `~/.local/bin/nasaq-*` | helper scripts (settings snapshots, display, translation, scratchpads, ...) |
 | `~/.local/state/nasaq/` | install backups |
 | `~/.local/share/nasaq-settings/` | the snapshot repository |
 
 ## Languages
 
-The NASAQ interface is available in **English** (default) and **Arabic**, with automatic right-to-left layout for Arabic. Omarchy's own menus (such as `SUPER + SPACE`) stay in English. Arabic OCR and the Hijri calendar work regardless of the interface language.
+The NASAQ interface is available in **English** (default) and **Arabic**, with automatic right-to-left layout. Every string lives in `plugins/nasaq.commons/i18n/<language>.json`, so adding a language means adding one JSON file. Omarchy's own menus (such as `SUPER + SPACE`) stay in English.
 
 ## Credits and licence
 
