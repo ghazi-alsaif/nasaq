@@ -104,6 +104,6 @@ end
 -- ── NASAQ Settings window (code:57 = N, works under the Arabic layout) ──
 o.bind("SUPER + ALT + code:57", "NASAQ Settings", "omarchy-shell shell toggle nasaq.settings '{}'")
 
--- ── NASAQ: translate the selection with Claude (code:46 = L, for Language) ──
-o.bind("SUPER + CTRL + ALT + code:46", "Translate selection (Claude)", os.getenv("HOME") .. "/.local/bin/nasaq-translate")
-o.bind("SUPER + CTRL + ALT + SHIFT + code:46", "Translate a screen region (Claude)", os.getenv("HOME") .. "/.local/bin/nasaq-translate --region")
+-- ── NASAQ: translate the selection with the default agent (code:46 = L, for Language) ──
+o.bind("SUPER + CTRL + ALT + code:46", "Translate selection (agent)", os.getenv("HOME") .. "/.local/bin/nasaq-translate")
+o.bind("SUPER + CTRL + ALT + SHIFT + code:46", "Translate a screen region (agent)", os.getenv("HOME") .. "/.local/bin/nasaq-translate --region")
