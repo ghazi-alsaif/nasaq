@@ -49,7 +49,10 @@ Item {
   }
 
   // Safety net: if the ALT release never reaches us, switch after a pause.
-  Timer { id: idle; interval: 1200; onTriggered: root.confirm() }
+  // Switches on its own this long after the last TAB when the overlay never
+  // saw Alt go up (NASAQ Settings > Workspaces & Windows > App switcher).
+  readonly property int holdMs: Nasaq.Settings.get("switcher.holdMs", 120)
+  Timer { id: idle; interval: root.holdMs; onTriggered: root.confirm() }
   onOpenChanged: if (!open) idle.stop()
 
   function step(dir) {

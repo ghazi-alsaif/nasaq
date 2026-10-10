@@ -14,6 +14,9 @@ NPage {
     NRow { title: "Open Mission Control"; subtitle: "SUPER + TAB"; NButton { text: "Open"; onClicked: Sys.ipc("nasaq.overview", "open") } }
     NRow { title: "App switcher (ALT + TAB)"; subtitle: "Live previews in most-recently-used order. Off = Omarchy's plain cycling."
       NSwitch { checked: Settings.get("switcher.enabled", true); onToggled: function(c) { Settings.set("switcher.enabled", c) } } }
+    NRow { title: "Switch after the last TAB"; subtitle: "Lower = snappier; higher lets you pause while holding Alt."
+      NSlider { width: 220; from: 0; to: 1000; stepSize: 10; value: Settings.get("switcher.holdMs", 120); valueText: Math.round(value) + " ms"
+        onMoved: function(v) { Settings.set("switcher.holdMs", Math.round(v)) } } }
     NRow { title: "Window gaps"; subtitle: "SUPER + SHIFT + BACKSPACE"; NButton { text: "Toggle"; onClicked: Sys.run("omarchy-hyprland-window-gaps-toggle") } }
   }
 

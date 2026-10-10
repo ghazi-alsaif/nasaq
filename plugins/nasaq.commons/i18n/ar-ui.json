@@ -344,5 +344,7 @@
 "Bottom right": "أسفل اليمين",
 "Floating": "عائم",
 "Tiled": "مرصوف",
-"Open window": "نافذة مفتوحة"
+"Open window": "نافذة مفتوحة",
+"Switch after the last TAB": "الانتقال بعد آخر TAB",
+"Lower = snappier; higher lets you pause while holding Alt.": "أقل = أسرع؛ أعلى يتيح لك التوقف وأنت ضاغط Alt."
 }
