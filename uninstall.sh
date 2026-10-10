@@ -18,7 +18,7 @@ fi
 find "${C:?}/omarchy/plugins" -maxdepth 1 -name 'nasaq.*' -exec rm -rf {} +
 find "${C:?}/hypr" -maxdepth 1 -name 'nasaq-*.lua' -delete
 for s in nasaq-settings nasaq-sound nasaq-clone-check nasaq-auto-brightness nasaq-display-check nasaq-arabic-binds nasaq-keys \
-         nasaq-scratch nasaq-display nasaq-translate nasaq-ask nasaq-calendar nasaq-rules nasaq-auto nasaq-dynamic-theme \
+         nasaq-scratch nasaq-display nasaq-translate nasaq-ask nasaq-calendar nasaq-rules nasaq-auto \
          hypr-quit-app screensaver-mode; do
   rm -f "${B:?}/${s:?}"
 done
