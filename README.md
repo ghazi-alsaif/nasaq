@@ -1,18 +1,20 @@
-# NASAQ (نَسَق)
+<h1 align="center">NASAQ (نَسَق)</h1>
 
-**An opinionated desktop layer for [Omarchy](https://omarchy.org), by GHS (Ghazi Hamad Alsaif).**
+<p align="center"><strong>An opinionated desktop layer for <a href="https://omarchy.org">Omarchy</a>, by GHS (Ghazi Hamad Alsaif).</strong></p>
 
-[![Release](https://img.shields.io/github/v/release/ghazi-alsaif/nasaq?label=release&color=2ea44f)](https://github.com/ghazi-alsaif/nasaq/releases)
-[![Omarchy](https://img.shields.io/badge/Omarchy-4.0.4%2B-1f6feb)](https://omarchy.org)
-[![Hyprland](https://img.shields.io/badge/Hyprland-0.56%2B-58c7f3)](https://hyprland.org)
-[![Quickshell](https://img.shields.io/badge/Quickshell-0.3%2B-8957e5)](https://quickshell.org)
-[![Languages](https://img.shields.io/badge/UI-English%20%7C%20%D8%A7%D9%84%D8%B9%D8%B1%D8%A8%D9%8A%D8%A9-d29922)](#languages)
-[![License](https://img.shields.io/github/license/ghazi-alsaif/nasaq?color=lightgrey)](LICENSE)
-[![Stars](https://img.shields.io/github/stars/ghazi-alsaif/nasaq?style=flat&color=f5a623)](https://github.com/ghazi-alsaif/nasaq/stargazers)
+<p align="center">
+<a href="https://github.com/ghazi-alsaif/nasaq/releases"><img src="https://img.shields.io/github/v/release/ghazi-alsaif/nasaq?label=release&color=2ea44f" alt="Release"></a>
+<a href="https://omarchy.org"><img src="https://img.shields.io/badge/Omarchy-4.0.4%2B-1f6feb" alt="Omarchy"></a>
+<a href="https://hyprland.org"><img src="https://img.shields.io/badge/Hyprland-0.56%2B-58c7f3" alt="Hyprland"></a>
+<a href="https://quickshell.org"><img src="https://img.shields.io/badge/Quickshell-0.3%2B-8957e5" alt="Quickshell"></a>
+<a href="#languages"><img src="https://img.shields.io/badge/UI-English%20%7C%20%D8%A7%D9%84%D8%B9%D8%B1%D8%A8%D9%8A%D8%A9-d29922" alt="Languages"></a>
+<a href="LICENSE"><img src="https://img.shields.io/github/license/ghazi-alsaif/nasaq?color=lightgrey" alt="License"></a>
+<a href="https://github.com/ghazi-alsaif/nasaq/stargazers"><img src="https://img.shields.io/github/stars/ghazi-alsaif/nasaq?style=flat&color=f5a623" alt="Stars"></a>
+</p>
 
-[العربية](README.ar.md)
+<p align="center"><a href="README.ar.md">العربية</a></p>
 
-![NASAQ desktop](docs/screenshots/desktop.png)
+<p align="center"><img src="docs/screenshots/desktop.png" alt="NASAQ desktop" width="900"></p>
 
 ## The name
 
