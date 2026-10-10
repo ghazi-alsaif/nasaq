@@ -143,7 +143,7 @@ All of Omarchy's own shortcuts stay as they are, and any of them can be changed 
 ## Install
 
 ```bash
-git clone https://github.com/Ghazi-Ai/nasaq ~/.local/share/nasaq
+git clone https://github.com/ghazi-alsaif/nasaq ~/.local/share/nasaq
 cd ~/.local/share/nasaq
 ./install.sh
 ```
