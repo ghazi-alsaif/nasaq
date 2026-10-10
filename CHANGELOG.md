@@ -2,6 +2,7 @@
 
 ## 1.0.2 — 2026-10-10
 - Settings > Widgets: drag the handle next to a card to change the column order. Tasks & notes stretches to the bottom only when it is last; anywhere else it keeps a fixed height.
+- README: a short list on customising the widget column.
 
 ## 1.0.1 — 2026-10-10
 - Settings > Widgets: a switch for every desktop card (clock, prayer times, weather, up next, system, now playing, tasks & notes) and one for the prayer countdown and prayer row in the Dynamic Island. Prayer features are opt-out for anyone who does not need them.
