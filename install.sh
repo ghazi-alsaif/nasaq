@@ -92,7 +92,7 @@ PY
 fi
 
 # Optional packages
-opt=(tesseract-data-ara matugen cava nwg-displays kitty ptyxis)
+opt=(tesseract-data-ara cava nwg-displays kitty ptyxis)
 missing=()
 for p in "${opt[@]}"; do pacman -Q "$p" >/dev/null 2>&1 || missing+=("$p"); done
 if ((${#missing[@]})); then

@@ -47,24 +47,6 @@ NPage {
     NRow { title: "Opacity"; NSlider { width: 220; from: 0.3; to: 1; stepSize: 0.05; value: Settings.get("frame.alpha", 0.9); valueText: Math.round(value * 100) + "%"; onMoved: function(v) { Settings.set("frame.alpha", v) } } }
   }
 
-  property string dynStyle: "tonal"
-  NSection {
-    title: "THEME FROM WALLPAPER (TEST)"
-    note: "Builds the theme “nasaq-dynamic” from the current wallpaper: interface colours from the picture, terminal colours kept from your theme. Your own themes are never changed."
-    NRow {
-      title: "Style"
-      NDropdown { value: page.dynStyle; onActivated: function(v) { page.dynStyle = v }
-        model: [{ value: "tonal", label: "Calm (tonal)" }, { value: "vibrant", label: "Vibrant" }, { value: "expressive", label: "Expressive" }, { value: "neutral", label: "Neutral" }] }
-    }
-    NRow {
-      title: "Apply"
-      Row { spacing: 8
-        NButton { text: "Dark"; primary: true; onClicked: Sys.run("nasaq-dynamic-theme --style " + page.dynStyle + " --apply") }
-        NButton { text: "Light"; onClicked: Sys.run("nasaq-dynamic-theme --light --style " + page.dynStyle + " --apply") }
-        NButton { text: "Back to my theme"; onClicked: Sys.run("nasaq-dynamic-theme --back") } }
-    }
-  }
-
   NSection {
     title: "DISPLAY"
     NRow {
