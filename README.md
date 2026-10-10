@@ -17,7 +17,7 @@
 - **A layer, not a fork.** NASAQ is a set of plugins that run inside Omarchy's own Quickshell process. There is no second shell, no second notification daemon, no second lock screen. Omarchy keeps updating normally.
 - **Nothing under `/usr/share/omarchy` is touched.** NASAQ lives in `~/.config/omarchy/plugins`, `~/.config/hypr/nasaq-*.lua`, `~/.local/bin` and `~/.config/omarchy/nasaq`. A post-update check warns you if an Omarchy update changed something NASAQ builds on.
 - **Reversible.** The installer backs up every file it changes. `uninstall.sh` puts them back.
-- **One settings window.** `SUPER + ALT + N` opens NASAQ Settings: 12 pages with real controls for every feature, including a Plugins page that turns any shell plugin on or off, NASAQ's, Omarchy's or a community one.
+- **One settings window.** `SUPER + ALT + N` opens NASAQ Settings: 12 pages with real controls for every feature, including a Plugins page that turns any shell plugin on or off, whether NASAQ's, Omarchy's or a community one.
 - **Arabic first, English default.** The interface ships in English and can be switched to Arabic, with right-to-left layout. Shortcuts keep working under the Arabic keyboard layout, OCR reads Arabic, and the desktop knows the Hijri date and prayer times.
 
 ## The name
@@ -37,7 +37,7 @@ Left: the Omarchy menu, pinned app launchers, and the **workspace numbers**. The
 
 <p align="center"><img src="docs/screenshots/island.png" alt="Dynamic Island" width="420"></p>
 
-The island in the top centre is a living element, in the spirit of Apple's Dynamic Island. Collapsed, it shows the time and the countdown to the next prayer. Click it and it expands into a card with the Gregorian and Hijri dates, the five prayer times for your city, the weather, what is playing, and a stopwatch and pomodoro timer. Volume and brightness OSDs, and notifications, appear by morphing the island itself rather than as separate pop-ups.
+The island in the top centre is a living element, in the spirit of Apple's Dynamic Island. Collapsed, it shows the time and the countdown to the next prayer. Click it and it expands into a card with the Gregorian and Hijri dates, the five prayer times for your city, the weather, what is playing, and a stopwatch and Pomodoro timer. Volume and brightness OSDs, and notifications, appear by morphing the island itself rather than as separate pop-ups.
 
 ### Notifications and Notification Center
 
@@ -63,7 +63,7 @@ Make the column yours, in Settings > Widgets:
 
 - Every card has an on/off switch. The column closes the gap where a card is off.
 - Drag the handle next to a card to put the cards in any order.
-- Tasks & notes stretches to the bottom of the screen when it is last. Anywhere else it keeps a fixed height.
+- The Tasks / Notes card stretches to the bottom of the screen when it is last. Anywhere else it keeps a fixed height.
 - The prayer countdown and prayer row in the Dynamic Island have their own switch, so prayer times are entirely optional.
 
 ### Spotlight
@@ -119,7 +119,7 @@ The Shortcuts page lists all shortcuts, Omarchy's and NASAQ's. Each can be chang
 - **Fix speakers**: `SUPER + ALT + A` rebinds the audio card when the speakers go silent (iMac and some laptops).
 - **Window rules** and **automations** (time- or event-triggered commands), editable from Settings.
 - **Screensaver modes**: Matrix, image, or Omarchy's stock ASCII.
-- **Theme-aware**: every NASAQ surface follows the active Omarchy theme and updates when you change it.
+- **Themes**: every NASAQ surface follows the active Omarchy theme and updates when you change it.
 - **Screen frame** (off by default): a soft rounded frame in the theme colour drawn inside the window gaps.
 
 ## Shortcuts
@@ -204,6 +204,6 @@ The NASAQ interface is available in **English** (default) and **Arabic**, with a
 
 ## Credits and licence
 
-NASAQ is made by **GHS (Ghazi Hamad Alsaif)** on top of [Omarchy](https://omarchy.org) by DHH and contributors, [Hyprland](https://hyprland.org) and [Quickshell](https://quickshell.org). Several plugins started as copies of Omarchy's own plugins and ideas from the community plugins credited in [NOTICE.md](NOTICE.md).
+NASAQ is made by **GHS (Ghazi Hamad Alsaif)** on top of [Omarchy](https://omarchy.org) by DHH and contributors, [Hyprland](https://hyprland.org) and [Quickshell](https://quickshell.org). Several plugins started as copies of Omarchy's own plugins or borrow ideas from the community plugins credited in [NOTICE.md](NOTICE.md).
 
 MIT licence. See [LICENSE](LICENSE) and [CHANGELOG.md](CHANGELOG.md).
