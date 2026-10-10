@@ -1,0 +1,27 @@
+#!/bin/bash
+# NASAQ: one-shot question to the default Omarchy agent (omarchy default agent).
+#   nasaq-agent-ask "<prompt>"          prints the answer, nothing else
+#   nasaq-agent-ask --name              prints which agent will answer
+# Supports claude, codex, opencode, copilot, gemini; anything else falls back
+# to claude. NASAQ_AGENT_TIER=fast picks the agent's quickest model when it has one.
+set -uo pipefail
+agent=$(omarchy-default-agent 2>/dev/null || true)
+case $agent in claude|codex|opencode|copilot|gemini) ;; *) agent=claude ;; esac
+command -v "$agent" >/dev/null || agent=claude
+if [[ ${1:-} == --name ]]; then echo "$agent"; exit 0; fi
+prompt=$1
+tier=${NASAQ_AGENT_TIER:-fast}
+run() { timeout 90 "$@" 2>/dev/null </dev/null; }
+case $agent in
+  claude)
+    model=(); [[ $tier == fast ]] && model=(--model haiku)
+    run claude -p "${model[@]}" "$prompt" ;;
+  codex)
+    out=$(mktemp); d="${XDG_RUNTIME_DIR:-/tmp}/nasaq-agent"; mkdir -p "$d"; cd "$d" && run codex exec --skip-git-repo-check -s read-only -o "$out" "$prompt" </dev/null >/dev/null; cat "$out"; rm -f "$out" ;;
+  opencode)
+    run opencode run "$prompt" ;;
+  copilot)
+    run copilot -p "$prompt" -s ;;
+  gemini)
+    run gemini -p "$prompt" ;;
+esac

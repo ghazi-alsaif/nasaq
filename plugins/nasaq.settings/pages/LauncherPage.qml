@@ -16,7 +16,7 @@ NPage {
       NSwitch { checked: Settings.get("launcher.windows", true); onToggled: function(c) { Settings.set("launcher.windows", c) } } }
     NRow { title: "Files and folders"; subtitle: "Names under your home folder, newest first."
       NSwitch { checked: Settings.get("launcher.files", true); onToggled: function(c) { Settings.set("launcher.files", c) } } }
-    NRow { title: "Ask Claude (TEST)"; subtitle: "Start with ? to ask, e.g. “? turn on night light”. A suggested command runs only after Enter, and only from a safe list."
+    NRow { title: "Ask your agent (TEST)"; subtitle: "Start with ? or ؟ to ask, e.g. “? turn on night light”. Answered by the default agent (Omarchy › Setup › Defaults). A suggested command runs only after Enter, and only from a safe list."
       NSwitch { checked: Settings.get("launcher.ai", true); onToggled: function(c) { Settings.set("launcher.ai", c) } } }
     NRow { title: "Quick Look"; subtitle: "Preview the selected file (images, PDF, text, folders) beside the results."
       NSwitch { checked: Settings.get("launcher.preview", true); onToggled: function(c) { Settings.set("launcher.preview", c) } } }

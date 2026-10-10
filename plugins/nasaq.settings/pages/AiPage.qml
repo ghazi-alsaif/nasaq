@@ -17,7 +17,7 @@ NPage {
 
   NSection {
     title: "TRANSLATE AND SUMMARISE"
-    note: "Select text anywhere (or copy it), then press SUPER + CTRL + ALT + L. The result appears in the island and is copied. Uses your Claude Code login."
+    note: "Select text anywhere (or copy it), then press SUPER + CTRL + ALT + L. The result appears in the island and is copied. Answered by your default agent (" + current.out + ")."
     NRow {
       title: "Translate to"
       NDropdown {
@@ -27,11 +27,11 @@ NPage {
       }
     }
     NRow {
-      title: "Model"
-      subtitle: "Haiku is fastest; Sonnet and Opus are more careful."
+      title: "Speed"
+      subtitle: "Fast uses the agent's quickest model (Claude: Haiku). Careful uses its default."
       NDropdown {
-        model: [{ value: "haiku", label: "Haiku (fast)" }, { value: "sonnet", label: "Sonnet" }, { value: "opus", label: "Opus" }]
-        value: Settings.get("translate.model", "haiku")
+        model: [{ value: "fast", label: "Fast" }, { value: "careful", label: "Careful" }]
+        value: Settings.get("translate.model", "fast")
         onActivated: function(v) { Settings.set("translate.model", v) }
       }
     }

@@ -31,7 +31,7 @@ if [[ $target == auto ]]; then
   if grep -qP '[\x{0600}-\x{06FF}]' <<<"$text"; then target=en; else target=ar; fi
 fi
 lang=$([[ $target == ar ]] && echo "Arabic" || echo "English")
-model=$(get translate.model haiku)
+tier=$(get translate.model fast)
 if [[ $mode == summary ]]; then
   prompt="Summarise the following text in $lang in at most three short sentences. Output only the summary."
   title="Summary"
@@ -40,11 +40,11 @@ else
   title="Translation → $lang"
 fi
 omarchy-shell -q nasaq.island alert "$title" "Working…"
-out=$(timeout 60 claude -p --model "$model" "$prompt
+out=$(NASAQ_AGENT_TIER=$tier nasaq-agent-ask "$prompt
 
-$text" 2>/dev/null | sed -e 's/[[:space:]]*$//')
+$text" | sed -e 's/[[:space:]]*$//')
 if [[ -z $out ]]; then
-  omarchy-shell -q nasaq.island alert "$title" "Claude did not answer. Is claude logged in?"
+  omarchy-shell -q nasaq.island alert "$title" "$(nasaq-agent-ask --name) did not answer. Is it logged in?"
   exit 1
 fi
 printf '%s' "$out" | wl-copy

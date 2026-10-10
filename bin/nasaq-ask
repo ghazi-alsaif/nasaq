@@ -19,11 +19,11 @@ prompt = (
   "`powerprofilesctl set ...`, `wpctl set-volume @DEFAULT_AUDIO_SINK@ 50%`, `playerctl ...`. Reply with ONLY a JSON object: "
   '{"answer": "...", "command": "..." or null}.\n\nRequest: ' + q)
 try:
-    out = subprocess.run(["claude", "-p", "--model", "haiku", prompt], capture_output=True, text=True, timeout=60).stdout
+    out = subprocess.run(["nasaq-agent-ask", prompt], capture_output=True, text=True, timeout=95).stdout
     m = re.search(r"\{.*\}", out, re.S)
     data = json.loads(m.group(0)) if m else {"answer": out.strip(), "command": None}
 except Exception as e:
-    data = {"answer": f"Claude did not answer ({e.__class__.__name__}).", "command": None}
+    data = {"answer": f"The agent did not answer ({e.__class__.__name__}).", "command": None}
 cmd = (data.get("command") or "").strip()
 if cmd and not ALLOW.match(cmd):
     data["answer"] = (data.get("answer") or "") + f"  (Suggested command not allowed here: {cmd})"

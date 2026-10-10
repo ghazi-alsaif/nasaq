@@ -339,5 +339,10 @@
 "Tiled": "مرصوف",
 "Open window": "نافذة مفتوحة",
 "Switch after the last TAB": "الانتقال بعد آخر TAB",
-"Lower = snappier; higher lets you pause while holding Alt.": "أقل = أسرع؛ أعلى يتيح لك التوقف وأنت ضاغط Alt."
+"Lower = snappier; higher lets you pause while holding Alt.": "أقل = أسرع؛ أعلى يتيح لك التوقف وأنت ضاغط Alt.",
+"Speed": "السرعة",
+"Fast": "سريع",
+"Careful": "دقيق",
+"Fast uses the agent's quickest model (Claude: Haiku). Careful uses its default.": "سريع يستخدم أسرع نموذج عند الوكيل (Claude: Haiku)، ودقيق يستخدم نموذجه الافتراضي.",
+"Ask your agent (TEST)": "اسأل وكيلك (تجربة)"
 }

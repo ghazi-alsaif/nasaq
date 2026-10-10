@@ -157,6 +157,10 @@ Item {
   // Either question mark works: "?" or the Arabic "؟".
   readonly property bool aiMode: aiOn && /^[?؟]\s*\S/.test(query)
   readonly property string aiQuestion: aiMode ? query.replace(/^[?؟]\s*/, "") : ""
+  property string agentName: "Claude"
+  Process { id: agentNameProc; command: ["nasaq-agent-ask", "--name"]; running: true
+    stdout: StdioCollector { onStreamFinished: { var n = this.text.trim(); root.agentName = n ? n.charAt(0).toUpperCase() + n.slice(1) : "Claude" } } }
+  Timer { interval: 60000; repeat: true; running: true; onTriggered: agentNameProc.running = true }
   property string aiAsked: ""
   property bool aiBusy: false
   property var aiReply: null
@@ -211,10 +215,10 @@ Item {
     }
     if (aiMode) {
       if (aiReply && aiAsked === aiQuestion) {
-        out.push({ kind: "ai", title: aiReply.answer || "(no answer)", subtitle: "Claude · Enter copies the answer", glyph: "󰚩", data: aiReply.answer })
+        out.push({ kind: "ai", title: aiReply.answer || "(no answer)", subtitle: root.agentName + " · Enter copies the answer", glyph: "󰚩", data: aiReply.answer })
         if (aiReply.command) out.push({ kind: "aicmd", title: "Run: " + aiReply.command, subtitle: "Runs only when you press Enter", glyph: "󰆍", data: aiReply.command })
       } else {
-        out.push({ kind: "ai", title: aiBusy ? "Thinking…" : "Ask Claude: " + aiQuestion, subtitle: aiBusy ? "Claude · this takes a few seconds" : "Enter to ask", glyph: "󰚩", data: null })
+        out.push({ kind: "ai", title: aiBusy ? "Thinking…" : "Ask " + agentName + ": " + aiQuestion, subtitle: aiBusy ? agentName + " · this takes a few seconds" : "Enter to ask", glyph: "󰚩", data: null })
       }
       return out
     }
@@ -554,7 +558,7 @@ Item {
             anchors.leftMargin: 12
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 3
-            text: section === "app" ? (root.query.trim() ? "Applications" : "Frequently Used") : section === "ai" || section === "aicmd" ? "Claude" : section === "window" ? "Open Windows" : section === "file" ? "Files" : section === "web" ? "Web" : ""
+            text: section === "app" ? (root.query.trim() ? "Applications" : "Frequently Used") : section === "ai" || section === "aicmd" ? root.agentName : section === "window" ? "Open Windows" : section === "file" ? "Files" : section === "web" ? "Web" : ""
             color: Qt.rgba(1, 1, 1, 0.45)
             font.family: root.textFont
             font.weight: Font.DemiBold
