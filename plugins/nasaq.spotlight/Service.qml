@@ -154,8 +154,9 @@ Item {
 
   // ── Ask Claude: "? question" (NASAQ Settings > Launcher) ──
   readonly property bool aiOn: Nasaq.Settings.get("launcher.ai", true)
-  readonly property bool aiMode: aiOn && /^\?\s*\S/.test(query)
-  readonly property string aiQuestion: aiMode ? query.replace(/^\?\s*/, "") : ""
+  // Either question mark works: "?" or the Arabic "؟".
+  readonly property bool aiMode: aiOn && /^[?؟]\s*\S/.test(query)
+  readonly property string aiQuestion: aiMode ? query.replace(/^[?؟]\s*/, "") : ""
   property string aiAsked: ""
   property bool aiBusy: false
   property var aiReply: null
