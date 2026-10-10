@@ -2,7 +2,13 @@
 
 **An opinionated desktop layer for [Omarchy](https://omarchy.org), by GHS (Ghazi Hamad Alsaif).**
 
-Version 1.0 · Omarchy 4.0.4+ · Hyprland 0.56+ · Interface in English or Arabic
+[![Release](https://img.shields.io/github/v/release/ghazi-alsaif/nasaq?label=release&color=2ea44f)](https://github.com/ghazi-alsaif/nasaq/releases)
+[![Omarchy](https://img.shields.io/badge/Omarchy-4.0.4%2B-1f6feb)](https://omarchy.org)
+[![Hyprland](https://img.shields.io/badge/Hyprland-0.56%2B-58c7f3)](https://hyprland.org)
+[![Quickshell](https://img.shields.io/badge/Quickshell-0.3%2B-8957e5)](https://quickshell.org)
+[![Languages](https://img.shields.io/badge/UI-English%20%7C%20%D8%A7%D9%84%D8%B9%D8%B1%D8%A8%D9%8A%D8%A9-d29922)](#languages)
+[![License](https://img.shields.io/github/license/ghazi-alsaif/nasaq?color=lightgrey)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/ghazi-alsaif/nasaq?style=flat&color=f5a623)](https://github.com/ghazi-alsaif/nasaq/stargazers)
 
 [العربية](README.ar.md)
 
