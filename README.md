@@ -57,7 +57,7 @@ A notification grows out of the island, with the app icon, title and body, then 
 
 ### Desktop widgets
 
-A column of glass widgets sits on the desktop behind your windows (see the screenshot at the top): a large clock with the Gregorian and Hijri dates, the prayer card with the next prayer highlighted and a progress bar to it, weather for your city, an Up Next card fed by iCal calendar links, a system card with CPU, memory and temperatures, Now Playing with media controls, and a Tasks / Notes card. `SUPER + ALT + D` hides and shows the column. Every card has its own switch in Settings > Widgets, and so do the prayer countdown and prayer row in the Dynamic Island, so prayer times are optional.
+A column of glass widgets sits on the desktop behind your windows (see the screenshot at the top): a large clock with the Gregorian and Hijri dates, the prayer card with the next prayer highlighted and a progress bar to it, weather for your city, an Up Next card fed by iCal calendar links, a system card with CPU, memory and temperatures, Now Playing with media controls, and a Tasks / Notes card. `SUPER + ALT + D` hides and shows the column. Every card has its own switch in Settings > Widgets and can be dragged into any order, and so do the prayer countdown and prayer row in the Dynamic Island, so prayer times are optional.
 
 ### Spotlight
 

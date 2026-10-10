@@ -116,6 +116,15 @@ Item {
   readonly property bool calendarEnabled: Nasaq.Settings.get("desktop.calendar", true)
   readonly property bool playerEnabled: Nasaq.Settings.get("desktop.player", true)
   readonly property bool notesEnabled: Nasaq.Settings.get("desktop.notes", true)
+  readonly property var defaultOrder: ["clock", "prayer", "weather", "calendar", "system", "player", "notes"]
+  // Top-to-bottom order of the cards (Settings > Widgets, drag the handles).
+  readonly property var cardOrder: {
+    var o = Nasaq.Settings.get("desktop.order", defaultOrder)
+    var seen = {}, out = []
+    for (var i = 0; i < o.length; i++) if (defaultOrder.indexOf(o[i]) >= 0 && !seen[o[i]]) { seen[o[i]] = true; out.push(o[i]) }
+    for (var j = 0; j < defaultOrder.length; j++) if (!seen[defaultOrder[j]]) out.push(defaultOrder[j])
+    return out
+  }
   readonly property int tempWarn: Nasaq.Settings.get("temps.warn", 60)
   readonly property int tempHot: Nasaq.Settings.get("temps.hot", 80)
   property var sys: null
@@ -355,6 +364,7 @@ Item {
 
   // ── UI ───────────────────────────────────────────────────────────
   component Card: Rectangle {
+    property string key: ""
     width: 320
     radius: 26
     color: root.glass
@@ -393,7 +403,7 @@ Item {
       // OnDemand so the note and task fields can take typing when clicked.
       WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
 
-      Column {
+      Item {
         id: widgets
         x: root.edge
         // Top edge level with the tiled windows' top edge (fallback until measured).
@@ -403,12 +413,39 @@ Item {
         width: 320
         // 10 px between widgets on screen, the same as between windows
         // (the column is scaled by win.ui, so divide it back out).
-        spacing: 10 / win.ui
+        readonly property real spacing: 10 / win.ui
         scale: win.ui
         transformOrigin: Item.TopLeft
+        // Cards are placed by hand in root.cardOrder; hidden cards leave no gap.
+        property string lastKey: ""
+        implicitHeight: 0
+        function cardFor(key) { for (var i = 0; i < children.length; i++) if (children[i].key === key) return children[i]; return null }
+        function relayout() {
+          var y = 0, last = ""
+          for (var i = 0; i < root.cardOrder.length; i++) {
+            var cards = root.cardOrder[i] === "prayer" ? [cardFor("prayer"), cardFor("prayer-missing")] : [cardFor(root.cardOrder[i])]
+            for (var k = 0; k < cards.length; k++) {
+              var c = cards[k]
+              if (!c || !c.visible) continue
+              c.y = y; y += c.height + spacing; last = root.cardOrder[i]
+            }
+          }
+          lastKey = last
+          implicitHeight = Math.max(0, y - spacing)
+        }
+        Component.onCompleted: {
+          for (var i = 0; i < children.length; i++) {
+            children[i].visibleChanged.connect(relayout)
+            children[i].heightChanged.connect(relayout)
+          }
+          relayout()
+        }
+        Connections { target: root; function onCardOrderChanged() { widgets.relayout() } }
+        onSpacingChanged: relayout()
 
         // ── Clock ──
         Card {
+          key: "clock"
           height: 150
           visible: root.clockEnabled
           Column {
@@ -445,6 +482,7 @@ Item {
 
         // ── Prayer times unavailable ──
         Card {
+          key: "prayer-missing"
           height: 64
           visible: root.prayerEnabled && root.prayerMissing
           Text {
@@ -461,6 +499,7 @@ Item {
 
         // ── Next prayer ──
         Card {
+          key: "prayer"
           height: 132
           visible: root.prayerEnabled && root.prayerDay !== null && root.nextPrayer !== null
           Item {
@@ -528,6 +567,7 @@ Item {
 
         // ── Weather ──
         Card {
+          key: "weather"
           height: 132
           visible: root.weatherEnabled && root.weather !== null
           Item {
@@ -581,6 +621,7 @@ Item {
 
         // ── Up next (calendar) ──
         Card {
+          key: "calendar"
           height: calCol.implicitHeight + 32
           visible: root.calendarEnabled && root.calendar.configured && root.upNext.length > 0
           Column {
@@ -604,6 +645,7 @@ Item {
 
         // ── System ──
         Card {
+          key: "system"
           height: 96
           visible: root.sysEnabled && root.sys !== null
           Row {
@@ -629,6 +671,7 @@ Item {
         // ── Now playing: art, title, controls, progress, live waveform ──
         Card {
           // With nothing playing it rests as "Not Playing".
+          key: "player"
           height: 178
           visible: root.playerEnabled
           Rectangle {
@@ -787,10 +830,12 @@ Item {
         // ── Notes & Tasks (two tabs) ──
         Card {
           id: notesCard
+          key: "notes"
           visible: root.notesEnabled
-          // Stretch to the bottom of the screen, ending at the same 10 px
-          // gap as the windows (widgets are scaled by win.ui).
-          height: Math.max(220, (win.height - 10 - widgets.y) / win.ui - y)
+          // As the last card it stretches to the bottom of the screen, ending
+          // at the same 10 px gap as the windows (widgets are scaled by
+          // win.ui). Anywhere else it keeps a fixed height and scrolls inside.
+          height: widgets.lastKey === "notes" ? Math.max(220, (win.height - 10 - widgets.y) / win.ui - y) : 300
           Row {
             id: tabs
             x: 14

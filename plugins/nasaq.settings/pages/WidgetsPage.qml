@@ -35,28 +35,98 @@ NPage {
 
   NSection {
     title: "WIDGETS"
-    note: "Turn each card on or off. The column closes the gap where a card is off."
-    Repeater {
-      model: [
-        { key: "desktop.clock", title: "Clock", subtitle: "Time, date and Hijri date" },
-        { key: "desktop.prayer", title: "Prayer times", subtitle: "Next prayer, countdown and the five times" },
-        { key: "desktop.weather", title: "Weather", subtitle: "Current conditions, high and low" },
-        { key: "desktop.calendar", title: "Up next", subtitle: "Events from the iCal calendars below" },
-        { key: "desktop.system", title: "System", subtitle: "CPU, memory and temperatures" },
-        { key: "desktop.player", title: "Now playing", subtitle: "Media title, art and controls" },
-        { key: "desktop.notes", title: "Tasks & notes", subtitle: "The two-tab card at the bottom" }
-      ]
-      delegate: NRow {
-        required property var modelData
-        title: modelData.title
-        subtitle: modelData.subtitle
-        NSwitch { checked: Settings.get(modelData.key, true); onToggled: function(c) { Settings.set(modelData.key, c) } }
+    note: "Turn each card on or off, and drag the handle to change the order, top to bottom. The column closes the gap where a card is off. Tasks & notes stretches to the bottom of the screen when it is last."
+    Item {
+      id: orderList
+      width: parent.width
+      height: orderModel.count * rowH
+      readonly property int rowH: 54
+      readonly property var defaults: ["clock", "prayer", "weather", "calendar", "system", "player", "notes"]
+      readonly property var info: ({
+        clock: { title: "Clock", subtitle: "Time, date and Hijri date" },
+        prayer: { title: "Prayer times", subtitle: "Next prayer, countdown and the five times" },
+        weather: { title: "Weather", subtitle: "Current conditions, high and low" },
+        calendar: { title: "Up next", subtitle: "Events from the iCal calendars below" },
+        system: { title: "System", subtitle: "CPU, memory and temperatures" },
+        player: { title: "Now playing", subtitle: "Media title, art and controls" },
+        notes: { title: "Tasks & notes", subtitle: "The two-tab card" }
+      })
+      ListModel { id: orderModel }
+      Component.onCompleted: {
+        var o = Settings.get("desktop.order", defaults), seen = {}
+        for (var i = 0; i < o.length; i++) if (info[o[i]] && !seen[o[i]]) { seen[o[i]] = true; orderModel.append({ key: o[i] }) }
+        for (var j = 0; j < defaults.length; j++) if (!seen[defaults[j]]) orderModel.append({ key: defaults[j] })
+      }
+      function save() {
+        var keys = []
+        for (var i = 0; i < orderModel.count; i++) keys.push(orderModel.get(i).key)
+        Settings.set("desktop.order", keys)
+      }
+      Repeater {
+        model: orderModel
+        delegate: Item {
+          id: rowItem
+          required property int index
+          required property string key
+          width: orderList.width
+          height: orderList.rowH
+          y: index * orderList.rowH
+          z: handleMouse.drag.active ? 2 : 1
+          Behavior on y { enabled: !handleMouse.drag.active; NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+          Rectangle {
+            anchors.fill: parent
+            anchors.bottomMargin: 1
+            radius: 10
+            color: handleMouse.drag.active ? Qt.rgba(1, 1, 1, 0.08) : "transparent"
+          }
+          NGlyph {
+            id: handle
+            anchors.left: parent.left
+            anchors.leftMargin: 2
+            anchors.verticalCenter: parent.verticalCenter
+            text: "󰇜"
+            font.pixelSize: 16
+            opacity: handleMouse.containsMouse || handleMouse.drag.active ? 1 : 0.45
+            MouseArea {
+              id: handleMouse
+              anchors.fill: parent
+              anchors.margins: -8
+              hoverEnabled: true
+              cursorShape: handleMouse.drag.active ? Qt.ClosedHandCursor : Qt.OpenHandCursor
+              drag.target: rowItem
+              drag.axis: Drag.YAxis
+              drag.minimumY: 0
+              drag.maximumY: (orderModel.count - 1) * orderList.rowH
+              onPositionChanged: {
+                if (!drag.active) return
+                var to = Math.max(0, Math.min(orderModel.count - 1, Math.round(rowItem.y / orderList.rowH)))
+                if (to !== rowItem.index) orderModel.move(rowItem.index, to, 1)
+              }
+              onReleased: { rowItem.y = rowItem.index * orderList.rowH; orderList.save() }
+            }
+          }
+          Column {
+            anchors.left: handle.right
+            anchors.leftMargin: 14
+            anchors.right: sw.left
+            anchors.rightMargin: Theme.spacingLarge
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 2
+            NLabel { width: parent.width; text: Tr.s(orderList.info[rowItem.key].title); font.weight: Font.Normal }
+            NSub { width: parent.width; text: Tr.s(orderList.info[rowItem.key].subtitle) }
+          }
+          NSwitch {
+            id: sw
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            checked: Settings.get("desktop." + rowItem.key, true)
+            onToggled: function(c) { Settings.set("desktop." + rowItem.key, c) }
+          }
+          Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: Theme.divider; opacity: 0.6 }
+        }
       }
     }
   }
-
-  Cmd { id: calStatus; script: "python3 -c 'import json,os;p=os.path.expanduser(\"~/.cache/nasaq/calendar.json\");d=json.load(open(p)) if os.path.exists(p) else {};print((\"Error: \"+d[\"error\"]) if d.get(\"error\") else (str(len(d.get(\"events\",[])))+\" events in the next 7 days\" if d.get(\"configured\") else \"No calendar connected\"))'" }
-  Cmd { id: calRefresh; autoRun: false; script: "nasaq-calendar"; onDone: calStatus.refresh() }
 
   NSection {
     title: "CALENDAR"
