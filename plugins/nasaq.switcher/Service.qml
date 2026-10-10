@@ -49,7 +49,7 @@ Item {
   }
 
   // Safety net: if the ALT release never reaches us, switch after a pause.
-  Timer { id: idle; interval: 1500; onTriggered: root.confirm() }
+  Timer { id: idle; interval: 1200; onTriggered: root.confirm() }
   onOpenChanged: if (!open) idle.stop()
 
   function step(dir) {
@@ -64,7 +64,7 @@ Item {
       items = snapshot()
       if (items.length < 2) { if (items.length === 1) activate(items[0]); return }
       index = dir > 0 ? 1 : items.length - 1
-      if (Date.now() - releasedAt < 400) { releasedAt = 0; activate(items[index]); return }
+      if (Date.now() - releasedAt < 700) { releasedAt = 0; activate(items[index]); return }
       open = true
       return
     }
@@ -98,6 +98,10 @@ Item {
     function prev(): string { root.step(-1); return "ok" }
     function cancel(): string { root.cancel(); return "ok" }
     function confirm(): string { root.confirm(); return "ok" }
+    // TAB released. If the overlay still has no keyboard focus, Alt was
+    // (or is about to be) released before we could see it: a quick tap, so
+    // switch now. Once focused, Alt's own release is handled by the overlay.
+    function tabReleased(): string { if (root.open && !win.active) root.confirm(); return root.open ? "held" : "switched" }
     function status(): string { return JSON.stringify({ open: root.open, index: root.index, items: root.items.length, sinceRelease: Date.now() - root.releasedAt }) }
     function debug(): string { return JSON.stringify(root.snapshot().map(function(t) { return { address: String(t.address), title: t.title } })) }
   }
