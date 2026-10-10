@@ -22,7 +22,7 @@ Also available in <a href="README.ar.md">Arabic</a>.</p>
 
 ## The name
 
-NASAQ is the Latin spelling of the Arabic word **نَسَق** (*nasaq*), which means *order, harmony, a consistent pattern*: things arranged so they follow one line and fit together. Omarchy already gives you a beautiful Arch + Hyprland desktop shaped by DHH's taste. NASAQ is one person's taste layered on top of it: a desktop where every piece looks and behaves like the others, and everything is configured from one window.
+NASAQ is an Arabic word for *order, harmony, a consistent pattern*: things arranged so they follow one line and fit together. Omarchy already gives you a beautiful Arch + Hyprland desktop shaped by DHH's taste. NASAQ is one person's taste layered on top of it: a desktop where every piece looks and behaves like the others, and everything is configured from one window.
 
 ## Features
 
