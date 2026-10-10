@@ -64,13 +64,18 @@ Item {
       items = snapshot()
       if (items.length < 2) { if (items.length === 1) activate(items[0]); return }
       index = dir > 0 ? 1 : items.length - 1
+      if (Date.now() - releasedAt < 400) { releasedAt = 0; activate(items[index]); return }
       open = true
       return
     }
     index = (index + dir + items.length) % items.length
   }
+  // A very quick ALT+TAB can deliver the Alt-release command before the
+  // "next" command (two separate processes). Remember the release; if "next"
+  // then arrives within 400 ms it switches straight to the previous window.
+  property real releasedAt: 0
   function confirm() {
-    if (!open) return
+    if (!open) { releasedAt = Date.now(); return }
     var t = items[index]
     open = false
     if (t) activate(t)
@@ -93,6 +98,7 @@ Item {
     function prev(): string { root.step(-1); return "ok" }
     function cancel(): string { root.cancel(); return "ok" }
     function confirm(): string { root.confirm(); return "ok" }
+    function status(): string { return JSON.stringify({ open: root.open, index: root.index, items: root.items.length, sinceRelease: Date.now() - root.releasedAt }) }
     function debug(): string { return JSON.stringify(root.snapshot().map(function(t) { return { address: String(t.address), title: t.title } })) }
   }
 

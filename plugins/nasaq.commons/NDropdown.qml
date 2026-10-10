@@ -31,13 +31,18 @@ Item {
   QQC.Popup {
     id: popup
     parent: QQC.Overlay.overlay
-    readonly property point origin: dd.mapToItem(QQC.Overlay.overlay, 0, 0)
     readonly property int listHeight: Math.min(300, list.contentHeight + 8)
-    readonly property bool below: origin.y + dd.height + 4 + listHeight <= (QQC.Overlay.overlay ? QQC.Overlay.overlay.height : 10000)
-    x: Math.max(0, Math.min(origin.x, (QQC.Overlay.overlay ? QQC.Overlay.overlay.width : 10000) - width))
-    y: below ? origin.y + dd.height + 4 : origin.y - listHeight - 4
     width: Math.max(dd.width, 160)
     height: listHeight
+    // Positioned when it opens (mapToItem is not a live binding).
+    onAboutToShow: {
+      var ov = QQC.Overlay.overlay
+      var o = dd.mapToItem(ov, 0, 0)
+      var ovW = ov ? ov.width : dd.Window.width, ovH = ov ? ov.height : dd.Window.height
+      var below = o.y + dd.height + 4 + listHeight <= ovH
+      x = Math.max(0, Math.min(o.x, ovW - width))
+      y = below ? o.y + dd.height + 4 : Math.max(0, o.y - listHeight - 4)
+    }
     padding: 4
     modal: false
     closePolicy: QQC.Popup.CloseOnEscape | QQC.Popup.CloseOnPressOutside
