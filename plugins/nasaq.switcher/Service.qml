@@ -49,7 +49,7 @@ Item {
   }
 
   // Safety net: if the ALT release never reaches us, switch after a pause.
-  Timer { id: idle; interval: 2500; onTriggered: root.confirm() }
+  Timer { id: idle; interval: 1500; onTriggered: root.confirm() }
   onOpenChanged: if (!open) idle.stop()
 
   function step(dir) {
