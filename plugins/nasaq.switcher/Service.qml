@@ -77,8 +77,9 @@ Item {
   }
   function cancel() { open = false }
   function activate(t) {
-    Quickshell.execDetached(["hyprctl", "dispatch", "focuswindow", "address:0x" + norm(t.address)])
-    Quickshell.execDetached(["hyprctl", "dispatch", "hl.dsp.window.bring_to_top()"])
+    // Hyprland 0.55+ dispatches are Lua expressions.
+    Quickshell.execDetached(["hyprctl", "--batch",
+      'dispatch hl.dsp.focus({ window = "address:0x' + norm(t.address) + '" }); dispatch hl.dsp.window.bring_to_top()'])
   }
   function iconFor(t) {
     var cls = t && t.lastIpcObject ? String(t.lastIpcObject.class || "") : ""
@@ -91,6 +92,8 @@ Item {
     function next(): string { root.step(1); return "ok" }
     function prev(): string { root.step(-1); return "ok" }
     function cancel(): string { root.cancel(); return "ok" }
+    function confirm(): string { root.confirm(); return "ok" }
+    function debug(): string { return JSON.stringify(root.snapshot().map(function(t) { return { address: String(t.address), title: t.title } })) }
   }
 
   PanelWindow {

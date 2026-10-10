@@ -1,14 +1,18 @@
 import QtQuick
+import QtQuick.Controls as QQC
+
 // Compact dropdown: model = [{value, label}] or plain strings.
+// The list opens in the window's overlay layer, so it is never hidden by
+// the rows below it and never clipped by its card; it opens upward when
+// there is no room below.
 Item {
   id: dd
   property var model: []
   property var value
-  property bool open: false
+  property bool open: popup.visible
   signal activated(var value)
   width: 200
   height: 28
-  z: open ? 100 : 0
   function labelOf(v) {
     for (var i = 0; i < model.length; i++) {
       var m = model[i]; var mv = (typeof m === "object") ? m.value : m
@@ -19,32 +23,44 @@ Item {
   Rectangle {
     anchors.fill: parent
     radius: 8
-    color: Qt.rgba(1, 1, 1, headMouse.containsMouse || dd.open ? 0.2 : 0.12)
+    color: Qt.rgba(1, 1, 1, headMouse.containsMouse || popup.visible ? 0.2 : 0.12)
     NLabel { anchors.left: parent.left; anchors.leftMargin: 10; anchors.right: chev.left; anchors.verticalCenter: parent.verticalCenter; text: dd.labelOf(dd.value); font.weight: Font.Normal }
-    NGlyph { id: chev; anchors.right: parent.right; anchors.rightMargin: 8; anchors.verticalCenter: parent.verticalCenter; text: dd.open ? "󰅃" : "󰅀"; font.pixelSize: 12; opacity: 0.7 }
-    MouseArea { id: headMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: dd.open = !dd.open }
+    NGlyph { id: chev; anchors.right: parent.right; anchors.rightMargin: 8; anchors.verticalCenter: parent.verticalCenter; text: popup.visible ? "󰅃" : "󰅀"; font.pixelSize: 12; opacity: 0.7 }
+    MouseArea { id: headMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: popup.visible ? popup.close() : popup.open() }
   }
-  Rectangle {
-    visible: dd.open
-    y: dd.height + 4
-    width: dd.width
-    height: Math.min(260, list.contentHeight + 8)
-    radius: 10
-    color: Qt.rgba(0.16, 0.16, 0.18, 0.98)
-    border.color: Theme.tileBorder
-    ListView {
+  QQC.Popup {
+    id: popup
+    parent: QQC.Overlay.overlay
+    readonly property point origin: dd.mapToItem(QQC.Overlay.overlay, 0, 0)
+    readonly property int listHeight: Math.min(300, list.contentHeight + 8)
+    readonly property bool below: origin.y + dd.height + 4 + listHeight <= (QQC.Overlay.overlay ? QQC.Overlay.overlay.height : 10000)
+    x: Math.max(0, Math.min(origin.x, (QQC.Overlay.overlay ? QQC.Overlay.overlay.width : 10000) - width))
+    y: below ? origin.y + dd.height + 4 : origin.y - listHeight - 4
+    width: Math.max(dd.width, 160)
+    height: listHeight
+    padding: 4
+    modal: false
+    closePolicy: QQC.Popup.CloseOnEscape | QQC.Popup.CloseOnPressOutside
+    background: Rectangle {
+      radius: 10
+      color: Qt.rgba(0.13, 0.13, 0.15, 1)
+      border.color: Qt.rgba(1, 1, 1, 0.14)
+      border.width: 1
+    }
+    contentItem: ListView {
       id: list
-      anchors.fill: parent; anchors.margins: 4
       clip: true
       model: dd.model
+      boundsBehavior: Flickable.StopAtBounds
+      QQC.ScrollBar.vertical: QQC.ScrollBar { policy: list.contentHeight > list.height ? QQC.ScrollBar.AlwaysOn : QQC.ScrollBar.AlwaysOff }
       delegate: Rectangle {
         required property var modelData
         readonly property var v: (typeof modelData === "object") ? modelData.value : modelData
-        width: list.width; height: 28; radius: 6
+        width: list.width; height: 30; radius: 6
         color: itemMouse.containsMouse ? Theme.hover : (v === dd.value ? Qt.rgba(1, 1, 1, 0.06) : "transparent")
-        NLabel { anchors.left: parent.left; anchors.leftMargin: 8; anchors.verticalCenter: parent.verticalCenter; text: Tr.s((typeof modelData === "object") ? modelData.label : modelData); font.weight: Font.Normal }
-        NGlyph { anchors.right: parent.right; anchors.rightMargin: 8; anchors.verticalCenter: parent.verticalCenter; text: "󰄬"; visible: parent.v === dd.value; color: Theme.accent; font.pixelSize: 12 }
-        MouseArea { id: itemMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { dd.open = false; dd.activated(parent.v) } }
+        NLabel { anchors.left: parent.left; anchors.leftMargin: 8; anchors.right: tick.left; anchors.verticalCenter: parent.verticalCenter; text: Tr.s((typeof modelData === "object") ? modelData.label : modelData); font.weight: Font.Normal }
+        NGlyph { id: tick; anchors.right: parent.right; anchors.rightMargin: 8; anchors.verticalCenter: parent.verticalCenter; text: "󰄬"; visible: parent.v === dd.value; color: Theme.accent; font.pixelSize: 12 }
+        MouseArea { id: itemMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { popup.close(); dd.activated(parent.v) } }
       }
     }
   }
