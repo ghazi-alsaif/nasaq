@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.1 — 2026-10-10
+- Settings > Widgets: a switch for every desktop card (clock, prayer times, weather, up next, system, now playing, tasks & notes) and one for the prayer countdown and prayer row in the Dynamic Island. Prayer features are opt-out for anyone who does not need them.
+
 ## 1.0.0 — 2026-10-10
 First public release of NASAQ (نَسَق) for Omarchy 4.0.4.
 - One settings window (SUPER + ALT + N) with 12 pages and a Plugins page that turns any shell plugin on or off.

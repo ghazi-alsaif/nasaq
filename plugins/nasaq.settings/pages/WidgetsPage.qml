@@ -33,6 +33,28 @@ NPage {
     }
   }
 
+  NSection {
+    title: "WIDGETS"
+    note: "Turn each card on or off. The column closes the gap where a card is off."
+    Repeater {
+      model: [
+        { key: "desktop.clock", title: "Clock", subtitle: "Time, date and Hijri date" },
+        { key: "desktop.prayer", title: "Prayer times", subtitle: "Next prayer, countdown and the five times" },
+        { key: "desktop.weather", title: "Weather", subtitle: "Current conditions, high and low" },
+        { key: "desktop.calendar", title: "Up next", subtitle: "Events from the iCal calendars below" },
+        { key: "desktop.system", title: "System", subtitle: "CPU, memory and temperatures" },
+        { key: "desktop.player", title: "Now playing", subtitle: "Media title, art and controls" },
+        { key: "desktop.notes", title: "Tasks & notes", subtitle: "The two-tab card at the bottom" }
+      ]
+      delegate: NRow {
+        required property var modelData
+        title: modelData.title
+        subtitle: modelData.subtitle
+        NSwitch { checked: Settings.get(modelData.key, true); onToggled: function(c) { Settings.set(modelData.key, c) } }
+      }
+    }
+  }
+
   Cmd { id: calStatus; script: "python3 -c 'import json,os;p=os.path.expanduser(\"~/.cache/nasaq/calendar.json\");d=json.load(open(p)) if os.path.exists(p) else {};print((\"Error: \"+d[\"error\"]) if d.get(\"error\") else (str(len(d.get(\"events\",[])))+\" events in the next 7 days\" if d.get(\"configured\") else \"No calendar connected\"))'" }
   Cmd { id: calRefresh; autoRun: false; script: "nasaq-calendar"; onDone: calStatus.refresh() }
 
@@ -69,10 +91,6 @@ NPage {
   NSection {
     title: "SYSTEM CARD"
     note: "CPU, memory and temperatures in the widget column, refreshed every 5 seconds while it is shown."
-    NRow {
-      title: "Show the system card"
-      NSwitch { checked: Settings.get("desktop.system", true); onToggled: function(c) { Settings.set("desktop.system", c) } }
-    }
     NRow {
       title: "Warm from"
       subtitle: "Temperature turns yellow."
@@ -115,6 +133,11 @@ NPage {
   NSection {
     title: "PRAYER TIMES"
     note: "City: " + (page.island.city || "not set") + ". Change the city from the island's settings."
+    NRow {
+      title: "Prayer times in the Dynamic Island"
+      subtitle: "The countdown in the bar and the prayer row in the island card. The desktop prayer card has its own switch above."
+      NSwitch { checked: Settings.get("island.prayer", true); onToggled: function(c) { Settings.set("island.prayer", c) } }
+    }
     NRow {
       title: "Calculation method"
       NDropdown {

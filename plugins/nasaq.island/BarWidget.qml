@@ -75,7 +75,8 @@ BarWidget {
   property var prayerDay: null
   readonly property string hijriMode: Nasaq.Settings.get("island.hijri", "both")
   property string loadedDayKey: ""
-  readonly property var nextPrayer: Island.nextPrayer(prayerDay, now)
+  readonly property bool prayerEnabled: Nasaq.Settings.get("island.prayer", true)
+  readonly property var nextPrayer: prayerEnabled ? Island.nextPrayer(prayerDay, now) : null
   readonly property real msToNext: nextPrayer ? nextPrayer.time.getTime() - now.getTime() : -1
   readonly property bool prayerSoon: nextPrayer !== null && msToNext >= 0 && msToNext <= 60 * 60 * 1000
   property var notified: ({})
@@ -969,7 +970,7 @@ BarWidget {
           height: 70
           radius: 18
           color: Qt.rgba(1, 1, 1, 0.07)
-          visible: root.prayerDay !== null
+          visible: root.prayerEnabled && root.prayerDay !== null
 
           Row {
             anchors.fill: parent
@@ -1307,7 +1308,7 @@ BarWidget {
         }
 
         Text {
-          visible: !root.hasMedia && root.prayerDay === null
+          visible: !root.hasMedia && (root.prayerDay === null || !root.prayerEnabled)
           text: "Nothing playing"
           color: Qt.rgba(1, 1, 1, 0.5)
           font.family: root.textFont

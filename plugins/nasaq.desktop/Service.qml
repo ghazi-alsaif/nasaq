@@ -109,6 +109,13 @@ Item {
 
   // ── System card: CPU, memory, temperatures (NASAQ Settings > Widgets) ──
   readonly property bool sysEnabled: Nasaq.Settings.get("desktop.system", true)
+  // One switch per widget (Settings > Widgets); hidden cards leave no gap.
+  readonly property bool clockEnabled: Nasaq.Settings.get("desktop.clock", true)
+  readonly property bool prayerEnabled: Nasaq.Settings.get("desktop.prayer", true)
+  readonly property bool weatherEnabled: Nasaq.Settings.get("desktop.weather", true)
+  readonly property bool calendarEnabled: Nasaq.Settings.get("desktop.calendar", true)
+  readonly property bool playerEnabled: Nasaq.Settings.get("desktop.player", true)
+  readonly property bool notesEnabled: Nasaq.Settings.get("desktop.notes", true)
   readonly property int tempWarn: Nasaq.Settings.get("temps.warn", 60)
   readonly property int tempHot: Nasaq.Settings.get("temps.hot", 80)
   property var sys: null
@@ -403,6 +410,7 @@ Item {
         // ── Clock ──
         Card {
           height: 150
+          visible: root.clockEnabled
           Column {
             anchors.centerIn: parent
             spacing: -6
@@ -438,7 +446,7 @@ Item {
         // ── Prayer times unavailable ──
         Card {
           height: 64
-          visible: root.prayerMissing
+          visible: root.prayerEnabled && root.prayerMissing
           Text {
             anchors.centerIn: parent
             width: parent.width - 36
@@ -454,7 +462,7 @@ Item {
         // ── Next prayer ──
         Card {
           height: 132
-          visible: root.prayerDay !== null && root.nextPrayer !== null
+          visible: root.prayerEnabled && root.prayerDay !== null && root.nextPrayer !== null
           Item {
             anchors.fill: parent
             anchors.margins: 18
@@ -521,7 +529,7 @@ Item {
         // ── Weather ──
         Card {
           height: 132
-          visible: root.weather !== null
+          visible: root.weatherEnabled && root.weather !== null
           Item {
             anchors.fill: parent
             anchors.margins: 18
@@ -574,7 +582,7 @@ Item {
         // ── Up next (calendar) ──
         Card {
           height: calCol.implicitHeight + 32
-          visible: root.calendar.configured && root.upNext.length > 0
+          visible: root.calendarEnabled && root.calendar.configured && root.upNext.length > 0
           Column {
             id: calCol
             x: 20; y: 16
@@ -620,8 +628,9 @@ Item {
 
         // ── Now playing: art, title, controls, progress, live waveform ──
         Card {
-          // Always shown; with nothing playing it rests as "Not Playing".
+          // With nothing playing it rests as "Not Playing".
           height: 178
+          visible: root.playerEnabled
           Rectangle {
             id: art
             x: 16
@@ -778,6 +787,7 @@ Item {
         // ── Notes & Tasks (two tabs) ──
         Card {
           id: notesCard
+          visible: root.notesEnabled
           // Stretch to the bottom of the screen, ending at the same 10 px
           // gap as the windows (widgets are scaled by win.ui).
           height: Math.max(220, (win.height - 10 - widgets.y) / win.ui - y)
