@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.3 — 2026-10-10
+- Notification Center: the first open after a shell start no longer sweeps in from the left; the panel is anchored to the right edge and slides by its own width.
+
 ## 1.0.2 — 2026-10-10
 - Settings > Widgets: drag the handle next to a card to change the column order. Tasks & notes stretches to the bottom only when it is last; anywhere else it keeps a fixed height.
 - README: a short list on customising the widget column.

@@ -177,7 +177,16 @@ Item {
       id: panel
       width: 380
       y: win.topGap
-      x: root.shown ? win.width - width - Style.gapsOut - 4 : win.width + 20
+      // Anchored to the right edge and slid by its own (fixed) width, so the
+      // hidden position is right from the first frame: win.width is 0 before
+      // the window is mapped, and an x based on it made the first open sweep
+      // in from the left.
+      anchors.right: parent.right
+      anchors.rightMargin: Style.gapsOut + 4
+      transform: Translate {
+        x: root.shown ? 0 : panel.width + Style.gapsOut + 24
+        Behavior on x { SpringAnimation { spring: 3.2; damping: 0.34; epsilon: 0.5 } }
+      }
       height: Math.min(content.implicitHeight + 28, win.height - win.topGap - Style.gapsOut - 4)
       radius: 24
       color: root.cardColor
@@ -185,7 +194,6 @@ Item {
       border.width: 1
       clip: true
       opacity: root.shown ? 1 : 0
-      Behavior on x { SpringAnimation { spring: 3.2; damping: 0.34; epsilon: 0.5 } }
       Behavior on opacity { NumberAnimation { duration: 180 } }
 
       MouseArea { anchors.fill: parent }
