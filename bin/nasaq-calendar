@@ -1,0 +1,131 @@
+#!/usr/bin/env python3
+"""NASAQ calendar: fetch the iCal feeds in ~/.config/omarchy/nasaq/secrets.json
+("calendars": ["https://calendar.google.com/calendar/ical/.../basic.ics", ...])
+and write the next 7 days of events to ~/.cache/nasaq/calendar.json.
+Handles all-day and timed events, TZID/UTC times, and DAILY/WEEKLY/MONTHLY/YEARLY
+RRULEs with COUNT/UNTIL/INTERVAL/BYDAY. Cancelled instances (EXDATE) are skipped.
+  nasaq-calendar          refresh (prints the number of events)
+  nasaq-calendar --test   parse a URL given on the command line and print events
+"""
+import json, os, re, sys, urllib.request
+from datetime import datetime, date, timedelta, timezone
+from pathlib import Path
+from zoneinfo import ZoneInfo
+
+HOME = Path.home()
+SECRETS = HOME / ".config/omarchy/nasaq/secrets.json"
+OUT = HOME / ".cache/nasaq/calendar.json"
+LOCAL = datetime.now().astimezone().tzinfo
+BACKSLASH = chr(92)
+DAYS = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"]
+
+def unfold(text):
+    return re.sub(r"\r?\n[ \t]", "", text).splitlines()
+
+def parse_dt(value, params):
+    v = value.strip()
+    if params.get("VALUE") == "DATE" or re.fullmatch(r"\d{8}", v):
+        return date(int(v[:4]), int(v[4:6]), int(v[6:8])), True
+    dt = datetime.strptime(v[:15], "%Y%m%dT%H%M%S")
+    if v.endswith("Z"):
+        dt = dt.replace(tzinfo=timezone.utc)
+    elif "TZID" in params:
+        try: dt = dt.replace(tzinfo=ZoneInfo(params["TZID"]))
+        except Exception: dt = dt.replace(tzinfo=LOCAL)
+    else:
+        dt = dt.replace(tzinfo=LOCAL)
+    return dt.astimezone(LOCAL), False
+
+def events(text):
+    ev, out = None, []
+    for line in unfold(text):
+        if line == "BEGIN:VEVENT": ev = {"exdates": []}; continue
+        if line == "END:VEVENT":
+            if ev and "start" in ev: out.append(ev)
+            ev = None; continue
+        if ev is None or ":" not in line: continue
+        head, value = line.split(":", 1)
+        name, *ps = head.split(";")
+        params = dict(p.split("=", 1) for p in ps if "=" in p)
+        if name == "SUMMARY": ev["title"] = value.replace(BACKSLASH + ",", ",").replace(BACKSLASH + "n", " ").replace(BACKSLASH + ";", ";")
+        elif name == "LOCATION": ev["location"] = value.replace("\\,", ",")
+        elif name == "DTSTART": ev["start"], ev["allDay"] = parse_dt(value, params)
+        elif name == "DTEND": ev["end"], _ = parse_dt(value, params)
+        elif name == "RRULE": ev["rrule"] = dict(p.split("=", 1) for p in value.split(";") if "=" in p)
+        elif name == "EXDATE": ev["exdates"] += [parse_dt(v, params)[0] for v in value.split(",")]
+        elif name == "STATUS": ev["status"] = value
+        elif name == "RECURRENCE-ID": ev["recurrence"] = True
+    return out
+
+def occurrences(ev, lo, hi):
+    start = ev["start"]; dur = (ev.get("end") or start) - start
+    rr = ev.get("rrule")
+    def key(d): return d if isinstance(d, date) and not isinstance(d, datetime) else d.replace(second=0, microsecond=0)
+    ex = {key(x) for x in ev["exdates"]}
+    if not rr:
+        yield start, start + dur; return
+    freq, step = rr.get("FREQ"), int(rr.get("INTERVAL", 1))
+    count = int(rr["COUNT"]) if "COUNT" in rr else None
+    until = None
+    if "UNTIL" in rr:
+        until, _ = parse_dt(rr["UNTIL"], {})
+    byday = [DAYS.index(d[-2:]) for d in rr.get("BYDAY", "").split(",") if d[-2:] in DAYS]
+    n, cur, guard = 0, start, 0
+    while guard < 5000:
+        guard += 1
+        cands = [cur]
+        if freq == "WEEKLY" and byday:
+            monday = cur - timedelta(days=cur.weekday())
+            cands = sorted(monday + timedelta(days=d) for d in byday)
+        for c in cands:
+            if c < start: continue
+            if until and (c > until if type(c) == type(until) else False): return
+            n += 1
+            if count and n > count: return
+            if c > hi: return
+            if key(c) not in ex and c + dur >= lo: yield c, c + dur
+        if freq == "DAILY": cur += timedelta(days=step)
+        elif freq == "WEEKLY": cur += timedelta(weeks=step)
+        elif freq == "MONTHLY":
+            m = cur.month - 1 + step; cur = cur.replace(year=cur.year + m // 12, month=m % 12 + 1)
+        elif freq == "YEARLY": cur = cur.replace(year=cur.year + step)
+        else: return
+
+def collect(urls):
+    now = datetime.now(LOCAL)
+    lo = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    hi = lo + timedelta(days=7)
+    items = []
+    for url in urls:
+        req = urllib.request.Request(url, headers={"User-Agent": "nasaq-calendar"})
+        text = urllib.request.urlopen(req, timeout=20).read().decode("utf-8", "replace")
+        for ev in events(text):
+            if ev.get("status") == "CANCELLED": continue
+            allday = ev.get("allDay")
+            loc, hic = (lo.date(), hi.date()) if allday else (lo, hi)
+            for s, e in occurrences(ev, loc, hic):
+                items.append({"title": ev.get("title", "(no title)"), "location": ev.get("location", ""), "allDay": bool(allday),
+                              "start": s.isoformat(), "end": e.isoformat(),
+                              "startMs": int((datetime.combine(s, datetime.min.time(), LOCAL) if allday else s).timestamp() * 1000)})
+    items.sort(key=lambda x: x["startMs"])
+    return items
+
+if __name__ == "__main__":
+    if len(sys.argv) > 2 and sys.argv[1] == "--test":
+        print(json.dumps(collect([sys.argv[2]]), ensure_ascii=False, indent=1)); sys.exit()
+    try:
+        urls = json.loads(SECRETS.read_text()).get("calendars", [])
+    except Exception:
+        urls = []
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    if not urls:
+        OUT.write_text(json.dumps({"configured": False, "events": []})); print(0); sys.exit()
+    try:
+        items = collect(urls)
+        OUT.write_text(json.dumps({"configured": True, "updated": int(datetime.now().timestamp() * 1000), "events": items}, ensure_ascii=False))
+        print(len(items))
+    except Exception as e:
+        prev = {}
+        try: prev = json.loads(OUT.read_text())
+        except Exception: pass
+        prev.update({"configured": True, "error": str(e)}); OUT.write_text(json.dumps(prev, ensure_ascii=False)); print("error:", e, file=sys.stderr); sys.exit(1)

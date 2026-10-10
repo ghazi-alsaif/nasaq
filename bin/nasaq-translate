@@ -1,0 +1,51 @@
+#!/bin/bash
+# NASAQ: translate the selected text (or the clipboard) with Claude and show
+# the result in the Dynamic Island; the translation is also copied.
+#   nasaq-translate            Arabic → English, anything else → Arabic
+#   nasaq-translate en|ar      force the target language
+#   nasaq-translate --summary  summarise instead of translating
+#   nasaq-translate --region   pick a screen region, read its text (OCR), translate it
+# Settings: translate.target (auto|en|ar), translate.model (default haiku).
+set -uo pipefail
+settings="$HOME/.config/omarchy/nasaq/settings.json"
+get() { python3 -c "import json,sys;d=json.load(open('$settings'));v=d
+for k in sys.argv[1].split('.'): v=v.get(k,{}) if isinstance(v,dict) else {}
+print(v if isinstance(v,str) and v else sys.argv[2])" "$1" "$2" 2>/dev/null || echo "$2"; }
+
+mode=translate target="" region=false
+case "${1:-}" in --summary) mode=summary ;; --region) region=true ;; en|ar) target=$1 ;; esac
+if $region; then
+  geom=$(slurp 2>/dev/null) || exit 0
+  text=$(grim -g "$geom" - | tesseract stdin stdout --oem 1 --psm 6 -l "${OMARCHY_OCR_LANGS:-ara+eng}" 2>/dev/null)
+else
+  text=$(wl-paste -p -n 2>/dev/null)
+  [[ -z ${text// } ]] && text=$(wl-paste -n 2>/dev/null)
+fi
+if [[ -z ${text// } ]]; then
+  omarchy-shell -q nasaq.island alert "Translate" "Select or copy some text first"
+  exit 1
+fi
+text=${text:0:4000}
+[[ -z $target ]] && target=$(get translate.target auto)
+if [[ $target == auto ]]; then
+  if grep -qP '[\x{0600}-\x{06FF}]' <<<"$text"; then target=en; else target=ar; fi
+fi
+lang=$([[ $target == ar ]] && echo "Arabic" || echo "English")
+model=$(get translate.model haiku)
+if [[ $mode == summary ]]; then
+  prompt="Summarise the following text in $lang in at most three short sentences. Output only the summary."
+  title="Summary"
+else
+  prompt="Translate the following text to $lang. Output only the translation, nothing else."
+  title="Translation → $lang"
+fi
+omarchy-shell -q nasaq.island alert "$title" "Working…"
+out=$(timeout 60 claude -p --model "$model" "$prompt
+
+$text" 2>/dev/null | sed -e 's/[[:space:]]*$//')
+if [[ -z $out ]]; then
+  omarchy-shell -q nasaq.island alert "$title" "Claude did not answer. Is claude logged in?"
+  exit 1
+fi
+printf '%s' "$out" | wl-copy
+omarchy-shell -q nasaq.island alert "$title · copied" "${out:0:300}"

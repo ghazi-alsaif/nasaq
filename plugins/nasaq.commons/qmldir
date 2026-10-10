@@ -1,0 +1,17 @@
+singleton Theme 1.0 Theme.qml
+singleton Settings 1.0 Settings.qml
+singleton Tr 1.0 Tr.qml
+NCard 1.0 NCard.qml
+NLabel 1.0 NLabel.qml
+NSub 1.0 NSub.qml
+NGlyph 1.0 NGlyph.qml
+NSwitch 1.0 NSwitch.qml
+NSlider 1.0 NSlider.qml
+NRow 1.0 NRow.qml
+NSection 1.0 NSection.qml
+NButton 1.0 NButton.qml
+NDropdown 1.0 NDropdown.qml
+NTextField 1.0 NTextField.qml
+NKeyField 1.0 NKeyField.qml
+NPage 1.0 NPage.qml
+Rtl 1.0 Rtl.qml

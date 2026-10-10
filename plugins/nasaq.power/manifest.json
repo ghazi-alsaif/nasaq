@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "nasaq.power",
+  "name": "Power Behaviour",
+  "version": "1.0.0",
+  "author": "NASAQ (GHS)",
+  "description": "Apple-style Low Power Mode and per-profile behaviour",
+  "kinds": [
+    "service"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "service": "Service.qml"
+  }
+}

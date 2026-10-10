@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "nasaq.launchers",
+  "name": "Launchers",
+  "version": "1.0.0",
+  "author": "NASAQ (GHS)",
+  "description": "Pinned app launchers in the bar (edit the list in NASAQ settings: bars.launchers)",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Launchers.qml"
+  },
+  "barWidget": {
+    "displayName": "Launchers",
+    "description": "Pinned app launchers (list in NASAQ settings: bars.launchers)",
+    "category": "Compositor",
+    "allowMultiple": false
+  }
+}

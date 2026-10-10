@@ -1,0 +1,80 @@
+#!/bin/bash
+# NASAQ: check every monitor and suggest the Hyprland scale that suits it, so
+# the floating bar, desktop widgets and lock screen (all sized to the logical
+# screen) look the same as on the laptop (1920x1080 @ scale 1).
+#
+#   nasaq-display-check            show each monitor and the suggestion
+#   nasaq-display-check --apply    write the suggested scale into
+#                                  ~/.config/hypr/monitors.lua (backup first)
+#                                  and reload Hyprland
+#
+# Rule of thumb: aim for a logical width of ~1920–2560 px.
+#   ≥ 5000 px wide (5K iMac)      → 2
+#   ≥ 3800 px (4K / 4.5K iMac)    → 2   (4.5K 4480 → 2240 logical)
+#   ≥ 2800 px (3K panels)         → 1.5
+#   otherwise                     → 1
+set -euo pipefail
+
+apply=0
+[[ ${1:-} == --apply ]] && apply=1
+
+suggest() {
+  local w=$1
+  if (( w >= 3800 )); then echo 2
+  elif (( w >= 2800 )); then echo 1.5
+  else echo 1
+  fi
+}
+
+mapfile -t mons < <(hyprctl monitors all -j | jq -r '.[] | "\(.name)\t\(.width)\t\(.height)\t\(.scale)\t\(.refreshRate)"')
+(( ${#mons[@]} )) || { echo "No monitors found."; exit 1; }
+
+changes=()
+for m in "${mons[@]}"; do
+  IFS=$'\t' read -r name w h scale hz <<<"$m"
+  want=$(suggest "$w")
+  lw=$(awk -v w="$w" -v s="$scale" 'BEGIN{printf "%d", w/s}')
+  lh=$(awk -v h="$h" -v s="$scale" 'BEGIN{printf "%d", h/s}')
+  ui=$(awk -v h="$lh" 'BEGIN{u=h/1080; if(u<0.9)u=0.9; if(u>1.45)u=1.45; printf "%.2f", u}')
+  same=$(awk -v a="$scale" -v b="$want" 'BEGIN{print (a+0==b+0) ? 1 : 0}')
+  # A scale that already gives a comfortable logical height (1000–1500 px,
+  # e.g. the iMac's 4K at 1.6 → 1350) is a deliberate choice, not a mistake.
+  (( lh >= 1000 && lh <= 1500 )) && same=1
+  printf '%-10s %5sx%-5s scale %-5s → logical %sx%s, widgets %s×' "$name" "$w" "$h" "$scale" "$lw" "$lh" "$ui"
+  if (( same )); then
+    echo "  ✓ good"
+  else
+    echo "  → suggest scale $want"
+    changes+=("$name $want")
+  fi
+done
+
+(( ${#changes[@]} )) || exit 0
+if (( ! apply )); then
+  echo
+  echo "Run 'nasaq-display-check --apply' to write the suggested scale(s) to monitors.lua."
+  exit 0
+fi
+
+f="$HOME/.config/hypr/monitors.lua"
+[[ -f $f ]] || { echo "No $f — set the scale in your monitor config by hand."; exit 1; }
+cp "$f" "$f.bak.$(date +%s)"
+for c in "${changes[@]}"; do
+  read -r name want <<<"$c"
+  # Within the hl.monitor({ ... }) block for this output, replace `scale = ...`.
+  python3 - "$f" "$name" "$want" <<'PY'
+import re, sys
+path, name, want = sys.argv[1:]
+s = open(path).read()
+pat = re.compile(r'(hl\.monitor\(\{[^}]*?output\s*=\s*"' + re.escape(name) + r'"[^}]*?scale\s*=\s*)[0-9.]+', re.S)
+s2, n = pat.subn(lambda m: m.group(1) + want, s)
+if n == 0:
+    print(f"  ! no scale field for {name} in monitors.lua — add `scale = {want},` to its hl.monitor block")
+else:
+    open(path, "w").write(s2)
+    print(f"  {name}: scale = {want}")
+PY
+done
+hyprctl reload >/dev/null && sleep 1
+errs=$(hyprctl configerrors)
+[[ -z ${errs//[[:space:]]/} ]] && echo "Applied. Restart the shell to resize everything: omarchy restart shell" || { echo "$errs"; echo "Config errors — restore the .bak copy."; }

@@ -1,0 +1,50 @@
+#!/bin/bash
+# NASAQ: several nasaq.* plugins are frozen copies of Omarchy's own plugins
+# (lock screen, notifications, bar…), with the originals switched off. An
+# Omarchy update can change the originals — a fix, or a changed interface the
+# copies still rely on — and nothing would say so.
+#
+#   nasaq-clone-check            compare the originals with the recorded state
+#   nasaq-clone-check accept     record the current originals as the new baseline
+#
+# Also watched: the packaged commands NASAQ overrides (~/.local/share/omarchy-overrides),
+# Omarchy's SDDM theme next to NASAQ's login theme, and the NASAQ hook in
+# ~/.config/hypr/hyprland.lua (a `omarchy refresh hyprland` would drop it).
+# Run automatically after `omarchy update` (hook post-update.d). It only tells;
+# it never changes a plugin.
+plugins="$HOME/.config/omarchy/plugins"
+stock="${OMARCHY_PATH:-/usr/share/omarchy}/shell/plugins"
+base="$HOME/.config/omarchy/nasaq/clone-baseline.txt"
+
+# "<clone id> <stock id> <stock dir> <hash of the stock dir's files>"
+snapshot() {
+  local m clone from dir
+  # Bar widgets carry their manifest as Name.manifest.json, so match any *manifest.json.
+  for m in "$plugins"/nasaq.*/*manifest.json; do
+    clone=$(jq -r '.id' "$m"); from=$(jq -r '.omarchy.clonedFrom // empty' "$m")
+    [[ -n $from ]] || continue
+    dir=$(grep -lR --include='*manifest.json' "\"id\": *\"$from\"" "$stock" 2>/dev/null | head -1)
+    dir=${dir%/*manifest.json}
+    [[ -d $dir ]] || { echo "$clone $from missing -"; continue; }
+    echo "$clone $from $dir $(cd "$dir" && find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -c1-16)"
+  done
+  local f name pkg
+  for f in "$HOME"/.local/share/omarchy-overrides/*; do
+    name=${f##*/}; pkg="${OMARCHY_PATH:-/usr/share/omarchy}/bin/$name"
+    [[ -f $pkg ]] && echo "override:$name $name $pkg $(sha256sum < "$pkg" | cut -c1-16)"
+  done
+  [[ -d ${OMARCHY_PATH:-/usr/share/omarchy}/default/sddm ]] && \
+    echo "login-theme omarchy-sddm - $(find "${OMARCHY_PATH:-/usr/share/omarchy}/default/sddm" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -c1-16) $(grep -hs "^Current=" /etc/sddm.conf.d/*.conf | tail -1)"
+  echo "hyprland-hook nasaq - $(grep -q 'nasaq-remap.lua' "$HOME/.config/hypr/hyprland.lua" && echo present || echo missing)"
+}
+
+case ${1:-} in
+  accept) snapshot > "$base"; echo "Recorded $(wc -l < "$base") originals as the baseline."; exit 0 ;;
+esac
+[[ -f $base ]] || { snapshot > "$base"; echo "First run: baseline recorded."; exit 0; }
+
+changed=$(diff <(sort "$base") <(snapshot | sort) | sed -n 's/^> \(\S*\) \(\S*\) .*/\1 (from \2)/p')
+if [[ -z $changed ]]; then echo "Omarchy's originals are unchanged since the copies were made."; exit 0; fi
+echo "Omarchy changed the originals of:"; echo "$changed" | sed 's/^/  • /'
+echo "The copies still work as they are, but may miss a fix. Ask your agent to compare, then: nasaq-clone-check accept"
+notify-send -u critical -a "Omarchy" "Omarchy update changed plugins you customised" "$(echo "$changed" | tr '\n' ' ')— ask your agent to compare them (nasaq-clone-check)." 2>/dev/null || true

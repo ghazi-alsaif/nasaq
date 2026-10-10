@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "nasaq.switcher",
+  "name": "App Switcher",
+  "version": "1.0.0",
+  "author": "NASAQ (GHS)",
+  "description": "macOS-style ALT + TAB: windows in most-recently-used order with live previews. Hold ALT, press TAB to move, release ALT to switch.",
+  "kinds": ["service"],
+  "keepLoaded": true,
+  "entryPoints": { "service": "Service.qml" }
+}

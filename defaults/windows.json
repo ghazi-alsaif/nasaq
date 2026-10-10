@@ -1,0 +1,23 @@
+{
+  "activeOpacity": 0.75,
+  "inactiveOpacity": 0.55,
+  "blur": true,
+  "blurSize": 4,
+  "blurPasses": 2,
+  "vibrancy": 0,
+  "vibrancyDarkness": 0,
+  "brightness": 1,
+  "contrast": 1,
+  "noise": 0.1,
+  "dim": true,
+  "dimStrength": 0,
+  "rounding": 10,
+  "border": 2,
+  "gapsIn": 5,
+  "shadow": false,
+  "shadowRange": 37,
+  "shadowSpread": 50,
+  "shadowOpacity": 0.7,
+  "shadowAngle": 120,
+  "shadowDistance": 23
+}

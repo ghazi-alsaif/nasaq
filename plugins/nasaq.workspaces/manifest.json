@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "nasaq.workspaces",
+  "name": "Workspaces",
+  "version": "1.0.0",
+  "author": "NASAQ (GHS)",
+  "description": "Workspace number indicators",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Workspaces.qml"
+  },
+  "barWidget": {
+    "displayName": "Workspaces",
+    "description": "Workspace number indicators",
+    "category": "Compositor",
+    "allowMultiple": false
+  },
+  "omarchy": {
+    "clonedFrom": "omarchy.workspaces"
+  }
+}

@@ -1,0 +1,64 @@
+#!/bin/bash
+
+# Switch the Omarchy screensaver between modes.
+#
+#   screensaver-mode matrix   # Matrix rain, muted green
+#   screensaver-mode image    # a real image, full colour (kitty graphics)
+#   screensaver-mode ascii    # stock Omarchy random ttfx effects (default)
+#   screensaver-mode status   # show which one is active
+#   screensaver-mode preview  # start the screensaver now to look at it
+#
+# Overrides live in ~/.local/share/omarchy-overrides, which hyprland.lua
+# prepends to the session PATH so they win over /usr/share/omarchy/bin.
+
+set -euo pipefail
+
+OVERRIDE="$HOME/.local/share/omarchy-overrides/omarchy-screensaver"
+LINK="$HOME/.local/bin/omarchy-screensaver"
+MATRIX="$HOME/.local/share/screensaver-matrix/omarchy-screensaver-matrix"
+IMAGE="$HOME/.local/share/screensaver-image/omarchy-screensaver-image"
+
+activate() {
+  [[ -f $1 ]] || { echo "Missing $1" >&2; exit 1; }
+  ln -sfn "$1" "$OVERRIDE"
+  ln -sfn "$1" "$LINK"
+}
+
+case "${1:-status}" in
+matrix)
+  activate "$MATRIX"
+  echo "Screensaver mode: matrix (muted green)"
+  echo "Tune the colours at the top of $MATRIX"
+  ;;
+image)
+  activate "$IMAGE"
+  echo "Screensaver mode: image (full colour)"
+  echo "Edit the IMAGES list in $IMAGE"
+  ;;
+ascii)
+  # Removing the override lets /usr/share/omarchy/bin/omarchy-screensaver win
+  # again -- the stock behaviour, untouched.
+  rm -f "$OVERRIDE" "$LINK"
+  echo "Screensaver mode: ascii (Omarchy default restored)"
+  ;;
+status)
+  if [[ -L $OVERRIDE ]]; then
+    target=$(readlink -f "$OVERRIDE")
+    case $target in
+    *matrix*) echo "Screensaver mode: matrix" ;;
+    *image*) echo "Screensaver mode: image" ;;
+    *) echo "Screensaver mode: custom" ;;
+    esac
+    echo "  script: $target"
+  else
+    echo "Screensaver mode: ascii (Omarchy default)"
+  fi
+  ;;
+preview)
+  omarchy-launch-screensaver force
+  ;;
+*)
+  echo "Usage: screensaver-mode <matrix|image|ascii|status|preview>" >&2
+  exit 1
+  ;;
+esac

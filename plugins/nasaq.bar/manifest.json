@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "nasaq.bar",
+  "name": "NASAQ Bar",
+  "version": "1.0.0",
+  "author": "NASAQ (GHS)",
+  "description": "Status bar with widgets",
+  "kinds": [
+    "bar"
+  ],
+  "entryPoints": {
+    "bar": "Bar.qml"
+  },
+  "omarchy": {
+    "clonedFrom": "omarchy.bar"
+  }
+}

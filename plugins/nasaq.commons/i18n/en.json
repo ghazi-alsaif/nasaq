@@ -1,0 +1,8 @@
+{
+  "settings.title": "NASAQ Settings",
+  "settings.search": "Search settings",
+  "page.general": "General", "page.appearance": "Appearance", "page.bars": "Bars & Panels", "page.widgets": "Widgets",
+  "page.launcher": "Launcher", "page.notifications": "Notifications", "page.windows": "Workspaces & Windows",
+  "page.system": "System", "page.shortcuts": "Shortcuts", "page.ai": "AI & Automation", "page.plugins": "Plugins", "page.advanced": "Advanced",
+  "common.save": "Save snapshot", "common.restore": "Restore…", "common.open": "Open", "common.reload": "Reload"
+}

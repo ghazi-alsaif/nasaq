@@ -1,0 +1,640 @@
+// NASAQ: macOS-style Notification Center. A glass panel that slides in from
+// the right with the date (and Hijri date), a month calendar, the weather,
+// Do Not Disturb, and the notification history grouped by app.
+
+import QtQuick
+import Quickshell
+import Quickshell.Io
+import Quickshell.Wayland
+import Quickshell.Hyprland
+import Quickshell.Widgets
+import Quickshell.Services.Notifications
+import qs.Commons
+import "../NotificationLogic.js" as NotificationLogic
+import "../../nasaq.island/Island.js" as Island
+import "../../nasaq.island/Weather.js" as Weather
+import "../../nasaq.commons" as Nasaq
+
+Item {
+  id: root
+
+  property var service: null
+  property bool open: false
+  property bool shown: false
+
+  readonly property string textFont: "IBM Plex Sans Arabic"
+  readonly property string iconFont: Style.font.family
+  readonly property color accent: Color.accent
+  readonly property color cardColor: Util.alpha(Color.background, 0.94)
+  readonly property color tileColor: Qt.rgba(1, 1, 1, 0.07)
+  readonly property string home: Quickshell.env("HOME")
+
+  property var entries: []
+  property var weather: null
+  property var prayerDay: null
+  property var config: ({ city: "", latitude: 21.4225, longitude: 39.8262, method: 4 })
+  property date viewMonth: new Date()
+  property date now: new Date()
+
+  property var expandedGroups: ({})
+  readonly property var groups: {
+    var order = [], map = {}
+    for (var i = 0; i < entries.length; i++) {
+      var e = entries[i]
+      var key = e.app === "omarchy-action" ? "Omarchy" : (e.app || "Other")
+      // NASAQ Settings > Notifications > Group by app (off = one card each)
+      if (!Nasaq.Settings.get("notifications.groupByApp", true)) key = key + "\u0000" + (e.id || i)
+      if (!map[key]) { map[key] = { app: key.split("\u0000")[0], key: key, icon: e.appIcon || (String(e.image || "").indexOf("image://icon/") === 0 ? String(e.image).slice(13) : ""), glyph: e.glyph || "", items: [] }; order.push(key) }
+      map[key].items.push(e)
+    }
+    return order.map(function(k) { return map[k] })
+  }
+
+  readonly property var targetScreen: {
+    var mon = Hyprland.focusedMonitor
+    var screens = Quickshell.screens
+    for (var i = 0; i < screens.length; i++) if (mon && screens[i].name === mon.name) return screens[i]
+    return screens.length > 0 ? screens[0] : null
+  }
+
+  function toggle() { open ? close() : show() }
+  function show() {
+    now = new Date()
+    viewMonth = new Date()
+    open = true
+    reload()
+    Qt.callLater(function() { root.shown = true })
+  }
+  function close() {
+    shown = false
+    hideTimer.restart()
+  }
+  Timer { id: hideTimer; interval: 260; onTriggered: root.open = false }
+  Timer { interval: 30000; running: root.open; repeat: true; onTriggered: root.now = new Date() }
+
+  function reload() {
+    if (service && !historyProc.running) {
+      historyProc.command = ["bash", "-c", "awk 1 \"$1\"/*.json 2>/dev/null || true", "--", service.historyDir]
+      historyProc.running = true
+    }
+    configView.reload()
+  }
+
+  function timeAgo(ts) {
+    var diff = (Date.now() - ts) / 1000
+    if (diff < 60) return "now"
+    if (diff < 3600) return Math.floor(diff / 60) + "m"
+    if (diff < 86400) return Math.floor(diff / 3600) + "h"
+    if (diff < 172800) return "Yesterday"
+    return Qt.formatDate(new Date(ts), "d MMM")
+  }
+
+  function iconFor(group) {
+    var name = String(group.icon || "")
+    if (name.indexOf("/") === 0) return "file://" + name
+    if (name.indexOf("file://") === 0) return name
+    if (name) return Quickshell.iconPath(name, true)
+    var entry = DesktopEntries.heuristicLookup(group.app)
+    return entry && entry.icon ? Quickshell.iconPath(entry.icon, true) : ""
+  }
+
+  function clearGroup(group) {
+    if (!service) return
+    var files = group.items.map(function(e) { return service.historyDir + NotificationLogic.popupFileName(e) })
+    Quickshell.execDetached(["rm", "-f"].concat(files))
+    entries = entries.filter(function(e) { return group.items.indexOf(e) === -1 })
+    reloadTimer.restart()
+  }
+
+  function clearAll() {
+    if (!service) return
+    service.clearHistory()
+    service.clearPopups()
+    entries = []
+    reloadTimer.restart()
+  }
+  Timer { id: reloadTimer; interval: 400; onTriggered: root.reload() }
+
+  Process {
+    id: historyProc
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        var live = root.service ? root.service.liveRowsForReplay() : []
+        root.entries = NotificationLogic.historyRows(text, live, NotificationUrgency.Normal, 50)
+      }
+    }
+  }
+
+  FileView {
+    id: configView
+    path: root.home + "/.config/omarchy/nasaq/island.json"
+    printErrors: false
+    onLoaded: {
+      try { root.config = Object.assign({}, root.config, JSON.parse(text())) } catch (e) {}
+      weatherProc.command = ["bash", "-c", Weather.fetchScript, "nasaq-weather", String(root.config.latitude), String(root.config.longitude)]
+      weatherProc.running = true
+      var d = new Date()
+      prayerProc.command = ["bash", "-c", "cat \"${XDG_CACHE_HOME:-$HOME/.cache}/nasaq-island/prayer-$1-$2-$3-$4-$5.json\" 2>/dev/null",
+        "nasaq-prayer", String(d.getFullYear()), String(d.getMonth() + 1), String(root.config.latitude), String(root.config.longitude), String(root.config.method || 4)]
+      prayerProc.running = true
+    }
+  }
+  Process {
+    id: weatherProc
+    stdout: StdioCollector { waitForEnd: true; onStreamFinished: { var w = Weather.parse(text); if (w) root.weather = w } }
+  }
+  Process {
+    id: prayerProc
+    stdout: StdioCollector { waitForEnd: true; onStreamFinished: { var p = Island.dayFromMonth(text, new Date()); if (p) root.prayerDay = p } }
+  }
+
+  // ── UI ───────────────────────────────────────────────────────────
+  component Tile: Rectangle {
+    radius: 16
+    color: root.tileColor
+    border.color: Qt.rgba(1, 1, 1, 0.05)
+    border.width: 1
+  }
+
+  PanelWindow {
+    id: win
+    screen: root.targetScreen
+    visible: root.open
+    anchors { top: true; bottom: true; left: true; right: true }
+    color: "transparent"
+    exclusionMode: ExclusionMode.Ignore
+    WlrLayershell.namespace: "nasaq-notification-center"
+    WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.keyboardFocus: root.open ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+
+    readonly property real topGap: root.service ? root.service.barClearance : 40
+
+    MouseArea { anchors.fill: parent; onClicked: root.close() }
+    Item { anchors.fill: parent; focus: root.open; Keys.onEscapePressed: root.close() }
+
+    Rectangle {
+      id: panel
+      width: 380
+      y: win.topGap
+      x: root.shown ? win.width - width - Style.gapsOut - 4 : win.width + 20
+      height: Math.min(content.implicitHeight + 28, win.height - win.topGap - Style.gapsOut - 4)
+      radius: 24
+      color: root.cardColor
+      border.color: Qt.rgba(1, 1, 1, 0.14)
+      border.width: 1
+      clip: true
+      opacity: root.shown ? 1 : 0
+      Behavior on x { SpringAnimation { spring: 3.2; damping: 0.34; epsilon: 0.5 } }
+      Behavior on opacity { NumberAnimation { duration: 180 } }
+
+      MouseArea { anchors.fill: parent }
+
+      Flickable {
+        anchors.fill: parent
+        anchors.margins: 14
+        contentHeight: content.implicitHeight
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
+
+        Column {
+          id: content
+          width: parent.width
+          spacing: 12
+
+          // ── Date header ──
+          Item {
+            width: parent.width
+            height: 54
+            Column {
+              anchors.left: parent.left
+              anchors.verticalCenter: parent.verticalCenter
+              Text {
+                text: Qt.locale("en_US").toString(root.now, "dddd")
+                color: root.accent
+                font.family: root.textFont
+                font.weight: Font.DemiBold
+                font.pixelSize: 13
+              }
+              Text {
+                text: Qt.locale("en_US").toString(root.now, "d MMMM")
+                color: "white"
+                font.family: root.textFont
+                font.weight: Font.Bold
+                font.pixelSize: 24
+              }
+            }
+            Text {
+              anchors.right: parent.right
+              anchors.verticalCenter: parent.verticalCenter
+              visible: root.prayerDay !== null
+              text: root.prayerDay ? root.prayerDay.hijri.day + " " + root.prayerDay.hijri.month + " " + root.prayerDay.hijri.year : ""
+              color: Qt.rgba(1, 1, 1, 0.6)
+              font.family: root.textFont
+              font.pixelSize: 13
+            }
+          }
+
+          // ── Calendar ──
+          Tile {
+            width: parent.width
+            height: cal.implicitHeight + 24
+            Column {
+              id: cal
+              x: 12
+              y: 12
+              width: parent.width - 24
+              spacing: 6
+
+              readonly property int year: root.viewMonth.getFullYear()
+              readonly property int month: root.viewMonth.getMonth()
+              readonly property int firstDow: new Date(year, month, 1).getDay()
+              readonly property int days: new Date(year, month + 1, 0).getDate()
+
+              Item {
+                width: parent.width
+                height: 22
+                Text {
+                  anchors.left: parent.left
+                  anchors.verticalCenter: parent.verticalCenter
+                  text: Qt.locale("en_US").toString(root.viewMonth, "MMMM yyyy")
+                  color: "white"
+                  font.family: root.textFont
+                  font.weight: Font.DemiBold
+                  font.pixelSize: 14
+                }
+                Row {
+                  anchors.right: parent.right
+                  anchors.verticalCenter: parent.verticalCenter
+                  spacing: 14
+                  Repeater {
+                    model: [{ g: "󰅁", d: -1 }, { g: "󰅂", d: 1 }]
+                    delegate: Text {
+                      required property var modelData
+                      text: modelData.g
+                      color: navMouse.containsMouse ? "white" : Qt.rgba(1, 1, 1, 0.6)
+                      font.family: root.iconFont
+                      font.pixelSize: 14
+                      MouseArea {
+                        id: navMouse
+                        anchors.fill: parent
+                        anchors.margins: -6
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.viewMonth = new Date(cal.year, cal.month + modelData.d, 1)
+                      }
+                    }
+                  }
+                }
+              }
+
+              Grid {
+                columns: 7
+                width: parent.width
+                readonly property real cell: width / 7
+                Repeater {
+                  model: ["S", "M", "T", "W", "T", "F", "S"]
+                  delegate: Text {
+                    required property string modelData
+                    width: parent.cell
+                    horizontalAlignment: Text.AlignHCenter
+                    text: modelData
+                    color: Qt.rgba(1, 1, 1, 0.45)
+                    font.family: root.textFont
+                    font.weight: Font.DemiBold
+                    font.pixelSize: 11
+                  }
+                }
+                Repeater {
+                  model: 42
+                  delegate: Item {
+                    required property int index
+                    readonly property int day: index - cal.firstDow + 1
+                    readonly property bool inMonth: day >= 1 && day <= cal.days
+                    readonly property bool today: inMonth && day === root.now.getDate()
+                      && cal.month === root.now.getMonth() && cal.year === root.now.getFullYear()
+                    width: parent.cell
+                    height: 28
+                    visible: index < 35 || cal.firstDow + cal.days > 35
+                    Rectangle {
+                      anchors.centerIn: parent
+                      width: 26
+                      height: 26
+                      radius: 13
+                      color: parent.today ? root.accent : "transparent"
+                    }
+                    Text {
+                      anchors.centerIn: parent
+                      text: parent.inMonth ? parent.day : ""
+                      color: parent.today ? "white" : ((index % 7 === 5 || index % 7 === 6) ? Qt.rgba(1, 1, 1, 0.55) : Qt.rgba(1, 1, 1, 0.9))
+                      font.family: root.textFont
+                      font.weight: parent.today ? Font.Bold : Font.Normal
+                      font.pixelSize: 12
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          // ── Weather ──
+          Tile {
+            width: parent.width
+            height: 118
+            visible: root.weather !== null
+            Item {
+              anchors.fill: parent
+              anchors.margins: 12
+              Column {
+                anchors.left: parent.left
+                anchors.top: parent.top
+                Text {
+                  text: root.config.city || ""
+                  color: "white"
+                  font.family: root.textFont
+                  font.weight: Font.DemiBold
+                  font.pixelSize: 13
+                }
+                Text {
+                  text: root.weather ? root.weather.temp + "°" : ""
+                  color: "white"
+                  font.family: root.textFont
+                  font.weight: Font.Light
+                  font.pixelSize: 34
+                }
+              }
+              Column {
+                anchors.right: parent.right
+                anchors.top: parent.top
+                Text {
+                  anchors.right: parent.right
+                  text: root.weather ? root.weather.icon : ""
+                  color: Color.accent
+                  font.family: root.iconFont
+                  font.pixelSize: 26
+                }
+                Text {
+                  anchors.right: parent.right
+                  text: root.weather ? root.weather.label + " · 󰖎 " + root.weather.humidity + "%" : ""
+                  color: Qt.rgba(1, 1, 1, 0.65)
+                  font.family: root.textFont
+                  font.pixelSize: 11
+                }
+              }
+              Row {
+                anchors.bottom: parent.bottom
+                anchors.left: parent.left
+                anchors.right: parent.right
+                Repeater {
+                  model: root.weather ? root.weather.days : []
+                  delegate: Column {
+                    required property var modelData
+                    width: parent.width / 5
+                    Text {
+                      anchors.horizontalCenter: parent.horizontalCenter
+                      text: modelData.name
+                      color: Qt.rgba(1, 1, 1, 0.55)
+                      font.family: root.textFont
+                      font.pixelSize: 10
+                    }
+                    Text {
+                      anchors.horizontalCenter: parent.horizontalCenter
+                      text: modelData.icon + " " + modelData.max + "°"
+                      color: "white"
+                      font.family: root.iconFont
+                      font.pixelSize: 12
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          // ── Do Not Disturb ──
+          Tile {
+            width: parent.width
+            height: 46
+            Text {
+              id: dndIcon
+              anchors.left: parent.left
+              anchors.leftMargin: 14
+              anchors.verticalCenter: parent.verticalCenter
+              text: "󰽥"
+              color: root.service && root.service.doNotDisturb ? Color.accent : Qt.rgba(1, 1, 1, 0.7)
+              font.family: root.iconFont
+              font.pixelSize: 17
+            }
+            Text {
+              anchors.left: dndIcon.right
+              anchors.leftMargin: 10
+              anchors.verticalCenter: parent.verticalCenter
+              text: "Do Not Disturb"
+              color: "white"
+              font.family: root.textFont
+              font.weight: Font.DemiBold
+              font.pixelSize: 13
+            }
+            Rectangle {
+              id: sw
+              readonly property bool checked: !!root.service && root.service.doNotDisturb
+              anchors.right: parent.right
+              anchors.rightMargin: 12
+              anchors.verticalCenter: parent.verticalCenter
+              width: 38
+              height: 22
+              radius: 11
+              color: checked ? Color.accent : Qt.rgba(1, 1, 1, 0.22)
+              Behavior on color { ColorAnimation { duration: 140 } }
+              Rectangle {
+                width: 18
+                height: 18
+                radius: 9
+                y: 2
+                x: sw.checked ? sw.width - width - 2 : 2
+                color: "white"
+                Behavior on x { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+              }
+              MouseArea {
+                anchors.fill: parent
+                anchors.margins: -6
+                cursorShape: Qt.PointingHandCursor
+                onClicked: if (root.service) root.service.setDoNotDisturb(!root.service.doNotDisturb)
+              }
+            }
+          }
+
+          // ── Notifications ──
+          Item {
+            width: parent.width
+            height: 22
+            Text {
+              anchors.left: parent.left
+              anchors.verticalCenter: parent.verticalCenter
+              text: "Notifications"
+              color: "white"
+              font.family: root.textFont
+              font.weight: Font.Bold
+              font.pixelSize: 15
+            }
+            Text {
+              anchors.right: parent.right
+              anchors.verticalCenter: parent.verticalCenter
+              visible: root.entries.length > 0
+              text: "Clear All"
+              color: clearAllMouse.containsMouse ? "white" : root.accent
+              font.family: root.textFont
+              font.weight: Font.DemiBold
+              font.pixelSize: 12
+              MouseArea {
+                id: clearAllMouse
+                anchors.fill: parent
+                anchors.margins: -6
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: root.clearAll()
+              }
+            }
+          }
+
+          Text {
+            visible: root.entries.length === 0
+            width: parent.width
+            horizontalAlignment: Text.AlignHCenter
+            topPadding: 10
+            bottomPadding: 14
+            text: "No Notifications"
+            color: Qt.rgba(1, 1, 1, 0.4)
+            font.family: root.textFont
+            font.pixelSize: 13
+          }
+
+          Repeater {
+            model: root.groups
+            delegate: Tile {
+              id: groupTile
+              required property var modelData
+              width: content.width
+              height: groupCol.implicitHeight + 20
+
+              Column {
+                id: groupCol
+                x: 12
+                y: 10
+                width: parent.width - 24
+                spacing: 8
+
+                Item {
+                  width: parent.width
+                  height: 22
+                  IconImage {
+                    id: appIconImg
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    implicitSize: 18
+                    source: root.iconFor(groupTile.modelData)
+                    visible: source != ""
+                  }
+                  Text {
+                    id: glyphIcon
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: !appIconImg.visible
+                    text: groupTile.modelData.glyph || "󰂚"
+                    color: Qt.rgba(1, 1, 1, 0.75)
+                    font.family: root.iconFont
+                    font.pixelSize: 15
+                  }
+                  Text {
+                    anchors.left: parent.left
+                    anchors.leftMargin: 26
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: groupTile.modelData.app + (groupTile.modelData.items.length > 1 ? "  ·  " + groupTile.modelData.items.length : "")
+                    color: Qt.rgba(1, 1, 1, 0.7)
+                    font.family: root.textFont
+                    font.weight: Font.DemiBold
+                    font.pixelSize: 12
+                  }
+                  Text {
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "󰅖"
+                    color: groupClose.containsMouse ? "white" : Qt.rgba(1, 1, 1, 0.45)
+                    font.family: root.iconFont
+                    font.pixelSize: 13
+                    MouseArea {
+                      id: groupClose
+                      anchors.fill: parent
+                      anchors.margins: -6
+                      hoverEnabled: true
+                      cursorShape: Qt.PointingHandCursor
+                      onClicked: root.clearGroup(groupTile.modelData)
+                    }
+                  }
+                }
+
+                Repeater {
+                  model: root.expandedGroups[groupTile.modelData.key] ? groupTile.modelData.items : groupTile.modelData.items.slice(0, 4)
+                  delegate: Item {
+                    required property var modelData
+                    width: groupCol.width
+                    height: entryCol.implicitHeight
+                    Column {
+                      id: entryCol
+                      width: parent.width - 50
+                      spacing: 1
+                      Text {
+                        width: parent.width
+                        text: modelData.summary || ""
+                        color: "white"
+                        elide: Text.ElideRight
+                        font.family: root.textFont
+                        font.weight: Font.DemiBold
+                        font.pixelSize: 13
+                      }
+                      Text {
+                        width: parent.width
+                        visible: text.length > 0
+                        text: String(modelData.body || "").replace(/<[^>]*>/g, "")
+                        color: Qt.rgba(1, 1, 1, 0.65)
+                        wrapMode: Text.Wrap
+                        maximumLineCount: 2
+                        elide: Text.ElideRight
+                        font.family: root.textFont
+                        font.pixelSize: 12
+                      }
+                    }
+                    Text {
+                      anchors.right: parent.right
+                      anchors.top: parent.top
+                      text: root.timeAgo(modelData.timestamp || 0)
+                      color: Qt.rgba(1, 1, 1, 0.45)
+                      font.family: root.textFont
+                      font.pixelSize: 11
+                    }
+                  }
+                }
+
+                Text {
+                  readonly property bool isOpen: !!root.expandedGroups[groupTile.modelData.key]
+                  visible: groupTile.modelData.items.length > 4
+                  text: isOpen ? "Show less" : "+" + (groupTile.modelData.items.length - 4) + " more"
+                  color: moreMouse.containsMouse ? "white" : Qt.rgba(1, 1, 1, 0.45)
+                  font.family: root.textFont
+                  font.pixelSize: 11
+                  MouseArea {
+                    id: moreMouse
+                    anchors.fill: parent
+                    anchors.margins: -6
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: { var m = Object.assign({}, root.expandedGroups); m[groupTile.modelData.key] = !parent.isOpen; root.expandedGroups = m }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

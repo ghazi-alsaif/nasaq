@@ -1,0 +1,7 @@
+#!/bin/bash
+# Play one of NASAQ's UI sounds: volume | notify | lock | unlock
+# Silenced while ~/.config/omarchy/nasaq/sounds-off exists.
+[[ -e $HOME/.config/omarchy/nasaq/sounds-off ]] && exit 0
+f="$HOME/.local/share/sounds/nasaq/$1.oga"
+[[ -f $f ]] || exit 0
+exec pw-play --volume "${NASAQ_SOUND_VOLUME:-0.7}" "$f" >/dev/null 2>&1

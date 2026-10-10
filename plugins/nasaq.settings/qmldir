@@ -1,0 +1,2 @@
+singleton Sys 1.0 Sys.qml
+Cmd 1.0 Cmd.qml

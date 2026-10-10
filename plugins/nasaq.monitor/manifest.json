@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "nasaq.monitor",
+  "name": "Display",
+  "version": "1.0.0",
+  "author": "NASAQ (GHS)",
+  "description": "Brightness slider and laptop display controls",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "Display",
+    "description": "Brightness slider and laptop display controls",
+    "category": "System",
+    "allowMultiple": false
+  },
+  "omarchy": {
+    "clonedFrom": "omarchy.monitor"
+  }
+}

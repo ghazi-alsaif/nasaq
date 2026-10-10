@@ -1,0 +1,53 @@
+#!/bin/bash
+# NASAQ: follow the room's light with the screen brightness, like a Mac.
+#
+#   nasaq-auto-brightness on|off     turn it on or off (remembered across reboots)
+#   nasaq-auto-brightness status     prints "sensor" if this machine has an ambient
+#                                    light sensor and "on" if auto brightness is on
+#   nasaq-auto-brightness target     show the light reading and the brightness it asks for
+#   nasaq-auto-brightness run        the loop itself (started by the systemd user service)
+#
+# Off by default. Moving the brightness slider in the control center turns it off.
+
+sensor=""
+for f in /sys/bus/iio/devices/*/in_illuminance_raw /sys/bus/iio/devices/*/in_illuminance_input; do
+  [[ -r $f ]] && { sensor=$f; break; }
+done
+unit=nasaq-auto-brightness.service
+
+# Light reading → brightness %. Logarithmic, because eyes are: a dark room
+# (reading ~0) gives 20 %, a lit room in the evening (~200) about 80 %, daylight 100 %.
+target_for() {
+  awk -v l="$1" 'BEGIN { t = 20 + 27 * log(1 + l) / log(10); if (t < 15) t = 15; if (t > 100) t = 100; printf "%d", t }'
+}
+current() { brightnessctl -m -c backlight 2>/dev/null | head -1 | cut -d, -f4 | tr -d %; }
+
+case ${1:-} in
+  on)
+    [[ -n $sensor ]] || { echo "No ambient light sensor on this machine." >&2; exit 1; }
+    systemctl --user enable --now "$unit" >/dev/null 2>&1 ;;
+  off)
+    systemctl --user disable --now "$unit" >/dev/null 2>&1 ;;
+  status)
+    [[ -n $sensor ]] && echo sensor
+    systemctl --user is-enabled --quiet "$unit" 2>/dev/null && echo on
+    exit 0 ;;
+  target)
+    [[ -n $sensor ]] || { echo "No ambient light sensor."; exit 1; }
+    light=$(cat "$sensor"); echo "light $light → brightness $(target_for "$light")% (now $(current)%)" ;;
+  run)
+    [[ -n $sensor ]] || exit 0
+    while :; do
+      light=$(cat "$sensor" 2>/dev/null) || { sleep 10; continue; }
+      want=$(target_for "$light"); now=$(current)
+      if [[ -n $now ]]; then
+        diff=$(( want - now ))
+        # Ignore small differences (no flicker), then move a little at a time.
+        if (( diff > 6 )); then brightnessctl -q -c backlight set "$(( now + (diff > 12 ? 4 : 2) ))%"
+        elif (( diff < -6 )); then brightnessctl -q -c backlight set "$(( now - (diff < -12 ? 4 : 2) ))%"
+        fi
+      fi
+      sleep 3
+    done ;;
+  *) sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 1 ;;
+esac

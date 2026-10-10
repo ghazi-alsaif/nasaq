@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "nasaq.commons",
+  "name": "NASAQ Commons",
+  "version": "1.0.0",
+  "author": "NASAQ (GHS)",
+  "description": "Shared NASAQ theme, live settings, translations and UI components used by every nasaq.* plugin.",
+  "kinds": ["service"],
+  "keepLoaded": true,
+  "entryPoints": { "service": "Service.qml" }
+}

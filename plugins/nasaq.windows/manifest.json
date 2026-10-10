@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "nasaq.windows",
+  "name": "Window Look",
+  "version": "1.0.0",
+  "author": "NASAQ (GHS)",
+  "description": "Bar island with every window look setting: transparency, blur, blur colours, dim, rounding, borders, gaps, shadows",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Window Look",
+    "description": "Window transparency, blur and shape",
+    "category": "Compositor",
+    "allowMultiple": false
+  }
+}

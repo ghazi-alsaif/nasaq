@@ -1,0 +1,16 @@
+{
+  "bar": {
+    "id": "nasaq.bar",
+    "position": "top",
+    "transparent": false,
+    "centerAnchor": "nasaq.island",
+    "layout": {
+      "left": [{ "id": "omarchy.menu" }, { "id": "nasaq.launchers" }, { "id": "nasaq.workspaces" }],
+      "center": [{ "id": "omarchy.indicators" }, { "id": "nasaq.island", "format": "ddd d MMM h:mm AP" }, { "id": "omarchy.system-update" }],
+      "right": [{ "id": "nasaq.tray" }, { "id": "omarchy.agents" }, { "id": "nasaq.control-center" }]
+    }
+  },
+  "plugins": ["nasaq.commons", "nasaq.lock", "nasaq.notifications", "nasaq.overview", "nasaq.spotlight", "nasaq.desktop", "nasaq.power", "nasaq.switcher", "nasaq.corners", "nasaq.settings"],
+  "disabledPlugins": ["omarchy.lock", "omarchy.osd", "omarchy.notifications"],
+  "cloneSourceRestores": ["nasaq.lock", "nasaq.notifications"]
+}

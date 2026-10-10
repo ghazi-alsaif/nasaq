@@ -1,0 +1,10 @@
+  // NASAQ (added by NASAQ's install.sh; removed by uninstall.sh)
+  "nasaq": {"icon":"󰒓","label":"NASAQ","aliases":["nasaq","nasaq-settings"]},
+  "nasaq.settings": {"icon":"󰒓","label":"NASAQ Settings","description":"All NASAQ settings","action":"omarchy-shell shell toggle nasaq.settings '{}'"},
+  "nasaq.save": {"icon":"󰆓","label":"Save Now","description":"Save the current settings","action":"omarchy-launch-floating-terminal-with-presentation $HOME/.local/bin/nasaq-settings save --ask"},
+  "nasaq.restore": {"icon":"󰋚","label":"Restore a Save","description":"Go back to an earlier save","action":"omarchy-launch-floating-terminal-with-presentation $HOME/.local/bin/nasaq-settings restore"},
+  "nasaq.widgets": {"icon":"󰕮","label":"Desktop Widgets","description":"Show or hide the widget column","action":"omarchy-shell nasaq.desktop toggle"},
+  "nasaq.stopwatch": {"icon":"󱎫","label":"Stopwatch","description":"Start or pause the island stopwatch","action":"omarchy-shell nasaq.stopwatch toggle"},
+  "nasaq.pomodoro": {"icon":"󱎫","label":"Pomodoro","description":"Start or stop a focus timer in the island","action":"omarchy-shell nasaq.pomodoro toggle"},
+  "nasaq.help": {"icon":"󰋗","label":"Shortcuts Guide","description":"What every key and corner does","action":"omarchy-launch-browser file://$HOME/.config/omarchy/nasaq/help/gestures.html"},
+  // /NASAQ

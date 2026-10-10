@@ -1,0 +1,8 @@
+{
+  "settings.title": "إعدادات نَسَق",
+  "settings.search": "ابحث في الإعدادات",
+  "page.general": "عام", "page.appearance": "المظهر", "page.bars": "الأشرطة واللوحات", "page.widgets": "الودجات",
+  "page.launcher": "المشغّل والبحث", "page.notifications": "الإشعارات", "page.windows": "المساحات والنوافذ",
+  "page.system": "النظام", "page.shortcuts": "الاختصارات", "page.ai": "الذكاء الاصطناعي والأتمتة", "page.plugins": "الإضافات", "page.advanced": "متقدم",
+  "common.save": "حفظ لقطة", "common.restore": "استرجاع…", "common.open": "فتح", "common.reload": "إعادة تحميل"
+}

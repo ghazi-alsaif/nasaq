@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "nasaq.island",
+  "name": "Dynamic Island",
+  "version": "1.0.0",
+  "author": "NASAQ (GHS)",
+  "description": "Apple-style Dynamic Island: clock, now playing, prayer times, OSD",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Dynamic Island",
+    "description": "Clock pill that expands with music, prayer times and OSD",
+    "category": "System",
+    "allowMultiple": false
+  }
+}

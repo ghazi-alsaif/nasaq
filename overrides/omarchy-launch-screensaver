@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# Local override of the packaged omarchy-launch-screensaver.
+#
+# Why: the packaged script picks the terminal from `xdg-terminal-exec --print-id`
+# and refuses anything but Alacritty/Foot/Ghostty/Kitty. The default terminal
+# here is Ptyxis (kept for Arabic BiDi rendering), so the screensaver never ran.
+# This override always uses kitty for the screensaver and leaves Ptyxis as the
+# system default terminal for everything else.
+
+if omarchy-cmd-missing ttfx; then
+  exit 1
+fi
+
+if ! command -v kitty >/dev/null; then
+  omarchy-notification-send -g ✋ "Screensaver needs kitty installed"
+  exit 1
+fi
+
+# Exit early if screensaver is already running
+pgrep -f '[o]rg.omarchy.screensaver' && exit 0
+
+# Allow screensaver to be turned off but also force started
+if omarchy-toggle-enabled screensaver-off && [[ $1 != "force" ]]; then
+  exit 1
+fi
+
+focused=$(omarchy-hyprland-monitor-focused)
+
+hypr_focus_monitor() {
+  hyprctl dispatch "hl.dsp.focus({ monitor = \"$1\" })" >/dev/null 2>&1 || hyprctl dispatch focusmonitor "$1" >/dev/null
+}
+
+hypr_exec() {
+  local command
+  printf -v command '%q ' "$@"
+
+  hyprctl dispatch "hl.dsp.exec_cmd([[$command]])" >/dev/null 2>&1 || hyprctl dispatch exec -- bash -lc "$command" >/dev/null
+}
+
+SOCKET="$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock"
+
+# Open Hyprland's event stream before spawning anything, so a terminal that maps
+# quickly can't emit its openwindow event before we are listening for it.
+exec {events}< <(socat -U - "UNIX-CONNECT:$SOCKET")
+
+wait_for_screensaver_window() {
+  local line deadline=$((SECONDS + 5))
+  while ((SECONDS < deadline)) && IFS= read -r -t $((deadline - SECONDS)) -u "$events" line; do
+    [[ $line == openwindow\>\>*,org.omarchy.screensaver,* ]] && return 0
+  done
+}
+
+for m in $(hyprctl monitors -j | jq -r '.[] | .name'); do
+  hypr_focus_monitor "$m"
+  hypr_exec kitty --class=org.omarchy.screensaver --override font_size=18 --override window_padding_width=0 -e omarchy-screensaver
+  wait_for_screensaver_window
+done
+
+hypr_focus_monitor "$focused"

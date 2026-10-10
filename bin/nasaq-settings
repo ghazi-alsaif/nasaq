@@ -1,0 +1,440 @@
+#!/bin/bash
+
+# Save and restore your NASAQ desktop settings.
+#
+#   nasaq-settings save [name]      Record the current settings as a new save.
+#   nasaq-settings save --ask       Same, asking for an optional name first.
+#   nasaq-settings restore [rev]    Go back to a save (pick from a list without rev).
+#                                   Asks: window look only, or everything.
+#   nasaq-settings base             Go back to your base settings.
+#   nasaq-settings set-base         Make the current settings the new base.
+#   nasaq-settings list             Show saves, newest first.
+#   nasaq-settings status           Show what differs from the latest save.
+#   nasaq-settings log              Named saves by day (automatic ones left out).
+#
+# The saves live in a git repo whose work tree is ~/.config, tracking only the
+# files listed below. The base is the `base` tag: saving never moves it, and
+# restoring never deletes history. Every restore first saves the current state,
+# so a restore can itself be undone from the list.
+
+set -e
+
+repo="$HOME/.local/share/nasaq-settings"
+tree="$HOME/.config"
+base_tag="base"
+
+# git reads pathspecs relative to the current directory, not the work tree, so
+# the paths below only resolve when run from ~/.config itself.
+cd "$tree"
+
+# One writer at a time: two overlapping git runs fail on index.lock. The lock
+# is taken only around the writing itself (take_lock), never while a menu is
+# waiting for an answer, so an automatic save is not locked out by an open list.
+exec 9>"${XDG_RUNTIME_DIR:-/tmp}/nasaq-settings.lock"
+take_lock() {
+  flock -w 30 9 || { echo "Another nasaq-settings run is still busy. Try again." >&2; exit 1; }
+}
+
+paths=(
+  hypr/autostart.lua
+  hypr/bindings.lua
+  hypr/hyprland.lua
+  hypr/input.lua
+  hypr/looknfeel.lua
+  hypr/nasaq-windows.lua
+  hypr/monitors.lua
+  hypr/hyprsunset.conf
+  hypr/xdph.conf
+  hypr/.luarc.json
+  omarchy/shell.json
+  omarchy/shell.toml
+  omarchy/themed/shell.toml.tpl
+  omarchy/extensions/omarchy-menu.jsonc
+  omarchy/nasaq/windows.json
+  omarchy/nasaq/windows-default.json
+  omarchy/nasaq/island.json
+  omarchy/nasaq/settings.json
+  omarchy/nasaq/settings.schema.json
+  omarchy/nasaq/power.json
+  omarchy/nasaq/overview.json
+  omarchy/nasaq/help
+  omarchy/nasaq/clone-baseline.txt
+  omarchy/hooks/post-update.d/nasaq-clone-check.sh
+  omarchy/hooks/theme-set.d/ptyxis-theme.sh
+  omarchy/hooks/theme-set.d/mlterm-theme.sh
+)
+# Personal extras: one path per line (relative to ~/.config) in
+# ~/.config/omarchy/nasaq/settings-extra-paths.txt.
+if [[ -f $HOME/.config/omarchy/nasaq/settings-extra-paths.txt ]]; then
+  while IFS= read -r extra; do [[ -n $extra && $extra != \#* ]] && paths+=("$extra"); done < "$HOME/.config/omarchy/nasaq/settings-extra-paths.txt"
+fi
+
+# Generated NASAQ Hyprland layers (nasaq-binds.lua, nasaq-monitors.lua, …).
+for genfile in hypr/nasaq-*.lua; do
+  [[ -e $genfile ]] && paths+=("$genfile")
+done
+
+# Every nasaq.* plugin, whatever exists today: a new plugin is saved without
+# anyone having to remember to list it here.
+for plugin in omarchy/plugins/nasaq.*/; do
+  [[ -d $plugin ]] && paths+=("${plugin%/}")
+done
+
+# Your own commands live outside ~/.config. A copy is kept in this folder on
+# every save, so they are part of the save too; "everything" restores put them
+# back (except nasaq-settings itself, which stays the current one).
+bin_mirror="omarchy/nasaq/bin"
+paths+=("$bin_mirror")
+mirror_bin() {
+  local f name
+  mkdir -p "$tree/$bin_mirror"
+  for f in "$HOME"/.local/bin/nasaq-* "$HOME/.local/bin/fix-sound" "$HOME/.local/bin/hypr-quit-app"; do
+    [[ -f $f ]] || continue
+    name=${f##*/}
+    cmp -s "$f" "$tree/$bin_mirror/$name" || cp -p "$f" "$tree/$bin_mirror/$name"
+  done
+}
+unmirror_bin() {
+  local p name
+  for p in "$@"; do
+    [[ $p == "$bin_mirror"/* ]] || continue
+    name=${p##*/}
+    [[ $name == nasaq-settings ]] && continue
+    install -m 0755 "$tree/$p" "$HOME/.local/bin/.$name.new" && mv -f "$HOME/.local/bin/.$name.new" "$HOME/.local/bin/$name"
+  done
+}
+
+# What "window look only" restores: the chosen values, never code. Not
+# looknfeel.lua: it also holds the loaders and layer rules features depend on.
+look_paths=(
+  hypr/nasaq-windows.lua
+  omarchy/nasaq/windows.json
+  omarchy/shell.toml
+  omarchy/themed/shell.toml.tpl
+)
+
+# Saves made automatically by the window settings page. They roll into one
+# entry instead of filling the list.
+auto_prefix="Window look"
+
+g() { git --git-dir="$repo" --work-tree="$tree" "$@"; }
+
+has_saves() { g rev-parse -q --verify HEAD >/dev/null 2>&1; }
+
+require_saves() {
+  if ! has_saves; then
+    echo "No saved settings yet. Run: nasaq-settings save" >&2
+    exit 1
+  fi
+}
+
+init_repo() {
+  [[ -d $repo ]] && return
+  git init -q --bare "$repo"
+  g config user.name "NASAQ"
+  g config user.email "nasaq@localhost"
+  g config status.showUntrackedFiles no
+}
+
+# Backup copies never belong in a save.
+ignore_backups() {
+  [[ -d $repo/info ]] || return 0
+  grep -qxF '*.bak*' "$repo/info/exclude" 2>/dev/null || echo '*.bak*' >> "$repo/info/exclude"
+}
+
+stage() {
+  mirror_bin
+  local p present=()
+  for p in "${paths[@]}"; do
+    [[ -e $tree/$p ]] && present+=("$p")
+  done
+  g add -A -- "${present[@]}"
+}
+
+# Commits whatever is staged. Returns 1 when there was nothing new to record.
+commit_if_changed() {
+  stage
+  if has_saves && g diff --cached --quiet; then
+    return 1
+  fi
+  # Automatic saves from the same sitting (the last one under 30 minutes old)
+  # replace each other; an older look keeps its own entry. Never the base itself.
+  dropped=0
+  if has_saves && [[ $1 == "$auto_prefix"* && $(g log -1 --format=%s) == "$auto_prefix"* ]] \
+     && (( $(date +%s) - $(g log -1 --format=%ct) < 1800 )) \
+     && [[ $(g rev-parse HEAD) != "$(g rev-parse -q --verify "refs/tags/$base_tag^{commit}" 2>/dev/null)" ]]; then
+    if g diff --cached --quiet HEAD^ 2>/dev/null; then
+      # Back to exactly what was there before the automatic save: drop it.
+      g reset -q --soft HEAD^
+      dropped=1
+    else
+      g commit -q --amend -m "$1"
+    fi
+  else
+    g commit -q -m "$1"
+  fi
+}
+
+# Untracked files count too: a brand-new plugin is a change worth saving.
+unsaved_changes() {
+  mirror_bin
+  has_saves && [[ -n $(g status --porcelain --untracked-files=all -- "${paths[@]}") ]]
+}
+
+save() {
+  local name=$1
+
+  init_repo
+  ignore_backups
+
+  if [[ $name == --ask ]]; then
+    if has_saves && ! unsaved_changes; then
+      echo "Nothing changed since the last save ($(g log -1 --format='%s')). Nothing to save."
+      return
+    fi
+    name=$(gum input --header "Name this save (optional)" --placeholder "e.g. softer corners" --char-limit 60) || return 130
+  fi
+
+  name=${name//|/-}
+  [[ -n $name ]] || name="Save $(date '+%F %H:%M')"
+
+  take_lock
+  if commit_if_changed "$name"; then
+    if ((dropped)); then echo "Back to the look that was already saved. Nothing new to keep."; else echo "Saved: $name"; fi
+  else
+    echo "Nothing changed since the last save. Nothing to save."
+  fi
+}
+
+reload_affected() {
+  if printf '%s\n' "$@" | grep -q '^hypr/'; then
+    hyprctl reload >/dev/null
+    local errors
+    errors=$(hyprctl configerrors)
+    if [[ -n ${errors//[[:space:]]/} ]]; then
+      echo -e "\e[31mHyprland reported config errors:\e[0m\n$errors"
+    else
+      echo "Hyprland reloaded."
+    fi
+  fi
+
+  # The theme template only takes effect once the theme is applied again.
+  if printf '%s\n' "$@" | grep -q '^omarchy/themed/'; then
+    omarchy theme set "$(omarchy theme current)" >/dev/null 2>&1 || true
+  fi
+
+  if printf '%s\n' "$@" | grep -q '^omarchy/'; then
+    # Run it in the foreground: a backgrounded restart dies with the terminal
+    # window before it gets going. It takes well under a second.
+    if omarchy restart shell >/dev/null 2>&1; then
+      echo "Omarchy shell restarted."
+    else
+      echo -e "\e[31mOmarchy shell restart failed. Run: omarchy restart shell\e[0m"
+    fi
+  fi
+}
+
+# A friendly name for a saved path.
+describe_path() {
+  case $1 in
+    hypr/looknfeel.lua|hypr/nasaq-windows.lua|omarchy/nasaq/windows.json) echo "Window look (transparency, blur, shape)" ;;
+    omarchy/nasaq/windows-default.json) echo "Your saved window default" ;;
+    omarchy/shell.toml|omarchy/themed/*) echo "Bar and menu transparency" ;;
+    omarchy/shell.json) echo "Bar layout" ;;
+    hypr/bindings.lua) echo "Keyboard shortcuts" ;;
+    hypr/monitors.lua) echo "Display setup" ;;
+    hypr/*) echo "Hyprland settings" ;;
+    omarchy/plugins/nasaq.island/*) echo "Dynamic Island" ;;
+    omarchy/plugins/nasaq.notifications/*) echo "Notifications" ;;
+    omarchy/plugins/nasaq.lock/*|omarchy/plugins/nasaq.control-center/*) echo "Control center and lock screen" ;;
+    omarchy/plugins/nasaq.windows/*) echo "Window settings page" ;;
+    omarchy/plugins/nasaq.power/*) echo "Power behaviour" ;;
+    omarchy/plugins/nasaq.audio/*) echo "Old audio panel" ;;
+    omarchy/nasaq/island.json) echo "Prayer city and island options" ;;
+    omarchy/nasaq/help/*) echo "Shortcuts guide page" ;;
+    omarchy/nasaq/clone-baseline.txt|omarchy/hooks/post-update.d/nasaq-clone-check.sh) echo "Clone check after updates" ;;
+    omarchy/nasaq/bin/*) echo "Your commands (nasaq-*)" ;;
+    omarchy/plugins/nasaq.overview/*) echo "Mission Control" ;;
+    omarchy/plugins/nasaq.desktop/*) echo "Desktop widgets" ;;
+    omarchy/plugins/nasaq.spotlight/*) echo "Spotlight" ;;
+    omarchy/plugins/nasaq.bar/*|omarchy/plugins/nasaq.launchers/*|omarchy/plugins/nasaq.workspaces/*) echo "Bar" ;;
+    omarchy/plugins/*) echo "Other bar pieces" ;;
+    omarchy/extensions/*) echo "Omarchy menu" ;;
+    *) echo "Other settings" ;;
+  esac
+}
+
+# restore_to <rev> <label> [look]
+restore_to() {
+  local rev=$1 label=$2 scope=${3:-all} changed=() from=("${paths[@]}")
+  [[ $scope == look ]] && from=("${look_paths[@]}")
+
+  mapfile -t changed < <(g diff --name-only "$rev" -- "${from[@]}")
+  # Files added after that save do not exist in it; leave them alone.
+  local p in_rev=() newer=()
+  for p in "${changed[@]}"; do
+    if g cat-file -e "$rev:$p" 2>/dev/null; then
+      in_rev+=("$p")
+    else
+      newer+=("$p")
+    fi
+  done
+
+  if ((${#in_rev[@]} == 0)); then
+    echo "Your settings already match \"$label\". Nothing to restore."
+    return
+  fi
+
+  echo "Going back to: $label"
+  echo
+  if [[ $scope == look ]]; then
+    echo "Only the look changes. Features stay as they are now."
+  else
+    echo "Everything goes back, features included: anything built after that save is undone."
+  fi
+  echo
+  echo "What will change:"
+  for p in "${in_rev[@]}"; do describe_path "$p"; done | sort | uniq -c | sort -rn |
+    while read -r n what; do printf '  • %s (%s file%s)\n' "$what" "$n" "$([[ $n == 1 ]] || echo s)"; done
+  if ((${#newer[@]} > 0)); then
+    echo
+    echo "Added after that save, left as they are: ${#newer[@]} file(s)."
+  fi
+  echo
+
+  gum confirm --default=false "Restore \"$label\"?" || { echo "Cancelled. Nothing changed."; return 130; }
+
+  take_lock
+  local auto_name
+  auto_name="Before restore ($(date '+%m-%d %H:%M'))"
+  if commit_if_changed "$auto_name"; then
+    echo "Current settings saved first as \"$auto_name\"."
+  fi
+
+  g checkout "$rev" -- "${in_rev[@]}"
+  unmirror_bin "${in_rev[@]}"
+  commit_if_changed "Restored: ${label#Restored: }" || true
+  echo "Restored ${#in_rev[@]} file(s)."
+
+  reload_affected "${in_rev[@]}"
+}
+
+# Rows for gum choose: "display|hash", newest first.
+save_rows() {
+  local base_rev="" clean=1
+  base_rev=$(g rev-parse -q --verify "refs/tags/$base_tag" 2>/dev/null || true)
+  unsaved_changes && clean=0
+
+  local first=1 hash when subject mark prev_auto=0
+  while IFS=$'\t' read -r hash when subject; do
+    # Older automatic saves in a run fold into the newest one of that run.
+    if [[ $subject == "$auto_prefix"* ]]; then
+      if ((prev_auto)); then first=0; continue; fi
+      prev_auto=1
+    else
+      prev_auto=0
+    fi
+    mark="  "
+    ((first && clean)) && mark="● "
+    [[ $hash == "$base_rev" ]] && subject="$subject  [Base]"
+    printf '%s%s  %s|%s\n' "$mark" "$when" "${subject//|/-}" "$hash"
+    first=0
+  done < <(g log -n 300 --format=$'%H\t%cd\t%s' --date=format:'%Y-%m-%d %H:%M')
+}
+
+restore() {
+  require_saves
+
+  local rev=${1:-} label
+  if [[ -z $rev ]]; then
+    unsaved_changes && echo -e "\e[33mYou have unsaved changes. They will be saved automatically before restoring.\e[0m\n"
+    rev=$(save_rows | gum choose --header "Pick a save to go back to (● = current)" --label-delimiter "|" --height 15) || return 130
+  fi
+
+  rev=$(g rev-parse --verify "$rev^{commit}")
+  label=$(g log -1 --format=%s "$rev")
+  local scope
+  scope=$(restore_scope) || { echo "Cancelled. Nothing changed."; return 130; }
+  restore_to "$rev" "$label" "$scope"
+}
+
+# Look only, or everything. Prints the answer; fails when the question is
+# cancelled. The menu draws on the terminal itself (stderr), so this works
+# inside $(...); without a terminal to ask in: everything, as before.
+restore_scope() {
+  [[ -t 0 && -t 2 ]] || { echo all; return 0; }
+  local pick
+  pick=$(gum choose --header "What should go back?" \
+    "Window look only (transparency, blur, shape, bar tint)" \
+    "Everything (features too)") || return 1
+  [[ $pick == Window* ]] && echo look || echo all
+}
+
+base() {
+  require_saves
+  if ! g rev-parse -q --verify "refs/tags/$base_tag" >/dev/null; then
+    echo "No base set yet. Run: nasaq-settings set-base" >&2
+    exit 1
+  fi
+  local scope
+  scope=$(restore_scope) || { echo "Cancelled. Nothing changed."; return 130; }
+  restore_to "refs/tags/$base_tag" "Base" "$scope"
+}
+
+set_base() {
+  init_repo
+  if unsaved_changes || ! has_saves; then
+    commit_if_changed "Base $(date '+%F %H:%M')" || true
+  fi
+
+  local old
+  old=$(g log -1 --format='%s (%cd)' --date=format:'%Y-%m-%d' "refs/tags/$base_tag" 2>/dev/null || true)
+  if [[ -n $old ]]; then
+    echo "Current base: $old"
+    gum confirm --default=false "Replace the base with the current settings?" || { echo "Cancelled. Base unchanged."; return 130; }
+  fi
+  take_lock
+
+  g tag -f "$base_tag" HEAD >/dev/null
+  echo "Base is now: $(g log -1 --format=%s)"
+}
+
+list() {
+  require_saves
+  save_rows | cut -d'|' -f1
+}
+
+# Named saves, grouped by day, newest first. Automatic saves are left out.
+log() {
+  require_saves
+  local day="" d when subject
+  while IFS=$'\t' read -r d when subject; do
+    if [[ $d != "$day" ]]; then day=$d; printf '\n%s\n' "$day"; fi
+    # Automatic saves are shown too, marked, so the log tells the whole story.
+    [[ $subject == "$auto_prefix"* || $subject == "Before restore"* ]] && subject="$subject  (automatic)"
+    printf '  %s  %s\n' "$when" "$subject"
+  done < <(g log -n 500 --format=$'%cd\t%s' --date=format:$'%A %d %B %Y\t%H:%M')
+}
+
+status() {
+  require_saves
+  if unsaved_changes; then
+    g status --short -- "${paths[@]}"
+  else
+    echo "Settings match the latest save ($(g log -1 --format=%s))."
+  fi
+}
+
+case ${1:-} in
+  save) shift; save "$*" ;;
+  restore) restore "${2:-}" ;;
+  base) base ;;
+  set-base) set_base ;;
+  list) list ;;
+  log) log ;;
+  status) status ;;
+  *)
+    sed -n '3,13p' "$0" | sed 's/^# \{0,1\}//' >&2
+    exit 1
+    ;;
+esac

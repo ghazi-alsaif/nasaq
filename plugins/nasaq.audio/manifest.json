@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "nasaq.audio",
+  "name": "Audio",
+  "version": "1.0.0",
+  "author": "NASAQ (GHS)",
+  "description": "Volume slider, output picker, per-app mixer",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "Audio",
+    "description": "Volume slider, output picker, per-app mixer",
+    "category": "Audio",
+    "allowMultiple": false
+  },
+  "omarchy": {
+    "clonedFrom": "omarchy.audio"
+  }
+}
