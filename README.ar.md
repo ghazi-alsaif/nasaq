@@ -37,7 +37,7 @@
 يتطلب Omarchy 4.0.4 أو أحدث.
 
 ```bash
-git clone https://github.com/<you>/nasaq ~/.local/share/nasaq
+git clone https://github.com/ghazi-alsaif/nasaq ~/.local/share/nasaq
 cd ~/.local/share/nasaq
 ./install.sh
 ```
