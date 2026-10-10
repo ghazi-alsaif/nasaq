@@ -31,6 +31,7 @@ if [[ ${1:-} == --purge ]]; then
   rm -rf "${C:?}/omarchy/nasaq" "${HOME:?}/.local/state/nasaq"
   echo " ✓ NASAQ settings removed"
 fi
+[[ -f /etc/udev/rules.d/69-nasaq-input.rules ]] && sudo rm -f /etc/udev/rules.d/69-nasaq-input.rules 2>/dev/null && echo " ✓ udev rule removed"
 omarchy-shell -q shell rescanPlugins || true
 hyprctl reload >/dev/null 2>&1 || true
 omarchy restart shell >/dev/null 2>&1 || true

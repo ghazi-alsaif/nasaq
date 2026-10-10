@@ -51,8 +51,8 @@ Item {
   // Safety net: if the ALT release never reaches us, switch after a pause.
   // Switches on its own this long after the last TAB when the overlay never
   // saw Alt go up (NASAQ Settings > Workspaces & Windows > App switcher).
-  readonly property int holdMs: Nasaq.Settings.get("switcher.holdMs", 120)
-  Timer { id: idle; interval: root.holdMs; onTriggered: root.confirm() }
+  readonly property int holdMs: Nasaq.Settings.get("switcher.holdMs", 10)
+  Timer { id: idle; interval: root.holdMs; onTriggered: if (!root.altKnown) root.confirm() }
   onOpenChanged: if (!open) idle.stop()
 
   function step(dir) {
@@ -68,6 +68,8 @@ Item {
       if (items.length < 2) { if (items.length === 1) activate(items[0]); return }
       index = dir > 0 ? 1 : items.length - 1
       if (Date.now() - releasedAt < 700) { releasedAt = 0; activate(items[index]); return }
+      // Alt already up (a very quick tap): switch without showing anything.
+      if (altKnown && !altHeld) { activate(items[index]); return }
       open = true
       return
     }
@@ -95,6 +97,27 @@ Item {
     return Quickshell.iconPath(e && e.icon ? e.icon : "application-x-executable", "application-x-executable")
   }
 
+  // Alt state straight from the kernel (nasaq-altwatch reads evdev), because
+  // Hyprland never reports a modifier key's release. "unknown" = watcher not
+  // available; then the TAB-release heuristic and the hold timer take over.
+  property string altState: "unknown"
+  readonly property bool altKnown: altState !== "unknown"
+  readonly property bool altHeld: altState === "down"
+  Process {
+    id: altWatch
+    command: ["nasaq-altwatch"]
+    running: true
+    stdout: SplitParser {
+      onRead: function(line) {
+        line = line.trim()
+        if (line === "down" || line === "up") { root.altState = line; if (line === "up" && root.open) root.confirm() }
+        else if (line === "unavailable") root.altState = "unknown"
+      }
+    }
+    onRunningChanged: if (!running) { root.altState = "unknown"; restartWatch.restart() }
+  }
+  Timer { id: restartWatch; interval: 3000; onTriggered: altWatch.running = true }
+
   IpcHandler {
     target: "nasaq.switcher"
     function next(): string { root.step(1); return "ok" }
@@ -104,8 +127,8 @@ Item {
     // TAB released. If the overlay still has no keyboard focus, Alt was
     // (or is about to be) released before we could see it: a quick tap, so
     // switch now. Once focused, Alt's own release is handled by the overlay.
-    function tabReleased(): string { if (root.open && !win.active) root.confirm(); return root.open ? "held" : "switched" }
-    function status(): string { return JSON.stringify({ open: root.open, index: root.index, items: root.items.length, sinceRelease: Date.now() - root.releasedAt }) }
+    function tabReleased(): string { if (root.open && !root.altKnown && !win.active) root.confirm(); return root.open ? "held" : "switched" }
+    function status(): string { return JSON.stringify({ open: root.open, alt: root.altState, index: root.index, items: root.items.length }) }
     function debug(): string { return JSON.stringify(root.snapshot().map(function(t) { return { address: String(t.address), title: t.title } })) }
   }
 

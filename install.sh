@@ -103,6 +103,17 @@ if ((${#missing[@]})); then
   fi
 fi
 
+# The app switcher reads the Alt key from the kernel (Hyprland never reports a
+# modifier's release). That needs read access to /dev/input: one udev rule.
+if [[ ! -f /etc/udev/rules.d/69-nasaq-input.rules ]]; then
+  if $YES || { command -v gum >/dev/null && gum confirm "Install the udev rule that lets the app switcher read the Alt key (needs sudo)?"; }; then
+    sudo install -m644 "$R/defaults/69-nasaq-input.rules" /etc/udev/rules.d/69-nasaq-input.rules &&
+      sudo udevadm control --reload && sudo udevadm trigger --subsystem-match=input --action=add && say "udev rule installed"
+  else
+    warn "without the udev rule ALT+TAB uses a timing fallback"
+  fi
+fi
+
 nasaq-arabic-binds on >/dev/null 2>&1 || true
 nasaq-scratch apply >/dev/null 2>&1 || true
 omarchy-shell -q shell rescanPlugins || true
