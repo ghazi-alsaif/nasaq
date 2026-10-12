@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- One name rule on the lock, login and boot screens: the account's full name (first GECOS field) when it is set, otherwise the user name exactly as it is. The lock screen no longer capitalises the user name, and the avatar shows the first letter of the shown name.
+
 ## 1.1.0 — 2026-10-12
 The session screens follow the theme: boot, login, lock and shutdown now share one look and take their colours from the active Omarchy theme. Tested with clean installs on two machines.
 

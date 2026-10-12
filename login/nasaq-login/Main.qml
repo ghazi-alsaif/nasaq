@@ -34,7 +34,18 @@ Rectangle {
   // Last user who logged in, else the first account SDDM lists (NameRole).
   property string currentUser: userModel.lastUser
     || String(userModel.data(userModel.index(0, 0), Qt.UserRole + 1) || "")
-  readonly property string displayName: currentUser.length > 0 ? currentUser.charAt(0).toUpperCase() + currentUser.slice(1) : ""
+  // Shown name, the same rule on the lock, login and boot screens: the
+  // account's full name (GECOS, SDDM's RealNameRole) if set, else the user
+  // name exactly as it is.
+  readonly property string displayName: {
+    for (var i = 0; i < userModel.rowCount(); i++) {
+      var idx = userModel.index(i, 0)
+      if (String(userModel.data(idx, Qt.UserRole + 1) || "") !== currentUser) continue
+      var real = String(userModel.data(idx, Qt.UserRole + 2) || "").split(",")[0].trim()
+      return real.length > 0 ? real : currentUser
+    }
+    return currentUser
+  }
   property bool loginFailed: false
   property bool busy: false
   property var now: new Date()
@@ -200,7 +211,7 @@ Rectangle {
           color: root.accent
           Text {
             anchors.centerIn: parent
-            text: root.displayName.charAt(0)
+            text: root.displayName.charAt(0).toUpperCase()
             color: root.surface
             font.family: root.monoFont
             font.weight: Font.Bold
@@ -209,7 +220,7 @@ Rectangle {
         }
         Text {
           anchors.verticalCenter: parent.verticalCenter
-          text: root.currentUser
+          text: root.displayName
           color: root.fg
           font.family: root.monoFont
           font.weight: Font.Bold

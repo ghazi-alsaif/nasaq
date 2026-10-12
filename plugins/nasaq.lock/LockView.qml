@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Effects
 import Quickshell
+import Quickshell.Io
 import qs.Commons
 import qs.Ui
 
@@ -52,10 +53,23 @@ Item {
   readonly property color urgent: Color.urgent       // wrong password, armed power button
   function tint(c, a) { return Qt.rgba(c.r, c.g, c.b, a) }
   readonly property string iconFont: Style.font.family
-  readonly property string userName: {
-    var name = Quickshell.env("USER") || ""
-    return name.length > 0 ? name.charAt(0).toUpperCase() + name.slice(1) : ""
+  // Shown name, the same rule on the lock, login and boot screens: the
+  // account's full name (first GECOS field in /etc/passwd) if set, else the
+  // user name exactly as it is.
+  readonly property string loginName: Quickshell.env("USER") || ""
+  property string fullName: ""
+  FileView {
+    path: "/etc/passwd"
+    printErrors: false
+    onLoaded: {
+      var lines = String(text()).split("\n")
+      for (var i = 0; i < lines.length; i++) {
+        var f = lines[i].split(":")
+        if (f[0] === root.loginName && f.length > 4) { root.fullName = f[4].split(",")[0].trim(); return }
+      }
+    }
   }
+  readonly property string userName: fullName.length > 0 ? fullName : loginName
   readonly property string avatarPath: (Quickshell.env("HOME") || "") + "/.face"
   readonly property bool errorState: failureMessage.length > 0
   readonly property bool showPasswordCursor: inputEnabled && !authenticatingPassword && !errorState
@@ -584,7 +598,7 @@ Item {
             color: root.accent
             Text {
               anchors.centerIn: parent
-              text: root.userName.charAt(0)
+              text: root.userName.charAt(0).toUpperCase()
               color: root.surface
               font.family: root.monoFont
               font.weight: Font.Bold
@@ -641,7 +655,7 @@ Item {
         Text {
           anchors.centerIn: parent
           visible: avatarImage.status !== Image.Ready
-          text: root.userName.charAt(0)
+          text: root.userName.charAt(0).toUpperCase()
           color: root.fg
           font.family: root.textFont
           font.weight: Font.DemiBold

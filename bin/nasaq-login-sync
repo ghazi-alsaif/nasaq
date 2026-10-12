@@ -119,7 +119,12 @@ $plymouth || exit 0
 # clock, date and pills.
 mkdir -p "$rtmp/ply"
 as_user mkdir -p "$utmp/ply"
-as_user bash -s -- "$PDST/templates" "$utmp/ply" "$fg" "$accent" "$background" "$user" "$wall" <<'RENDER' || die "could not render the boot screen images"
+# Shown name, the same rule as the lock and login screens: the full name from
+# the first GECOS field if set, else the user name as it is. A leading "@"
+# would make ImageMagick read a file, so it is dropped.
+shown=$(getent passwd "$user" | cut -d: -f5 | cut -d, -f1 | tr -d '\n' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/^@*//')
+[[ -n $shown ]] || shown=$user
+as_user bash -s -- "$PDST/templates" "$utmp/ply" "$fg" "$accent" "$background" "$shown" "$wall" <<'RENDER' || die "could not render the boot screen images"
 set -euo pipefail
 tpl=$1 out=$2 fg=$3 accent=$4 bg=$5 name=$6 wall=$7
 cd "$out"
