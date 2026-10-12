@@ -152,6 +152,10 @@ Item {
     return icons[Math.max(0, Math.min(10, Math.round(batteryPercent / 10)))]
   }
 
+  // Colours follow the active Omarchy theme with the same mapping as the lock
+  // and login screens: Color.foreground for text, icons and the glass tint,
+  // Color.accent for accents, Color.background as the dark base, Color.urgent
+  // for armed or failing states. Inline components use Color.* directly.
   // The theme's accent (it used to be a fixed blue), so a theme change carries over.
   readonly property color accent: Color.accent
   // Text or icon drawn on an accent fill: dark on a light accent, white on a dark one.
@@ -560,13 +564,13 @@ Item {
   // ── Building blocks ────────────────────────────────────────────────
   component Tile: Rectangle {
     radius: 14
-    color: Qt.rgba(1, 1, 1, 0.08)
-    border.color: Qt.rgba(1, 1, 1, 0.06)
+    color: Util.alpha(Color.foreground, 0.08)
+    border.color: Util.alpha(Color.foreground, 0.06)
     border.width: 1
   }
 
   component Label: Text {
-    color: "white"
+    color: Color.foreground
     font.family: root.textFont
     font.pixelSize: 13
     font.weight: Font.DemiBold
@@ -574,25 +578,25 @@ Item {
   }
 
   component Sub: Text {
-    color: Qt.rgba(1, 1, 1, 0.6)
+    color: Util.alpha(Color.foreground, 0.6)
     font.family: root.textFont
     font.pixelSize: 11
     elide: Text.ElideRight
   }
 
   component Glyph: Text {
-    color: "white"
+    color: Color.foreground
     font.family: root.iconFont
     font.pixelSize: 15
   }
 
   component Divider: Rectangle {
     height: 1
-    color: Qt.rgba(1, 1, 1, 0.12)
+    color: Util.alpha(Color.foreground, 0.12)
   }
 
   component SectionTitle: Text {
-    color: Qt.rgba(1, 1, 1, 0.5)
+    color: Util.alpha(Color.foreground, 0.5)
     font.family: root.textFont
     font.pixelSize: 11
     font.weight: Font.DemiBold
@@ -609,12 +613,12 @@ Item {
     width: size
     height: size
     radius: size / 2
-    color: on ? root.accent : Qt.rgba(1, 1, 1, iconMouse.containsMouse ? 0.24 : 0.15)
+    color: on ? root.accent : Util.alpha(Color.foreground, iconMouse.containsMouse ? 0.24 : 0.15)
     Behavior on color { ColorAnimation { duration: 120 } }
     Glyph {
       anchors.centerIn: parent
       text: parent.icon
-      color: parent.on ? root.onAccent : "white"
+      color: parent.on ? root.onAccent : Color.foreground
       font.pixelSize: Math.round(parent.size * 0.5)
     }
     MouseArea {
@@ -635,7 +639,7 @@ Item {
     width: 38
     height: 22
     radius: 11
-    color: checked ? root.accent : Qt.rgba(1, 1, 1, 0.22)
+    color: checked ? root.accent : Util.alpha(Color.foreground, 0.22)
     Behavior on color { ColorAnimation { duration: 140 } }
     Rectangle {
       width: 18
@@ -643,7 +647,7 @@ Item {
       radius: 9
       y: 2
       x: sw.checked ? sw.width - width - 2 : 2
-      color: "white"
+      color: Color.foreground
       Behavior on x { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
     }
     MouseArea {
@@ -664,7 +668,7 @@ Item {
     signal expand()
     height: 40
     radius: 10
-    color: rowMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.07) : "transparent"
+    color: rowMouse.containsMouse ? Util.alpha(Color.foreground, 0.07) : "transparent"
     MouseArea {
       id: rowMouse
       anchors.fill: parent
@@ -713,7 +717,7 @@ Item {
     width: parent ? parent.width : 0
     height: 36
     radius: 8
-    color: lrMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : "transparent"
+    color: lrMouse.containsMouse ? Util.alpha(Color.foreground, 0.08) : "transparent"
     MouseArea {
       id: lrMouse
       anchors.fill: parent
@@ -775,7 +779,7 @@ Item {
       width: 26
       height: 26
       radius: 13
-      color: backMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.14) : "transparent"
+      color: backMouse.containsMouse ? Util.alpha(Color.foreground, 0.14) : "transparent"
       Glyph { anchors.centerIn: parent; text: "󰅁"; font.pixelSize: 14 }
       MouseArea {
         id: backMouse
@@ -808,7 +812,7 @@ Item {
     width: parent ? parent.width : 0
     height: 30
     radius: 8
-    color: flMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : "transparent"
+    color: flMouse.containsMouse ? Util.alpha(Color.foreground, 0.08) : "transparent"
     Label {
       anchors.left: parent.left
       anchors.leftMargin: 8
@@ -838,14 +842,14 @@ Item {
       id: track
       anchors.fill: parent
       radius: height / 2
-      color: Qt.rgba(1, 1, 1, 0.16)
+      color: Util.alpha(Color.foreground, 0.16)
       clip: true
 
       Rectangle {
         height: parent.height
         width: Math.max(track.height, track.width * Math.max(0, Math.min(1, slider.value)))
         radius: height / 2
-        color: Qt.rgba(1, 1, 1, 0.92)
+        color: Util.alpha(Color.foreground, 0.92)
       }
     }
 
@@ -867,7 +871,7 @@ Item {
       anchors.leftMargin: 6
       anchors.verticalCenter: parent.verticalCenter
       text: slider.icon
-      color: slider.value > 0.06 ? "#2c2c2e" : "white"
+      color: slider.value > 0.06 ? Color.background : Color.foreground
       font.family: root.iconFont
       font.pixelSize: 14
       MouseArea {
@@ -896,7 +900,7 @@ Item {
       width: 40
       height: 40
       radius: 20
-      color: pb.armed ? "#ff453a" : Qt.rgba(1, 1, 1, pbMouse.containsMouse ? 0.24 : 0.14)
+      color: pb.armed ? Color.urgent : Util.alpha(Color.foreground, pbMouse.containsMouse ? 0.24 : 0.14)
       Behavior on color { ColorAnimation { duration: 120 } }
       Glyph {
         anchors.centerIn: parent
@@ -919,7 +923,7 @@ Item {
     Sub {
       anchors.horizontalCenter: parent.horizontalCenter
       text: pb.armed ? "Click again" : pb.title
-      color: pb.armed ? "white" : Qt.rgba(1, 1, 1, 0.7)
+      color: pb.armed ? Color.foreground : Util.alpha(Color.foreground, 0.7)
     }
   }
 
@@ -934,7 +938,7 @@ Item {
            : mainPage.implicitHeight) + 24
     radius: 20
     color: root.chromeless ? "transparent" : Util.alpha(Color.background, root.panelAlpha)
-    border.color: Qt.rgba(1, 1, 1, 0.14)
+    border.color: Util.alpha(Color.foreground, 0.14)
     border.width: root.chromeless ? 0 : 1
     clip: true
     transformOrigin: Item.TopRight
@@ -1004,7 +1008,7 @@ Item {
           Tile {
             width: parent.width
             height: 56
-            color: Qt.rgba(1, 1, 1, kbMouse.containsMouse ? 0.13 : 0.08)
+            color: Util.alpha(Color.foreground, kbMouse.containsMouse ? 0.13 : 0.08)
             Column {
               anchors.fill: parent
               anchors.margins: 10
@@ -1049,7 +1053,7 @@ Item {
             width: parent.width
             height: 56
             visible: root.showLock && root.batteryPercent < 0
-            color: root.dnd ? root.accent : Qt.rgba(1, 1, 1, dndMouse.containsMouse ? 0.13 : 0.08)
+            color: root.dnd ? root.accent : Util.alpha(Color.foreground, dndMouse.containsMouse ? 0.13 : 0.08)
             Behavior on color { ColorAnimation { duration: 140 } }
             Column {
               anchors.fill: parent
@@ -1057,10 +1061,10 @@ Item {
               spacing: 1
               Row {
                 spacing: 7
-                Glyph { anchors.verticalCenter: parent.verticalCenter; text: root.dnd ? "󰂛" : "󰂚"; font.pixelSize: 14; color: root.dnd ? root.onAccent : "white" }
-                Label { anchors.verticalCenter: parent.verticalCenter; text: "Do Not Disturb"; color: root.dnd ? root.onAccent : "white" }
+                Glyph { anchors.verticalCenter: parent.verticalCenter; text: root.dnd ? "󰂛" : "󰂚"; font.pixelSize: 14; color: root.dnd ? root.onAccent : Color.foreground }
+                Label { anchors.verticalCenter: parent.verticalCenter; text: "Do Not Disturb"; color: root.dnd ? root.onAccent : Color.foreground }
               }
-              Sub { width: parent.width; color: root.dnd ? root.onAccent : Qt.rgba(1, 1, 1, 0.6); text: root.dnd ? "On" : "Off" }
+              Sub { width: parent.width; color: root.dnd ? root.onAccent : Util.alpha(Color.foreground, 0.6); text: root.dnd ? "On" : "Off" }
             }
             MouseArea {
               id: dndMouse
@@ -1080,7 +1084,7 @@ Item {
         width: parent.width
         height: 46
         visible: root.showLock && root.batteryPercent >= 0
-        color: Qt.rgba(1, 1, 1, dndRowMouse.containsMouse ? 0.13 : 0.08)
+        color: Util.alpha(Color.foreground, dndRowMouse.containsMouse ? 0.13 : 0.08)
         MouseArea {
           id: dndRowMouse
           anchors.fill: parent
@@ -1093,7 +1097,7 @@ Item {
           anchors.leftMargin: 12
           anchors.verticalCenter: parent.verticalCenter
           spacing: 9
-          Glyph { anchors.verticalCenter: parent.verticalCenter; text: root.dnd ? "󰂛" : "󰂚"; font.pixelSize: 15; color: root.dnd ? root.accent : "white" }
+          Glyph { anchors.verticalCenter: parent.verticalCenter; text: root.dnd ? "󰂛" : "󰂚"; font.pixelSize: 15; color: root.dnd ? root.accent : Color.foreground }
           Label { anchors.verticalCenter: parent.verticalCenter; text: "Do Not Disturb" }
         }
         Switch {
@@ -1206,7 +1210,7 @@ Item {
         width: parent.width
         height: 52
         visible: root.showLock
-        color: Qt.rgba(1, 1, 1, winMouse.containsMouse ? 0.13 : 0.08)
+        color: Util.alpha(Color.foreground, winMouse.containsMouse ? 0.13 : 0.08)
         RoundIcon {
           id: winIcon
           anchors.left: parent.left
@@ -1278,13 +1282,13 @@ Item {
                 width: (parent.width - 12) / 3
                 height: 30
                 radius: 15
-                color: current ? root.accent : Qt.rgba(1, 1, 1, modeMouse.containsMouse ? 0.16 : 0.08)
+                color: current ? root.accent : Util.alpha(Color.foreground, modeMouse.containsMouse ? 0.16 : 0.08)
                 Behavior on color { ColorAnimation { duration: 140 } }
                 Row {
                   anchors.centerIn: parent
                   spacing: 5
-                  Glyph { anchors.verticalCenter: parent.verticalCenter; text: modelData.icon; font.pixelSize: 13; color: modeBtn.current ? root.onAccent : "white" }
-                  Sub { anchors.verticalCenter: parent.verticalCenter; text: modelData.title; color: modeBtn.current ? root.onAccent : "white"; font.weight: Font.DemiBold }
+                  Glyph { anchors.verticalCenter: parent.verticalCenter; text: modelData.icon; font.pixelSize: 13; color: modeBtn.current ? root.onAccent : Color.foreground }
+                  Sub { anchors.verticalCenter: parent.verticalCenter; text: modelData.title; color: modeBtn.current ? root.onAccent : Color.foreground; font.weight: Font.DemiBold }
                 }
                 MouseArea {
                   id: modeMouse
@@ -1395,7 +1399,7 @@ Item {
             width: parent.width
             height: 28
             radius: 8
-            color: Qt.rgba(1, 1, 1, stMouse.containsMouse ? 0.18 : 0.10)
+            color: Util.alpha(Color.foreground, stMouse.containsMouse ? 0.18 : 0.10)
             Label {
               anchors.centerIn: parent
               text: "󰓅  Speed Test"
@@ -1438,13 +1442,13 @@ Item {
               width: dnsText.implicitWidth + 14
               height: 24
               radius: 12
-              color: current ? root.accent : Qt.rgba(1, 1, 1, dnsMouse.containsMouse ? 0.18 : 0.10)
+              color: current ? root.accent : Util.alpha(Color.foreground, dnsMouse.containsMouse ? 0.18 : 0.10)
               opacity: root.pendingDns && root.pendingDns === modelData ? 0.7 : 1
               Sub {
                 id: dnsText
                 anchors.centerIn: parent
                 text: modelData
-                color: parent.current ? root.onAccent : "white"
+                color: parent.current ? root.onAccent : Color.foreground
               }
               MouseArea {
                 id: dnsMouse
@@ -1768,7 +1772,7 @@ Item {
         width: parent.width
         height: 34
         radius: 17
-        color: Qt.rgba(1, 1, 1, fixMouse.containsMouse ? 0.18 : 0.10)
+        color: Util.alpha(Color.foreground, fixMouse.containsMouse ? 0.18 : 0.10)
         Row {
           anchors.centerIn: parent
           spacing: 8
@@ -1820,8 +1824,8 @@ Item {
       width: parent.width
       height: 34
       radius: 8
-      color: Qt.rgba(1, 1, 1, 0.12)
-      border.color: Qt.rgba(1, 1, 1, pwInput.activeFocus ? 0.35 : 0.12)
+      color: Util.alpha(Color.foreground, 0.12)
+      border.color: Util.alpha(Color.foreground, pwInput.activeFocus ? 0.35 : 0.12)
 
       TextInput {
         id: pwInput
@@ -1831,8 +1835,8 @@ Item {
         verticalAlignment: TextInput.AlignVCenter
         echoMode: TextInput.Password
         passwordMaskDelay: 0
-        color: "white"
-        selectionColor: Qt.rgba(1, 1, 1, 0.3)
+        color: Color.foreground
+        selectionColor: Util.alpha(Color.accent, 0.45)
         font.family: root.textFont
         font.pixelSize: 13
         clip: true
@@ -1845,7 +1849,7 @@ Item {
         verticalAlignment: Text.AlignVCenter
         visible: pwInput.text.length === 0
         text: "Password"
-        color: Qt.rgba(1, 1, 1, 0.45)
+        color: Util.alpha(Color.foreground, 0.45)
         font.family: root.textFont
         font.pixelSize: 13
       }
@@ -1856,8 +1860,8 @@ Item {
         width: 54
         height: 26
         radius: 6
-        color: pwInput.text.length > 0 ? root.accent : Qt.rgba(1, 1, 1, 0.15)
-        Label { anchors.centerIn: parent; text: "Join"; font.pixelSize: 12; color: pwInput.text.length > 0 ? root.onAccent : "white" }
+        color: pwInput.text.length > 0 ? root.accent : Util.alpha(Color.foreground, 0.15)
+        Label { anchors.centerIn: parent; text: "Join"; font.pixelSize: 12; color: pwInput.text.length > 0 ? root.onAccent : Color.foreground }
         MouseArea {
           anchors.fill: parent
           cursorShape: Qt.PointingHandCursor

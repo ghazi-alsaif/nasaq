@@ -48,16 +48,20 @@ for d in "$home/.local/state/omarchy/current/theme" "$home/.config/omarchy/curre
 done
 toml=""
 [[ -n $colors ]] && toml=$(as_user cat "$colors" 2>/dev/null || true)
-get() {   # get <key> <fallback>: a "#rrggbb" value from colors.toml, else the fallback
-  local v
-  v=$(sed -n "s/^[[:space:]]*$1[[:space:]]*=[[:space:]]*\"\(#[0-9A-Fa-f]\{6\}\)\".*/\1/p" <<<"$toml" | head -1)
-  printf '%s' "${v:-$2}"
-}
-background=$(get background "#101012")
-surface=$(get lighter_background "$background")
-fg=$(get foreground "#ffffff")
-accent=$(get accent "$fg")
-urgent=$(get red "#ff6b5e")
+# Same reading as Omarchy's shell (Commons/Color.qml), so the login screen gets
+# exactly the colours the lock screen gets from Color.*: named keys first, then
+# color0 / color7 / color4; urgent is the last "red" or "color1" in the file.
+declare -A col=()
+urgent=""
+while IFS='=' read -r k v; do
+  col[$k]=$v
+  [[ $k == red || $k == color1 ]] && urgent=$v
+done < <(sed -n 's/^[[:space:]]*\([A-Za-z0-9_-]*\)[[:space:]]*=[[:space:]]*["'"'"']\{0,1\}\(#[0-9A-Fa-f]\{6\}\).*/\1=\2/p' <<<"$toml")
+background=${col[background]:-${col[color0]:-#101315}}
+fg=${col[foreground]:-${col[color7]:-#cacccc}}
+accent=${col[accent]:-${col[color4]:-#cacccc}}
+urgent=${urgent:-#a55555}
+surface=$background   # Omarchy exposes no lighter shade; both screens use background
 
 # Monitor scale of the user's session, so the pills match the lock screen.
 scale=$(as_user env XDG_RUNTIME_DIR="/run/user/$uid" hyprctl -i 0 monitors -j 2>/dev/null \

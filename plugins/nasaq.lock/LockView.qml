@@ -42,6 +42,15 @@ Item {
 
   readonly property string textFont: "IBM Plex Sans Arabic"
   readonly property string monoFont: "JetBrains Mono"
+
+  // Colours follow the active Omarchy theme, mapped exactly like the NASAQ
+  // login screen (login/nasaq-login/Main.qml), so the two look like one.
+  // Color.* is live, so a theme change repaints the lock while it is up.
+  readonly property color fg: Color.foreground       // text, icons and the glass tint
+  readonly property color accent: Color.accent       // avatar, cursor, selection, Matrix rain
+  readonly property color surface: Color.background  // base under the wallpaper, dark panels
+  readonly property color urgent: Color.urgent       // wrong password, armed power button
+  function tint(c, a) { return Qt.rgba(c.r, c.g, c.b, a) }
   readonly property string iconFont: Style.font.family
   readonly property string userName: {
     var name = Quickshell.env("USER") || ""
@@ -160,7 +169,7 @@ Item {
       Text {
         anchors.horizontalCenter: parent.horizontalCenter
         text: Qt.locale("en_US").toString(clockColumn.now, "dddd, MMMM d")
-        color: Qt.rgba(1, 1, 1, 0.9)
+        color: root.tint(root.fg, 0.9)
         font.family: root.monoFont
         font.weight: Font.Medium
         font.pixelSize: Math.round(root.height * 0.026)
@@ -169,7 +178,7 @@ Item {
       Text {
         anchors.horizontalCenter: parent.horizontalCenter
         text: Qt.locale("en_US").toString(clockColumn.now, "h:mm AP").replace(/\s*[AP]M$/i, "")
-        color: Qt.rgba(1, 1, 1, 0.95)
+        color: root.tint(root.fg, 0.95)
         font.family: root.monoFont
         font.weight: Font.Normal
         font.pixelSize: Math.round(root.height * 0.13)
@@ -186,6 +195,8 @@ Item {
       width: Math.min(620, Math.round(root.width * 0.42))
       running: root.loadBackground
       opacity: 0.85
+      color: root.accent
+      headColor: Qt.lighter(root.accent, 1.6)
     }
 
     // ── Top-right status cluster (opens the control center) ──────────
@@ -197,8 +208,8 @@ Item {
       height: 34
       width: statusRow.implicitWidth + 24
       radius: height / 2
-      color: root.controlsOpen ? Qt.rgba(1, 1, 1, 0.28)
-           : (statusMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.18) : Qt.rgba(1, 1, 1, 0.10))
+      color: root.controlsOpen ? root.tint(root.fg, 0.28)
+           : (statusMouse.containsMouse ? root.tint(root.fg, 0.18) : root.tint(root.fg, 0.10))
       Behavior on color { ColorAnimation { duration: 120 } }
 
       Row {
@@ -210,7 +221,7 @@ Item {
           anchors.verticalCenter: parent.verticalCenter
           text: controls.layoutShort
           visible: text.length > 0
-          color: "white"
+          color: root.fg
           font.family: root.textFont
           font.weight: Font.DemiBold
           font.pixelSize: 13
@@ -218,7 +229,7 @@ Item {
         Text {
           anchors.verticalCenter: parent.verticalCenter
           text: controls.wifiIcon
-          color: "white"
+          color: root.fg
           font.family: root.iconFont
           font.pixelSize: 16
         }
@@ -229,14 +240,14 @@ Item {
           Text {
             anchors.verticalCenter: parent.verticalCenter
             text: controls.batteryPercent + "%"
-            color: "white"
+            color: root.fg
             font.family: root.textFont
             font.pixelSize: 13
           }
           Text {
             anchors.verticalCenter: parent.verticalCenter
             text: controls.batteryIcon
-            color: "white"
+            color: root.fg
             font.family: root.iconFont
             font.pixelSize: 16
           }
@@ -244,7 +255,7 @@ Item {
         Text {
           anchors.verticalCenter: parent.verticalCenter
           text: "󰔡"
-          color: "white"
+          color: root.fg
           font.family: root.iconFont
           font.pixelSize: 16
         }
@@ -286,7 +297,7 @@ Item {
       width: 38
       height: 38
       radius: 19
-      color: Qt.rgba(1, 1, 1, root.displayOpen ? 0.26 : (displayMouse.containsMouse ? 0.18 : 0.08))
+      color: root.tint(root.fg, root.displayOpen ? 0.26 : (displayMouse.containsMouse ? 0.18 : 0.08))
       opacity: root.displayOpen || displayMouse.containsMouse ? 1 : 0.6
       Behavior on color { ColorAnimation { duration: 120 } }
       Behavior on opacity { NumberAnimation { duration: 160 } }
@@ -294,7 +305,7 @@ Item {
       Text {
         anchors.centerIn: parent
         text: "󰤄"
-        color: "white"
+        color: root.fg
         font.family: root.iconFont
         font.pixelSize: 17
       }
@@ -320,8 +331,8 @@ Item {
       width: 290
       height: displayCol.implicitHeight + 28
       radius: 18
-      color: Qt.rgba(0.11, 0.11, 0.12, 0.66)
-      border.color: Qt.rgba(1, 1, 1, 0.14)
+      color: root.tint(root.surface, 0.66)
+      border.color: root.tint(root.fg, 0.14)
       border.width: 1
       transformOrigin: Item.BottomRight
       opacity: root.displayOpen ? 1 : 0
@@ -346,7 +357,7 @@ Item {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
             text: "Turn display off after"
-            color: Qt.rgba(1, 1, 1, 0.75)
+            color: root.tint(root.fg, 0.75)
             font.family: root.textFont
             font.pixelSize: 13
           }
@@ -354,7 +365,7 @@ Item {
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
             text: root.blankLabels[sleepSlider.index]
-            color: "white"
+            color: root.fg
             font.family: root.textFont
             font.weight: Font.DemiBold
             font.pixelSize: 13
@@ -380,14 +391,14 @@ Item {
             width: parent.width
             height: 4
             radius: 2
-            color: Qt.rgba(1, 1, 1, 0.18)
+            color: root.tint(root.fg, 0.18)
           }
           Rectangle {
             anchors.verticalCenter: parent.verticalCenter
             width: sleepSlider.index * sleepSlider.step
             height: 4
             radius: 2
-            color: Qt.rgba(1, 1, 1, 0.9)
+            color: root.tint(root.fg, 0.9)
           }
           Repeater {
             model: sleepSlider.count
@@ -398,7 +409,7 @@ Item {
               width: 3
               height: 3
               radius: 1.5
-              color: index <= sleepSlider.index ? Qt.rgba(0.2, 0.2, 0.22, 0.6) : Qt.rgba(1, 1, 1, 0.35)
+              color: index <= sleepSlider.index ? Util.alpha(Color.background, 0.6) : Util.alpha(Color.foreground, 0.35)
             }
           }
           Rectangle {
@@ -407,7 +418,7 @@ Item {
             width: 18
             height: 18
             radius: 9
-            color: "white"
+            color: root.fg
             border.color: Qt.rgba(0, 0, 0, 0.15)
             Behavior on x { enabled: !sleepMouse.pressed; NumberAnimation { duration: 120 } }
           }
@@ -433,14 +444,14 @@ Item {
           Text {
             anchors.left: parent.left
             text: "5 sec"
-            color: Qt.rgba(1, 1, 1, 0.45)
+            color: root.tint(root.fg, 0.45)
             font.family: root.textFont
             font.pixelSize: 10
           }
           Text {
             anchors.right: parent.right
             text: "Never"
-            color: Qt.rgba(1, 1, 1, 0.45)
+            color: root.tint(root.fg, 0.45)
             font.family: root.textFont
             font.pixelSize: 10
           }
@@ -450,7 +461,7 @@ Item {
           width: parent.width
           height: 34
           radius: 10
-          color: Qt.rgba(1, 1, 1, offMouse.containsMouse ? 0.2 : 0.12)
+          color: root.tint(root.fg, offMouse.containsMouse ? 0.2 : 0.12)
           Behavior on color { ColorAnimation { duration: 120 } }
           Row {
             anchors.centerIn: parent
@@ -458,14 +469,14 @@ Item {
             Text {
               anchors.verticalCenter: parent.verticalCenter
               text: "󰶐"
-              color: "white"
+              color: root.fg
               font.family: root.iconFont
               font.pixelSize: 15
             }
             Text {
               anchors.verticalCenter: parent.verticalCenter
               text: "Turn Off Display Now"
-              color: "white"
+              color: root.fg
               font.family: root.textFont
               font.weight: Font.DemiBold
               font.pixelSize: 13
@@ -508,7 +519,7 @@ Item {
           delegate: Text {
             required property var modelData
             text: modelData.icon
-            color: powerRow.armed === modelData.key ? "#ff6b5e" : "white"
+            color: powerRow.armed === modelData.key ? Color.urgent : Color.foreground
             opacity: pMouse.containsMouse || powerRow.armed === modelData.key ? 1 : 0.82
             scale: pMouse.containsMouse ? 1.12 : 1
             font.family: root.iconFont
@@ -539,7 +550,7 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         height: 14
         text: powerRow.armed === "off" ? "Click again to shut down" : powerRow.armed === "restart" ? "Click again to restart" : ""
-        color: Qt.rgba(1, 1, 1, 0.8)
+        color: root.tint(root.fg, 0.8)
         font.family: root.monoFont
         font.pixelSize: 11
       }
@@ -559,8 +570,8 @@ Item {
         width: 190
         height: 34
         radius: 17
-        color: Qt.rgba(1, 1, 1, 0.20)
-        border.color: Qt.rgba(1, 1, 1, 0.22)
+        color: root.tint(root.fg, 0.20)
+        border.color: root.tint(root.fg, 0.22)
         border.width: 1
         Row {
           anchors.centerIn: parent
@@ -570,11 +581,11 @@ Item {
             width: 18
             height: 18
             radius: 9
-            color: Qt.rgba(1, 1, 1, 0.9)
+            color: root.accent
             Text {
               anchors.centerIn: parent
               text: root.userName.charAt(0)
-              color: "#2c2c2e"
+              color: root.surface
               font.family: root.monoFont
               font.weight: Font.Bold
               font.pixelSize: 11
@@ -583,7 +594,7 @@ Item {
           Text {
             anchors.verticalCenter: parent.verticalCenter
             text: root.userName.toLowerCase()
-            color: "white"
+            color: root.fg
             font.family: root.monoFont
             font.weight: Font.Bold
             font.pixelSize: 14
@@ -598,8 +609,8 @@ Item {
         width: 64
         height: 64
         radius: 32
-        color: Qt.rgba(1, 1, 1, 0.22)
-        border.color: Qt.rgba(1, 1, 1, 0.35)
+        color: root.tint(root.fg, 0.22)
+        border.color: root.tint(root.fg, 0.35)
         border.width: 1
 
         Image {
@@ -631,7 +642,7 @@ Item {
           anchors.centerIn: parent
           visible: avatarImage.status !== Image.Ready
           text: root.userName.charAt(0)
-          color: "white"
+          color: root.fg
           font.family: root.textFont
           font.weight: Font.DemiBold
           font.pixelSize: 28
@@ -649,9 +660,9 @@ Item {
           width: parent.width
           height: parent.height
           radius: height / 2
-          color: Qt.rgba(1, 1, 1, passwordInput.activeFocus ? 0.26 : 0.20)
+          color: root.tint(root.fg, passwordInput.activeFocus ? 0.26 : 0.20)
           border.width: 1
-          border.color: root.errorState ? Qt.rgba(1, 0.45, 0.45, 0.8) : Qt.rgba(1, 1, 1, 0.22)
+          border.color: root.errorState ? root.tint(root.urgent, 0.8) : root.tint(root.fg, 0.22)
 
           TextInput {
             id: passwordInput
@@ -667,16 +678,16 @@ Item {
             echoMode: TextInput.Password
             passwordCharacter: "●"
             passwordMaskDelay: 0
-            color: "white"
-            selectionColor: Qt.rgba(1, 1, 1, 0.3)
-            selectedTextColor: "white"
+            color: root.fg
+            selectionColor: root.tint(root.accent, 0.45)
+            selectedTextColor: root.fg
             font.family: root.textFont
             font.pixelSize: text.length > 0 ? 11 : 13
             font.letterSpacing: text.length > 0 ? 2 : 0
             cursorVisible: activeFocus && root.showPasswordCursor
             cursorDelegate: Rectangle {
               width: 2
-              color: "white"
+              color: Color.accent
               visible: passwordInput.cursorVisible
             }
 
@@ -710,7 +721,7 @@ Item {
             textFormat: Text.PlainText
             text: root.authenticatingPassword ? "Checking…" : "Password"
             visible: passwordInput.text.length === 0
-            color: Qt.rgba(1, 1, 1, 0.85)
+            color: root.tint(root.fg, 0.85)
             font.family: root.monoFont
             font.weight: Font.Bold
             font.pixelSize: 13
@@ -729,12 +740,12 @@ Item {
             height: 24
             radius: 12
             visible: passwordInput.text.length > 0 || root.fingerprintConfigured
-            color: passwordInput.text.length > 0 ? Qt.rgba(1, 1, 1, submitMouse.containsMouse ? 0.45 : 0.32) : "transparent"
+            color: passwordInput.text.length > 0 ? root.tint(root.fg, submitMouse.containsMouse ? 0.45 : 0.32) : "transparent"
 
             Text {
               anchors.centerIn: parent
               text: passwordInput.text.length > 0 ? "󰁔" : "󰈷"
-              color: "white"
+              color: root.fg
               font.family: root.iconFont
               font.pixelSize: 15
             }
@@ -765,7 +776,7 @@ Item {
         height: 16
         text: root.errorState ? "Incorrect password, try again"
             : (root.fingerprintConfigured ? "Touch the sensor or enter password" : "")
-        color: root.errorState ? Qt.rgba(1, 0.75, 0.75, 0.95) : Qt.rgba(1, 1, 1, 0.6)
+        color: root.errorState ? Qt.lighter(root.urgent, 1.3) : root.tint(root.fg, 0.6)
         font.family: root.textFont
         font.pixelSize: 12
       }
