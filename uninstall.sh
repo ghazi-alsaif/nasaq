@@ -25,15 +25,25 @@ if [[ -f $menu ]] && grep -q '// NASAQ (added by' "$menu"; then
   echo " ✓ NASAQ removed from the Omarchy menu"
 fi
 
+# Optional parts: the login screen (back to the previous one) and the
+# terminal greeting block. ~/.config/fastfetch is left alone: it may be yours.
+if [[ -f /etc/sddm.conf.d/zz-nasaq-login.conf || -d /usr/share/sddm/themes/nasaq-login ]]; then
+  "$(dirname "$(readlink -f "$0")")/login/install-login.sh" --remove || echo " ! could not remove the login screen (needs sudo)"
+fi
+if grep -qs '# >>> NASAQ fastfetch >>>' "$HOME/.bashrc"; then
+  sed -i '/^# >>> NASAQ fastfetch >>>$/,/^# <<< NASAQ fastfetch <<<$/d' "$HOME/.bashrc"
+  echo " ✓ terminal greeting removed from ~/.bashrc"
+fi
+
 find "${C:?}/omarchy/plugins" -maxdepth 1 -name 'nasaq.*' -exec rm -rf {} +
 find "${C:?}/hypr" -maxdepth 1 -name 'nasaq-*.lua' -delete
 for s in nasaq-settings nasaq-sound nasaq-clone-check nasaq-auto-brightness nasaq-display-check nasaq-arabic-binds nasaq-keys \
-         nasaq-scratch nasaq-display nasaq-translate nasaq-ask nasaq-agent-ask nasaq-calendar nasaq-rules nasaq-auto nasaq-altwatch \
+         nasaq-scratch nasaq-display nasaq-translate nasaq-ask nasaq-agent-ask nasaq-calendar nasaq-rules nasaq-auto nasaq-altwatch nasaq-login-sync \
          hypr-quit-app screensaver-mode; do
   rm -f "${B:?}/${s:?}"
 done
 rm -f "${S:?}/omarchy-overrides/omarchy-launch-screensaver" "${S:?}/omarchy-overrides/omarchy-screensaver"
-find "${C:?}/omarchy/hooks/post-update.d" -maxdepth 1 -name 'nasaq-*.sh' -delete 2>/dev/null || true
+find "${C:?}/omarchy/hooks/post-update.d" "${C:?}/omarchy/hooks/theme-set.d" -maxdepth 1 -name 'nasaq-*.sh' -delete 2>/dev/null || true
 systemctl --user disable --now nasaq-auto-brightness.service >/dev/null 2>&1 || true
 for t in "$C"/systemd/user/nasaq-auto-*.timer; do [[ -e $t ]] && systemctl --user disable --now "$(basename "$t")" >/dev/null 2>&1; done || true
 

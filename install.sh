@@ -120,6 +120,48 @@ if [[ ! -f /etc/udev/rules.d/69-nasaq-input.rules ]]; then
   fi
 fi
 
+# Optional: the NASAQ login screen (SDDM theme following the Omarchy theme,
+# see login/install-login.sh for the files and the one sudoers rule). Offered while it is not
+# installed (--update too); once installed it is refreshed when the repository's
+# copy changed.
+if [[ ! -f /etc/sddm.conf.d/zz-nasaq-login.conf ]]; then
+  if $YES || { command -v gum >/dev/null && gum confirm "Install the NASAQ login screen (SDDM theme, needs sudo)?"; }; then
+    "$R/login/install-login.sh" || warn "login screen not installed"
+  else
+    warn "optional, not installed: the NASAQ login screen (later: login/install-login.sh)"
+  fi
+elif ! cmp -s "$R/login/nasaq-login/Main.qml" /usr/share/sddm/themes/nasaq-login/Main.qml ||
+     ! cmp -s "$R/login/nasaq-login/MatrixRain.qml" /usr/share/sddm/themes/nasaq-login/MatrixRain.qml ||
+     ! cmp -s "$R/bin/nasaq-login-sync" /usr/local/bin/nasaq-login-sync; then
+  "$R/login/install-login.sh" || warn "login screen not refreshed"
+fi
+
+# Optional: system info (fastfetch) when a terminal opens. Never overwrites an
+# existing ~/.config/fastfetch; the ~/.bashrc block sits between markers so
+# uninstall.sh can take exactly it out again.
+if ! grep -qs '# >>> NASAQ fastfetch >>>' "$HOME/.bashrc"; then
+  if $YES || { command -v gum >/dev/null && gum confirm "Show system info (fastfetch) when a terminal opens?"; }; then
+    command -v fastfetch >/dev/null || omarchy pkg add fastfetch || true
+    if command -v fastfetch >/dev/null; then
+      [[ -e $C/fastfetch ]] || { mkdir -p "$C/fastfetch" && cp "$R"/fastfetch/* "$C/fastfetch/"; }
+      [[ ! -s $HOME/.bashrc || $(tail -c1 "$HOME/.bashrc") == "" ]] || echo >> "$HOME/.bashrc"
+      cat >> "$HOME/.bashrc" <<'EOF'
+# >>> NASAQ fastfetch >>>
+# System info when a terminal opens (added by NASAQ's install.sh, removed by uninstall.sh).
+if [[ $- == *i* && -t 1 ]] && command -v fastfetch >/dev/null; then
+  if [[ -f ~/.config/fastfetch/compact.jsonc ]]; then fastfetch -c ~/.config/fastfetch/compact.jsonc; else fastfetch; fi
+fi
+# <<< NASAQ fastfetch <<<
+EOF
+      say "terminal greeting added to ~/.bashrc"
+    else
+      warn "fastfetch is not installed, so no terminal greeting"
+    fi
+  else
+    warn "optional, not installed: the terminal greeting (fastfetch)"
+  fi
+fi
+
 nasaq-arabic-binds on >/dev/null 2>&1 || true
 nasaq-scratch apply >/dev/null 2>&1 || true
 omarchy-shell -q shell rescanPlugins || true
