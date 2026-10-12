@@ -123,8 +123,21 @@ as_user bash -s -- "$PDST/templates" "$utmp/ply" "$fg" "$accent" "$background" "
 set -euo pipefail
 tpl=$1 out=$2 fg=$3 accent=$4 bg=$5 name=$6 wall=$7
 cd "$out"
+# Font files through fontconfig, so the name ImageMagick expects does not matter:
+# plain JetBrains Mono on one machine, the Nerd Font build on another, and any
+# monospace font when neither is installed.
+font() {   # font <Regular|Medium|Bold>: path of the font file to use
+  local f
+  for q in "JetBrains Mono:style=$1" "JetBrainsMono Nerd Font:style=$1" "JetBrainsMono NF:style=$1" "monospace:style=$1"; do
+    f=$(fc-match -f '%{file}' "$q" 2>/dev/null)
+    [[ -n $f && -r $f ]] && { printf '%s' "$f"; return; }
+  done
+  fc-match -f '%{file}' monospace
+}
+F_REGULAR=$(font Regular); F_MEDIUM=$(font Medium); F_BOLD=$(font Bold)
 word() {   # word <text> <weight> <size> <opacity> <file>
-  magick -background none -fill "$fg" -font "JetBrains-Mono-$2" -pointsize "$3" label:"$1" \
+  local ff; case $2 in Bold) ff=$F_BOLD ;; Medium) ff=$F_MEDIUM ;; *) ff=$F_REGULAR ;; esac
+  magick -background none -fill "$fg" -font "$ff" -pointsize "$3" label:"$1" \
     -channel A -evaluate multiply "$4" +channel "$5"
 }
 word "Hello" Regular 140 0.95 hello.png
@@ -154,9 +167,9 @@ rm -f body.png head.png headm.png mask.png
 # Name pill, like the lock screen's: glass pill, accent avatar with the initial.
 initial=$(printf '%s' "${name:0:1}" | tr '[:lower:]' '[:upper:]')
 rgb=$(magick xc:"$fg" -format '%[fx:int(255*r)],%[fx:int(255*g)],%[fx:int(255*b)]' info:)
-magick -background none -fill "$fg" -font JetBrains-Mono-Bold -pointsize 14 label:"$name" name.png
+magick -background none -fill "$fg" -font "$F_BOLD" -pointsize 14 label:"$name" name.png
 magick -size 18x18 xc:none -fill "$accent" -draw "circle 8.5,8.5 8.5,0" \
-  -fill "$bg" -font JetBrains-Mono-Bold -pointsize 11 -gravity center -annotate +0+0 "$initial" avatar.png
+  -fill "$bg" -font "$F_BOLD" -pointsize 11 -gravity center -annotate +0+0 "$initial" avatar.png
 nw=$(magick identify -format %w name.png); x0=$(( (190 - 25 - nw) / 2 )); (( x0 > 4 )) || x0=4
 magick -size 190x34 xc:none -fill "rgba($rgb,0.20)" -stroke "rgba($rgb,0.22)" -strokewidth 1 \
   -draw "roundrectangle 0.5,0.5 189.5,33.5 16.5,16.5" \
