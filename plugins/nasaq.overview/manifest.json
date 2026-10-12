@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "nasaq.overview",
   "name": "Mission Control",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": "NASAQ (GHS)",
   "description": "macOS-style overview of windows and workspaces with live previews",
   "kinds": [

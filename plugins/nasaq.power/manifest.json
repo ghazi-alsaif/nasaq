@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "nasaq.power",
   "name": "Power Behaviour",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": "NASAQ (GHS)",
   "description": "Apple-style Low Power Mode and per-profile behaviour",
   "kinds": [

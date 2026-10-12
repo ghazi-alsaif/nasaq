@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "nasaq.workspaces",
   "name": "Workspaces",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": "NASAQ (GHS)",
   "description": "Workspace number indicators",
   "kinds": [

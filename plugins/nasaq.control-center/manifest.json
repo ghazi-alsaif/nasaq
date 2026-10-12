@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "nasaq.control-center",
   "name": "Control Center",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": "NASAQ (GHS)",
   "description": "macOS-style control center: Wi-Fi, Bluetooth, keyboard, battery, brightness, sound, power",
   "kinds": [

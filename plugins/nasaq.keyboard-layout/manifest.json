@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "nasaq.keyboard-layout",
   "name": "Keyboard Layout",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": "NASAQ (GHS)",
   "description": "Current xkb layout, click cycles",
   "kinds": [
