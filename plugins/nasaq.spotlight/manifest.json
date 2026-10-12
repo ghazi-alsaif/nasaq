@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "nasaq.spotlight",
   "name": "Spotlight",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "NASAQ (GHS)",
   "description": "macOS-style search: apps, files, calculator, currency, units, web",
   "kinds": [

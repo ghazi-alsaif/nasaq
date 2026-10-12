@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 1.1.0 — 2026-10-12
+The session screens follow the theme: boot, login, lock and shutdown now share one look and take their colours from the active Omarchy theme. Tested with clean installs on two machines.
+
 - Boot screens: fonts are resolved through fontconfig, so the images render whether plain JetBrains Mono or its Nerd Font build is installed (found on the iMac, which only has the Nerd Font).
 - Boot and shutdown screens (optional installer step): a Plymouth theme, `nasaq`, in the same look as the lock and login screens, with the disk-unlock pill, the Matrix rain and the greeting per mode (Hello on boot, See you soon on restart, Goodbye on shutdown). `nasaq-login-sync` renders every image in the theme's colours (words in JetBrains Mono, like the lock screen's clock; the name pill uses the account name) and fills the theme colours into the script. It rebuilds the boot image once, only when the images changed. The theme-set hook now runs the helper in the background, and runs are serialised. uninstall.sh restores the previous Plymouth theme.
 - Sentence case on the session screens: "Hello", "See you soon" and "Goodbye", and on the lock screen and control center "Turn off display now", "Do not disturb", "Power mode", "Shut down", "Fix speakers", "Known networks", "Other networks", "Nearby devices", "Not connected", "Wi-Fi settings…" and "Bluetooth settings…". The user name shows exactly as the account has it (it was lowercased).
