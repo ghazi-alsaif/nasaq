@@ -111,6 +111,8 @@ The Shortcuts page lists all shortcuts, Omarchy's and NASAQ's. Each can be chang
 ### More
 
 - **Lock screen** with separate password and fingerprint flows, matching the theme.
+- **Login screen** (optional): an SDDM theme in the same look as the lock screen. It follows the active Omarchy theme (every colour, and your wallpaper blurred behind it) and updates on each theme change. With autologin it only shows after logging out.
+- **Terminal greeting** (optional): system info from fastfetch each time a terminal opens.
 - **Power**: an Apple-style Low Power Mode and per-profile behaviour (Saver, Balanced, Performance).
 - **Display**: resolution, scale and position with a 15-second automatic revert, and auto-brightness from the ambient sensor or the clock.
 - **Translation**: `SUPER + CTRL + ALT + L` translates the selected text; add SHIFT to OCR and translate a region of the screen. Both use your default Omarchy agent.
@@ -165,7 +167,8 @@ The installer:
 3. adds one `pcall(dofile, ...)` line to each of `hyprland.lua`, `looknfeel.lua` and `bindings.lua`, so NASAQ's layers load with yours;
 4. adds NASAQ's widgets to the bar and NASAQ's entries to the Omarchy menu;
 5. offers the optional packages and the udev rule for the App Switcher (`sudo` for that one step);
-6. restarts the shell.
+6. offers the NASAQ login screen (`sudo`; installs the theme to `/usr/share/sddm/themes/nasaq-login` and selects it in `/etc/sddm.conf.d/zz-nasaq-login.conf`; to follow theme changes it adds one sudoers rule, `/etc/sudoers.d/nasaq-login`, that lets you run a single root-owned helper, `/usr/local/bin/nasaq-login-sync`, and nothing else) and the terminal greeting (a marked block in `~/.bashrc`; an existing `~/.config/fastfetch` is never overwritten). `--update` offers them too while they are not installed;
+7. restarts the shell.
 
 `./install.sh --yes` accepts every optional step. When it finishes, press `SUPER + ALT + N`.
 
@@ -185,6 +188,8 @@ cd ~/.local/share/nasaq && ./update.sh
 cd ~/.local/share/nasaq && ./uninstall.sh          # restores the backed-up files
 cd ~/.local/share/nasaq && ./uninstall.sh --purge  # also removes NASAQ's settings
 ```
+
+The login screen goes back to the one you had before, and the terminal greeting block comes out of `~/.bashrc`. `~/.config/fastfetch` stays, since it may be your own.
 
 ## Where things live
 

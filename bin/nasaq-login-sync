@@ -1,0 +1,94 @@
+#!/bin/bash
+# Make the NASAQ login screen follow the active Omarchy theme.
+#   sudo /usr/local/bin/nasaq-login-sync
+# Runs as root (SDDM's theme folder is root's) through the one sudoers rule
+# NASAQ's installer adds for the installing user, from the theme-set hook and
+# at the end of the install step. It takes no arguments. It reads the theme's
+# colours and the wallpaper of the user who called sudo, writes
+# /usr/share/sddm/themes/nasaq-login/theme.conf and background.jpg (root-owned,
+# world-readable) and records that session's monitor scale.
+#
+# Safety: every user file is read by the user (runuser), never by root, so a
+# symlink swapped in after the checks cannot make root copy a file the user
+# could not read. Paths are resolved with readlink -f and must be regular files
+# under the user's home or /usr/share/omarchy.
+set -euo pipefail
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
+if (( EUID != 0 )); then exec sudo -n /usr/local/bin/nasaq-login-sync; fi
+
+DST=/usr/share/sddm/themes/nasaq-login
+die() { echo "nasaq-login-sync: $1" >&2; exit 1; }
+[[ -d $DST && ! -L $DST ]] || die "the NASAQ login screen is not installed"
+user=${SUDO_USER:-}
+[[ -n $user && $user != root ]] || die "run it through sudo as the desktop user"
+home=$(getent passwd "$user" | cut -d: -f6)
+uid=$(id -u "$user")
+[[ -d $home ]] || die "no home for $user"
+
+allowed() {   # allowed <resolved path>: a regular file in a place we trust
+  [[ -f $1 && ! -L $1 ]] || return 1
+  case $1 in "$home"/*|/usr/share/omarchy/*) return 0 ;; esac
+  return 1
+}
+as_user() { runuser -u "$user" -- "$@"; }
+
+# Root writes only into rtmp (root's, mode 0700). The user's ImageMagick writes
+# into utmp, and its output is read back by the user, so nothing the user can
+# plant in utmp (a symlink, say) is ever written through by root.
+rtmp=$(mktemp -d)
+utmp=$(mktemp -d)
+trap 'rm -rf "${rtmp:?}" "${utmp:?}"' EXIT
+chown "$user" "$utmp"
+
+# Theme colours (Omarchy 4 keeps the current theme in ~/.local/state).
+colors=""
+for d in "$home/.local/state/omarchy/current/theme" "$home/.config/omarchy/current/theme"; do
+  c=$(readlink -f "$d/colors.toml" 2>/dev/null || true)
+  if [[ -n $c ]] && allowed "$c"; then colors=$c; break; fi
+done
+toml=""
+[[ -n $colors ]] && toml=$(as_user cat "$colors" 2>/dev/null || true)
+get() {   # get <key> <fallback>: a "#rrggbb" value from colors.toml, else the fallback
+  local v
+  v=$(sed -n "s/^[[:space:]]*$1[[:space:]]*=[[:space:]]*\"\(#[0-9A-Fa-f]\{6\}\)\".*/\1/p" <<<"$toml" | head -1)
+  printf '%s' "${v:-$2}"
+}
+background=$(get background "#101012")
+surface=$(get lighter_background "$background")
+fg=$(get foreground "#ffffff")
+accent=$(get accent "$fg")
+urgent=$(get red "#ff6b5e")
+
+# Monitor scale of the user's session, so the pills match the lock screen.
+scale=$(as_user env XDG_RUNTIME_DIR="/run/user/$uid" hyprctl -i 0 monitors -j 2>/dev/null \
+  | jq -r '[.[] | select(.focused)][0].scale // .[0].scale // 1' 2>/dev/null || true)
+[[ $scale =~ ^[0-9]+([.][0-9]+)?$ ]] || scale=1
+
+# Wallpaper: blurred like the lock screen. ImageMagick runs as the user.
+wall=""
+for w in "$home/.local/state/omarchy/current/background" "$home/.config/omarchy/current/background"; do
+  r=$(readlink -f "$w" 2>/dev/null || true)
+  if [[ -n $r ]] && allowed "$r"; then wall=$r; break; fi
+done
+if [[ -n $wall ]]; then
+  if command -v magick >/dev/null; then
+    as_user magick "$wall" -resize '2560x1440^' -gravity center -extent 2560x1440 -blur 0x20 -quality 85 "$utmp/background.jpg" &&
+      as_user cat "$utmp/background.jpg" > "$rtmp/background.jpg" || true
+  elif [[ $wall == *.jpg || $wall == *.jpeg ]]; then
+    as_user cat "$wall" > "$rtmp/background.jpg" || true
+  fi
+fi
+
+cat > "$rtmp/theme.conf" <<EOF
+[General]
+uiScale=$scale
+background=background.jpg
+surface="$surface"
+fg="$fg"
+accent="$accent"
+rainColor="$accent"
+urgent="$urgent"
+EOF
+install -o root -g root -m 0644 "$rtmp/theme.conf" "$DST/theme.conf"
+if [[ -s $rtmp/background.jpg ]]; then install -o root -g root -m 0644 "$rtmp/background.jpg" "$DST/background.jpg"; fi
+echo "login screen follows the theme: accent $accent, text $fg, scale $scale${wall:+, wallpaper ${wall##*/}}"

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+- Login screen (optional installer step): an SDDM theme in the same look as the lock screen, following the active Omarchy theme. Every colour (text, glass pills, avatar, cursor, selection, errors, Matrix rain in the theme accent) and the blurred wallpaper come from the theme, and a theme-set hook refreshes them on every theme change. A root-owned helper, `/usr/local/bin/nasaq-login-sync`, writes the colours and wallpaper; the step adds one sudoers rule that allows only that helper. It is installed in its own folder with `/etc/sddm.conf.d/zz-nasaq-login.conf`, since Omarchy has no setting for a custom login theme. uninstall.sh restores the previous login screen.
+- Terminal greeting (optional installer step): fastfetch with NASAQ's compact layout when a terminal opens. The step adds a marked block to `~/.bashrc` and never overwrites an existing `~/.config/fastfetch`. uninstall.sh removes the block.
+- Optional installer steps are also offered under `--update` while they are not installed.
+
 ## 1.0.5 — 2026-10-12
 - Bar launchers: a new `bars.extraLaunchers` setting adds buttons after the default (or customised) launchers instead of replacing them. Settings > Bars & Panels now has editors for both lists (add, edit, remove).
 - Tasks and notes moved out of the clone folder: they now live in `~/.local/share/nasaq-data/notes.json`. The desktop widget moves the old `~/.local/share/nasaq/notes.json` there once on startup, so nothing NASAQ writes at runtime ends up inside the repository any more.
