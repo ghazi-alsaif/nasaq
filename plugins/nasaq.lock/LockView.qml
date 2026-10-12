@@ -475,7 +475,7 @@ Item {
             }
             Text {
               anchors.verticalCenter: parent.verticalCenter
-              text: "Turn Off Display Now"
+              text: "Turn off display now"
               color: root.fg
               font.family: root.textFont
               font.weight: Font.DemiBold
@@ -593,7 +593,7 @@ Item {
           }
           Text {
             anchors.verticalCenter: parent.verticalCenter
-            text: root.userName.toLowerCase()
+            text: root.userName
             color: root.fg
             font.family: root.monoFont
             font.weight: Font.Bold

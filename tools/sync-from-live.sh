@@ -25,6 +25,13 @@ cp "$C/omarchy/nasaq/windows-default.json" "$R/defaults/windows-default.json"
 if [[ -d $HOME/.local/share/nasaq-login ]]; then
   for f in Main.qml MatrixRain.qml metadata.desktop; do cp "$HOME/.local/share/nasaq-login/$f" "$R/login/nasaq-login/$f"; done
 fi
+# Boot screens: the user copy of the templates (the rendered images are per theme and stay out).
+if [[ -d $HOME/.local/share/nasaq-plymouth ]]; then
+  cp "$HOME"/.local/share/nasaq-plymouth/{nasaq.script.in,nasaq.plymouth.in} "$R/login/nasaq-plymouth/"
+  for f in entry bullet progress_box progress_bar trail0 trail1 trail2 trail3 trail4 trail5 trail6 trail7; do
+    cp "$HOME/.local/share/nasaq-plymouth/$f.png" "$R/login/nasaq-plymouth/"
+  done
+fi
 echo "synced into $R"
 # Privacy gate: nothing personal may leave this machine.
 if grep -rnIiE "ghazi|hostinger|147\.93|myvps|movieboxpro|حائل|buraydah|27\.52188|al\.saif" "$R"/{plugins,hypr,bin,overrides,hooks,help,defaults,login,fastfetch} 2>/dev/null; then

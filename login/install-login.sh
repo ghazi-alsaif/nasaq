@@ -20,22 +20,21 @@
 # Omarchy's 99-omarchy-login.conf (Current=omarchy) and autologin.conf.
 set -euo pipefail
 R="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+# shellcheck source=login/lib.sh
+source "$R/login/lib.sh"   # HELPER, SUDOERS, MARK and the shared helper/rule steps
 SRC="$R/login/nasaq-login"
 USERCOPY="$HOME/.local/share/nasaq-login"
 DST=/usr/share/sddm/themes/nasaq-login
 CONF=/etc/sddm.conf.d/zz-nasaq-login.conf
-HELPER=/usr/local/bin/nasaq-login-sync
-SUDOERS=/etc/sudoers.d/nasaq-login
-MARK="# Written by NASAQ (login/install-login.sh)"
 BACKUP="$HOME/.local/state/nasaq/sddm-backup"
 
 (( EUID != 0 )) || { echo "Run as your user (it asks for sudo itself)." >&2; exit 1; }
-user=$(id -un)
 
 if [[ ${1:-} == --remove ]]; then
-  sudo rm -f "$CONF" "$SUDOERS" "$HELPER"
+  sudo rm -f "$CONF"
   if [[ -f $BACKUP/${CONF##*/} ]]; then sudo install -m644 "$BACKUP/${CONF##*/}" "$CONF" && rm -f "$BACKUP/${CONF##*/}"; fi
   sudo rm -rf "${DST:?}"
+  remove_helper_if_unused
   echo " ✓ login screen back to the previous one"
   exit 0
 fi
@@ -45,19 +44,12 @@ fi
 mkdir -p "$USERCOPY"
 for f in Main.qml MatrixRain.qml metadata.desktop theme.conf; do cp "$SRC/$f" "$USERCOPY/$f"; done
 
-# 2. The sudoers rule, checked before it goes in. No arguments allowed ("").
-rule=$(mktemp)
-trap 'rm -f "${rule:?}"' EXIT
-printf '%s\n%s ALL=(root) NOPASSWD: %s ""\n' "$MARK" "$user" "$HELPER" > "$rule"
-visudo -cf "$rule" >/dev/null || { echo "sudoers rule failed validation; nothing installed." >&2; exit 1; }
-
-# 3. System files.
-sudo install -d -o root -g root -m 0755 "$DST" /etc/sddm.conf.d /usr/local/bin
+# 2. Helper and rule (shared with the boot screens), then the system files.
+install_helper_and_rule
+sudo install -d -o root -g root -m 0755 "$DST" /etc/sddm.conf.d
 for f in Main.qml MatrixRain.qml metadata.desktop theme.conf; do
   sudo install -o root -g root -m 0644 "$USERCOPY/$f" "$DST/$f"
 done
-sudo install -o root -g root -m 0755 "$R/bin/nasaq-login-sync" "$HELPER"
-sudo install -o root -g root -m 0440 "$rule" "$SUDOERS"
 # Keep a config of the same name that NASAQ did not write, for --remove.
 if [[ -f $CONF ]] && ! grep -qF "$MARK" "$CONF"; then
   mkdir -p "$BACKUP"; cp "$CONF" "$BACKUP/"
@@ -69,6 +61,6 @@ for f in /etc/sddm.conf.d/*.conf; do
   [[ $f > $CONF ]] && grep -q '^\[Theme\]' "$f" && echo " ! $f comes after $CONF and also sets a theme" >&2
 done
 
-# 4. Match the current theme right away (the same call the theme-set hook makes).
+# 3. Match the current theme right away (the same call the theme-set hook makes).
 sudo -n "$HELPER" || echo " ! could not run $HELPER; the login screen keeps its default colours" >&2
 echo " ✓ login screen installed (shows after logging out; autologin skips it)"

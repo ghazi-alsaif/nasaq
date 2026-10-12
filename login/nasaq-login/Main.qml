@@ -4,7 +4,7 @@ import SddmComponents 2.0
 
 // NASAQ login screen, in the same look as the NASAQ lock screen:
 // blurred wallpaper, big clock, Matrix rain, avatar + password pill, a
-// keyboard-layout pill top-right and Sleep / Restart / Shut Down bottom-right.
+// keyboard-layout pill top-right and Shut down / Restart / Sleep at the bottom.
 Rectangle {
   id: root
   width: 1920
@@ -209,7 +209,7 @@ Rectangle {
         }
         Text {
           anchors.verticalCenter: parent.verticalCenter
-          text: root.currentUser.toLowerCase()
+          text: root.currentUser
           color: root.fg
           font.family: root.monoFont
           font.weight: Font.Bold

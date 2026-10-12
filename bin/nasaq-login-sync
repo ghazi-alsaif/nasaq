@@ -1,12 +1,16 @@
 #!/bin/bash
-# Make the NASAQ login screen follow the active Omarchy theme.
+# Make the NASAQ login screen and boot/shutdown screens follow the active
+# Omarchy theme.
 #   sudo /usr/local/bin/nasaq-login-sync
-# Runs as root (SDDM's theme folder is root's) through the one sudoers rule
-# NASAQ's installer adds for the installing user, from the theme-set hook and
-# at the end of the install step. It takes no arguments. It reads the theme's
-# colours and the wallpaper of the user who called sudo, writes
-# /usr/share/sddm/themes/nasaq-login/theme.conf and background.jpg (root-owned,
-# world-readable) and records that session's monitor scale.
+# Runs as root (the SDDM and Plymouth theme folders are root's) through the one
+# sudoers rule NASAQ's installer adds for the installing user, from the
+# theme-set hook and at the end of the install steps. It takes no arguments.
+# It reads the theme's colours and the wallpaper of the user who called sudo:
+#   login screen  /usr/share/sddm/themes/nasaq-login: theme.conf, background.jpg
+#   boot screens  /usr/share/plymouth/themes/nasaq: images rendered in the theme
+#                 colours, nasaq.script and nasaq.plymouth from their templates;
+#                 the boot image (initramfs) is rebuilt once when they changed
+# Each part is skipped when its folder is missing. Runs are serialised.
 #
 # Safety: every user file is read by the user (runuser), never by root, so a
 # symlink swapped in after the checks cannot make root copy a file the user
@@ -17,8 +21,15 @@ export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
 if (( EUID != 0 )); then exec sudo -n /usr/local/bin/nasaq-login-sync; fi
 
 DST=/usr/share/sddm/themes/nasaq-login
+PDST=/usr/share/plymouth/themes/nasaq
 die() { echo "nasaq-login-sync: $1" >&2; exit 1; }
-[[ -d $DST && ! -L $DST ]] || die "the NASAQ login screen is not installed"
+login=false; plymouth=false
+[[ -d $DST && ! -L $DST ]] && login=true
+[[ -d $PDST && ! -L $PDST && -d $PDST/templates ]] && plymouth=true
+$login || $plymouth || die "neither the NASAQ login screen nor the boot screens are installed"
+# One run at a time (the theme-set hook starts it in the background).
+exec 9>/run/lock/nasaq-login-sync.lock
+flock 9
 user=${SUDO_USER:-}
 [[ -n $user && $user != root ]] || die "run it through sudo as the desktop user"
 home=$(getent passwd "$user" | cut -d: -f6)
@@ -83,7 +94,8 @@ if [[ -n $wall ]]; then
   fi
 fi
 
-cat > "$rtmp/theme.conf" <<EOF
+if $login; then
+  cat > "$rtmp/theme.conf" <<EOF
 [General]
 uiScale=$scale
 background=background.jpg
@@ -93,6 +105,97 @@ accent="$accent"
 rainColor="$accent"
 urgent="$urgent"
 EOF
-install -o root -g root -m 0644 "$rtmp/theme.conf" "$DST/theme.conf"
-if [[ -s $rtmp/background.jpg ]]; then install -o root -g root -m 0644 "$rtmp/background.jpg" "$DST/background.jpg"; fi
-echo "login screen follows the theme: accent $accent, text $fg, scale $scale${wall:+, wallpaper ${wall##*/}}"
+  install -o root -g root -m 0644 "$rtmp/theme.conf" "$DST/theme.conf"
+  if [[ -s $rtmp/background.jpg ]]; then install -o root -g root -m 0644 "$rtmp/background.jpg" "$DST/background.jpg"; fi
+  echo "login screen follows the theme: accent $accent, text $fg, scale $scale${wall:+, wallpaper ${wall##*/}}"
+fi
+
+$plymouth || exit 0
+
+# ── Boot and shutdown screens (Plymouth) ─────────────────────────────────────
+# The images are rendered by the user (ImageMagick, the user's fonts) from the
+# root-owned templates into utmp/ply, read back by the user into rtmp/ply, and
+# only then installed by root. Words in JetBrains Mono, like the lock screen's
+# clock, date and pills.
+mkdir -p "$rtmp/ply"
+as_user mkdir -p "$utmp/ply"
+as_user bash -s -- "$PDST/templates" "$utmp/ply" "$fg" "$accent" "$background" "$user" "$wall" <<'RENDER' || die "could not render the boot screen images"
+set -euo pipefail
+tpl=$1 out=$2 fg=$3 accent=$4 bg=$5 name=$6 wall=$7
+cd "$out"
+word() {   # word <text> <weight> <size> <opacity> <file>
+  magick -background none -fill "$fg" -font "JetBrains-Mono-$2" -pointsize "$3" label:"$1" \
+    -channel A -evaluate multiply "$4" +channel "$5"
+}
+word "Hello" Regular 140 0.95 hello.png
+word "See you soon" Regular 120 0.95 soon.png
+word "Goodbye" Regular 140 0.95 goodbye.png
+word "Unlock to start up" Medium 28 0.9 sub.png
+word "Restarting" Medium 28 0.9 sub-reboot.png
+word "Shutting down" Medium 28 0.9 sub-shutdown.png
+word "Password" Bold 13 0.85 placeholder.png
+for f in entry bullet progress_box progress_bar; do
+  magick "$tpl/$f.png" -fill "$fg" -colorize 100 "$f.png"
+done
+# Rain: the old drops' shapes and alpha in the accent, the way the lock and
+# login screens draw it; the bright head of each drop in a lighter accent.
+light=$(awk -v r=$((16#${accent:1:2})) -v g=$((16#${accent:3:2})) -v b=$((16#${accent:5:2})) \
+  'BEGIN { printf "#%02x%02x%02x", r + (255 - r) * 0.45, g + (255 - g) * 0.45, b + (255 - b) * 0.45 }')
+for i in 0 1 2 3 4 5 6 7; do
+  magick "$tpl/trail$i.png" -fill "$accent" -colorize 100 body.png
+  magick "$tpl/trail$i.png" -fill "$light" -colorize 100 head.png
+  magick "$tpl/trail$i.png" -alpha off -colorspace gray -threshold 85% mask.png
+  # The head keeps its own alpha, limited to the bright pixels.
+  magick head.png \( +clone -alpha extract mask.png -compose multiply -composite \) \
+    -alpha off -compose CopyOpacity -composite headm.png
+  magick body.png headm.png -compose over -composite "trail$i.png"
+done
+rm -f body.png head.png headm.png mask.png
+# Name pill, like the lock screen's: glass pill, accent avatar with the initial.
+initial=$(printf '%s' "${name:0:1}" | tr '[:lower:]' '[:upper:]')
+rgb=$(magick xc:"$fg" -format '%[fx:int(255*r)],%[fx:int(255*g)],%[fx:int(255*b)]' info:)
+magick -background none -fill "$fg" -font JetBrains-Mono-Bold -pointsize 14 label:"$name" name.png
+magick -size 18x18 xc:none -fill "$accent" -draw "circle 8.5,8.5 8.5,0" \
+  -fill "$bg" -font JetBrains-Mono-Bold -pointsize 11 -gravity center -annotate +0+0 "$initial" avatar.png
+nw=$(magick identify -format %w name.png); x0=$(( (190 - 25 - nw) / 2 )); (( x0 > 4 )) || x0=4
+magick -size 190x34 xc:none -fill "rgba($rgb,0.20)" -stroke "rgba($rgb,0.22)" -strokewidth 1 \
+  -draw "roundrectangle 0.5,0.5 189.5,33.5 16.5,16.5" \
+  avatar.png -gravity west -geometry "+$x0+0" -composite \
+  name.png -gravity west -geometry "+$((x0 + 25))+0" -composite namepill.png
+rm -f name.png avatar.png
+if [[ -n $wall ]]; then
+  magick "$wall" -resize '1920x1080^' -gravity center -extent 1920x1080 -blur 0x20 background.png
+else
+  magick -size 1920x1080 xc:"$bg" background.png
+fi
+# No timestamps in the files, so an unchanged theme gives identical bytes and
+# the boot image is only rebuilt when something really changed.
+for f in *.png; do magick "$f" -define png:exclude-chunks=date,time "$f"; done
+RENDER
+for f in "$utmp"/ply/*.png; do
+  n=${f##*/}
+  [[ $n =~ ^[a-z0-9_-]+\.png$ ]] || continue
+  as_user cat "$f" > "$rtmp/ply/$n"
+done
+# Script and theme file from the templates, with the theme colours filled in.
+frac() {   # "#rrggbb" -> "r, g, b" as 0..1 fractions, the way Plymouth wants them
+  awk -v r=$((16#${1:1:2})) -v g=$((16#${1:3:2})) -v b=$((16#${1:5:2})) 'BEGIN { printf "%.3f, %.3f, %.3f", r/255, g/255, b/255 }'
+}
+sed -e "s/@BG_RGB@/$(frac "$background")/" -e "s/@URGENT_RGB@/$(frac "$urgent")/" "$PDST/templates/nasaq.script.in" > "$rtmp/ply/nasaq.script"
+sed -e "s/@CONSOLE_BG@/0x${background:1}/" "$PDST/templates/nasaq.plymouth.in" > "$rtmp/ply/nasaq.plymouth"
+
+# Checksums of the rendered files (none yet on the first run, hence nullglob and || true).
+sums() { (shopt -s nullglob; cd "$PDST" && sha256sum -- *.png nasaq.script nasaq.plymouth 2>/dev/null || true) | sort; }
+before=$(sums)
+for f in "$rtmp"/ply/*; do install -o root -g root -m 0644 "$f" "$PDST/${f##*/}"; done
+after=$(sums)
+
+if [[ $before == "$after" ]]; then
+  echo "boot screens unchanged; boot image not rebuilt"
+elif [[ $(plymouth-set-default-theme 2>/dev/null) != nasaq ]]; then
+  echo "boot screens updated (not the active Plymouth theme, so the boot image was not rebuilt)"
+else
+  if command -v limine-mkinitcpio >/dev/null; then limine-mkinitcpio >/dev/null 2>&1; else mkinitcpio -P >/dev/null 2>&1; fi \
+    && echo "boot screens updated; boot image rebuilt" \
+    || die "boot screens updated, but rebuilding the boot image failed"
+fi

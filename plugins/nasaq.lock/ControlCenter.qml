@@ -981,7 +981,7 @@ Item {
               height: (parent.height - parent.spacing) / 2
               icon: root.wifiOn ? "󰖩" : "󰖪"
               title: "Wi-Fi"
-              subtitle: !root.wifiOn ? "Off" : (root.ssid.length > 0 ? root.ssid : "Not Connected")
+              subtitle: !root.wifiOn ? "Off" : (root.ssid.length > 0 ? root.ssid : "Not connected")
               on: root.wifiOn
               onToggled: { Networking.wifiEnabled = !Networking.wifiEnabled; root.interacted() }
               onExpand: root.openPage("wifi")
@@ -1062,7 +1062,7 @@ Item {
               Row {
                 spacing: 7
                 Glyph { anchors.verticalCenter: parent.verticalCenter; text: root.dnd ? "󰂛" : "󰂚"; font.pixelSize: 14; color: root.dnd ? root.onAccent : Color.foreground }
-                Label { anchors.verticalCenter: parent.verticalCenter; text: "Do Not Disturb"; color: root.dnd ? root.onAccent : Color.foreground }
+                Label { anchors.verticalCenter: parent.verticalCenter; text: "Do not disturb"; color: root.dnd ? root.onAccent : Color.foreground }
               }
               Sub { width: parent.width; color: root.dnd ? root.onAccent : Util.alpha(Color.foreground, 0.6); text: root.dnd ? "On" : "Off" }
             }
@@ -1098,7 +1098,7 @@ Item {
           anchors.verticalCenter: parent.verticalCenter
           spacing: 9
           Glyph { anchors.verticalCenter: parent.verticalCenter; text: root.dnd ? "󰂛" : "󰂚"; font.pixelSize: 15; color: root.dnd ? root.accent : Color.foreground }
-          Label { anchors.verticalCenter: parent.verticalCenter; text: "Do Not Disturb" }
+          Label { anchors.verticalCenter: parent.verticalCenter; text: "Do not disturb" }
         }
         Switch {
           anchors.right: parent.right
@@ -1258,7 +1258,7 @@ Item {
           Item {
             width: parent.width
             height: 16
-            Label { anchors.left: parent.left; text: "Power Mode" }
+            Label { anchors.left: parent.left; text: "Power mode" }
             Sub {
               anchors.right: parent.right
               anchors.verticalCenter: parent.verticalCenter
@@ -1322,7 +1322,7 @@ Item {
         }
         PowerButton { icon: "󰒲"; title: "Sleep"; onActivated: { root.closeRequested(); root.run("systemctl suspend") } }
         PowerButton { icon: "󰜉"; title: "Restart"; confirm: true; onActivated: root.run("omarchy-system-reboot") }
-        PowerButton { icon: "󰐥"; title: "Shut Down"; confirm: true; onActivated: root.run("omarchy-system-shutdown") }
+        PowerButton { icon: "󰐥"; title: "Shut down"; confirm: true; onActivated: root.run("omarchy-system-shutdown") }
       }
 
       // Bar copy only (never on the lock screen): the full NASAQ Settings window.
@@ -1495,13 +1495,13 @@ Item {
             onClicked: root.joinNetwork(root.currentNetwork)
           }
 
-          SectionTitle { visible: root.knownNetworks.length > 0; text: "Known Networks" }
+          SectionTitle { visible: root.knownNetworks.length > 0; text: "Known networks" }
           Repeater {
             model: root.knownNetworks
             delegate: NetworkRow { required property var modelData; net: modelData }
           }
 
-          SectionTitle { visible: root.otherNetworks.length > 0; text: "Other Networks" }
+          SectionTitle { visible: root.otherNetworks.length > 0; text: "Other networks" }
           Repeater {
             model: root.otherNetworks
             delegate: NetworkRow { required property var modelData; net: modelData }
@@ -1520,7 +1520,7 @@ Item {
       Divider { width: parent.width; visible: root.showLock }
       FooterLink {
         visible: root.showLock
-        title: "Wi-Fi Settings…"
+        title: "Wi-Fi settings…"
         onClicked: { root.closeRequested(); Quickshell.execDetached(["omarchy-shell", "omarchy.network", "open"]) }
       }
     }
@@ -1581,7 +1581,7 @@ Item {
             }
           }
 
-          SectionTitle { text: "Nearby Devices" }
+          SectionTitle { text: "Nearby devices" }
           Repeater {
             model: root.nearbyDevices
             delegate: ListRow {
@@ -1606,7 +1606,7 @@ Item {
       Divider { width: parent.width; visible: root.showLock }
       FooterLink {
         visible: root.showLock
-        title: "Bluetooth Settings…"
+        title: "Bluetooth settings…"
         onClicked: { root.closeRequested(); Quickshell.execDetached(["omarchy-shell", "omarchy.bluetooth", "open"]) }
       }
     }
@@ -1777,7 +1777,7 @@ Item {
           anchors.centerIn: parent
           spacing: 8
           Glyph { anchors.verticalCenter: parent.verticalCenter; text: "󰖷"; font.pixelSize: 14 }
-          Label { anchors.verticalCenter: parent.verticalCenter; text: "Fix Speakers" }
+          Label { anchors.verticalCenter: parent.verticalCenter; text: "Fix speakers" }
         }
         MouseArea {
           id: fixMouse

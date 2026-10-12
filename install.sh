@@ -136,6 +136,24 @@ elif ! cmp -s "$R/login/nasaq-login/Main.qml" /usr/share/sddm/themes/nasaq-login
   "$R/login/install-login.sh" || warn "login screen not refreshed"
 fi
 
+# Optional: the NASAQ boot and shutdown screens (Plymouth, following the theme
+# like the login screen; see login/install-plymouth.sh). Offered while not
+# installed; refreshed when the repository's templates changed.
+if command -v plymouth-set-default-theme >/dev/null; then
+  # "Installed" means selected too: a folder left by an interrupted install, or
+  # another theme chosen since, counts as not installed and is offered again.
+  if [[ ! -d /usr/share/plymouth/themes/nasaq || $(plymouth-set-default-theme 2>/dev/null) != nasaq ]]; then
+    if $YES || { command -v gum >/dev/null && gum confirm "Install the NASAQ boot and shutdown screens (Plymouth, needs sudo, rebuilds the boot image)?"; }; then
+      "$R/login/install-plymouth.sh" || warn "boot screens not installed"
+    else
+      warn "optional, not installed: the NASAQ boot screens (later: login/install-plymouth.sh)"
+    fi
+  elif ! cmp -s "$R/login/nasaq-plymouth/nasaq.script.in" /usr/share/plymouth/themes/nasaq/templates/nasaq.script.in ||
+       ! cmp -s "$R/bin/nasaq-login-sync" /usr/local/bin/nasaq-login-sync; then
+    "$R/login/install-plymouth.sh" || warn "boot screens not refreshed"
+  fi
+fi
+
 # Optional: system info (fastfetch) when a terminal opens. Never overwrites an
 # existing ~/.config/fastfetch; the ~/.bashrc block sits between markers so
 # uninstall.sh can take exactly it out again.
