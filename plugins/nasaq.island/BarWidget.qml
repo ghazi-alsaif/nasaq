@@ -31,7 +31,7 @@ BarWidget {
   // Same glass look as the control-center pill and card.
   // Glass: the card is as see-through as the user's active windows (Control
   // Center > Windows > Transparency), and Hyprland blurs behind it (layer rule
-  // in looknfeel.lua), so it follows his window settings like everything else.
+  // in looknfeel.lua), so it follows the user's window settings like everything else.
   property real glassAlpha: 0.65
   FileView {
     path: Quickshell.env("HOME") + "/.config/omarchy/nasaq/windows.json"
@@ -102,7 +102,14 @@ BarWidget {
     // Cleared from the notification center (or by us): drop the list now
     // instead of waiting for the next reload, so the pill's dot goes too.
     var c = Number(notif.clearedAt) || 0
-    if (c > clearedAt) { clearedAt = c; history = history.filter(function(e) { return (e.timestamp || 0) > c }); historyRefresh.restart() }
+    if (c > clearedAt) {
+      clearedAt = c
+      history = history.filter(function(e) { return (e.timestamp || 0) > c })
+      historyRefresh.restart()
+      // Already wiped elsewhere: a pending island Clear has nothing left to do
+      // (and must not dismiss toasts that arrive in its remaining seconds).
+      if (clearPending) { clearPending = false; clearTimer.stop() }
+    }
   }
   // Moment of the last history wipe; older entries are never shown again.
   property double clearedAt: 0
@@ -197,9 +204,9 @@ BarWidget {
   Timer { interval: 30000; repeat: true; running: root.notif.dnd === true; onTriggered: root.reloadHistory() }
   onExpandedChanged: {
     if (expanded) { reloadHistory(); return }
-    // Leaving the card with a Clear pending means "yes, clear": do it now.
-    if (clearPending) doClear()
-    else markSeen()
+    // A pending Clear keeps its five seconds when the card closes, so the card
+    // can be opened again to Undo it; clearTimer does the clear when it ends.
+    if (!clearPending) markSeen()
   }
   // A toast that times out moves into history; refresh then.
   onNotifActiveChanged: if (!notifActive) historyRefresh.restart()
@@ -1753,6 +1760,7 @@ BarWidget {
     running: true
     triggeredOnStart: true
     onTriggered: {
+      root.checkPrayerNow()
       root.refreshPrayer()
       var n = root.nextPrayer
       if (!n) return
@@ -1815,13 +1823,17 @@ BarWidget {
   }
 
   property var watchPrayer: null
-  onNowChanged: {
+  onNowChanged: checkPrayerNow()
+  // Also called by the 20 s timer before it moves watchPrayer on, so the
+  // prayer that passed while the machine slept is not replaced unannounced.
+  function checkPrayerNow() {
     var w = watchPrayer
-    if (!w || now.getTime() < w.time.getTime()) return
+    var t = Date.now()   // not `now`: right after a wake the clock may not have ticked yet
+    if (!w || t < w.time.getTime()) return
     var tag = w.key + "@" + w.time.getTime() + ":now"
     watchPrayer = null
-    // Only at the moment itself: an alert more than a minute late is noise.
-    if (notified[tag] || now.getTime() - w.time.getTime() > 60000) return
+    // Up to ten minutes late still counts (the machine may have been asleep).
+    if (notified[tag] || t - w.time.getTime() > 600000) return
     notified[tag] = true
     showAlert("حان الآن وقت صلاة " + w.name, root.config.city || "", 30000)
     if (root.config.prayerQuiet) startQuiet()

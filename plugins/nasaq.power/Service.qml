@@ -126,7 +126,7 @@ Item {
       profileBeforeLow = ""
       announce("Low Power Mode off", "Charger connected")
     } else if (autoLowPower && !isSaver()) {
-      // the user picked another mode himself — respect it.
+      // the user picked another mode; respect it.
       autoLowPower = false
       profileBeforeLow = ""
       saveState()
@@ -193,7 +193,7 @@ Item {
       waitForEnd: true
       onStreamFinished: {
         var cur = parseInt(String(text || "").trim())
-        // Only undo our own dimming; if the user moved the slider since, keep his.
+        // Only undo our own dimming; if the user has moved the slider since, keep their value.
         if (!isNaN(cur) && cur === root.brightnessCappedTo)
           Quickshell.execDetached(["brightnessctl", "-q", "-c", "backlight", "set", root.brightnessBeforeCap + "%"])
         root.brightnessBeforeCap = -1

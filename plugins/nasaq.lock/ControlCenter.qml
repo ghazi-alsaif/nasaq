@@ -1611,7 +1611,7 @@ Item {
     // Loaded only in the bar copy and only while the page shows: the lock
     // screen never creates it, and a missing nasaq.windows folder costs this
     // page, not the control center or the lock. Unloading it also makes it
-    // write its pending the user Settings save.
+    // write its pending NASAQ Settings save.
     Loader {
       id: winLoader
       // Kept alive while an Undo is pending. Tracked in a plain property (set

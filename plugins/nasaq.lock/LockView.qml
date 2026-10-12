@@ -117,7 +117,7 @@ Item {
       blur: 0.5
       blurMax: 64
       blurMultiplier: 1.0
-      // Blur only — no colour or brightness shift (the user, 2026-10-06).
+      // Blur only — no colour or brightness shift (design choice, 2026-10-06).
       visible: root.loadBackground && backdrop.status === Image.Ready
     }
 
@@ -125,7 +125,7 @@ Item {
     // clock and the power row read on any backdrop.
     Rectangle {
       anchors.fill: parent
-      visible: false   // gradient off: the user wants the backdrop blurred only
+      visible: false   // gradient off: the backdrop is blurred only
       gradient: Gradient {
         GradientStop { position: 0.0; color: Qt.rgba(0, 0, 0, 0.28) }
         GradientStop { position: 0.45; color: Qt.rgba(0, 0, 0, 0.04) }

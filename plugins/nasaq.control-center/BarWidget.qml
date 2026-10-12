@@ -18,7 +18,7 @@ BarWidget {
   property bool opened: false
   // Glass: the card is as see-through as the user's active windows (Control
   // Center > Windows > Transparency), and Hyprland blurs behind it (layer rule
-  // in looknfeel.lua), so it follows his window settings like everything else.
+  // in looknfeel.lua), so it follows the user's window settings like everything else.
   property real glassAlpha: 0.65
   FileView {
     path: Quickshell.env("HOME") + "/.config/omarchy/nasaq/windows.json"

@@ -235,7 +235,7 @@ Item {
     onTriggered: Quickshell.execDetached(["hyprctl", "reload"])
   }
 
-  // One the user Settings save per round of adjusting, 20 s after the last
+  // One NASAQ Settings save per round of adjusting, 20 s after the last
   // change (or when the page goes away), named after the look itself.
   function saveName() {
     return "Window look: " + Math.round(s.activeOpacity * 100) + "/" + Math.round(s.inactiveOpacity * 100)
