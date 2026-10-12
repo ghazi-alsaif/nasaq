@@ -18,6 +18,13 @@ NPage {
   }
   readonly property var bar: cfg.bar || {}
   readonly property var layout: bar.layout || {}
+  // Same as nasaq.launchers' defaults, listed here while bars.launchers is unset.
+  readonly property var defaultLaunchers: [
+    { glyph: "󰊯", tooltip: "Browser", command: "omarchy-launch-browser" },
+    { glyph: "󰉋", tooltip: "Files", command: "omarchy-launch-nautilus" },
+    { svg: "assets/claude.svg", tooltip: "Claude", command: "claude", terminal: true },
+    { svg: "assets/codex.svg", tooltip: "Codex", command: "codex", terminal: true }
+  ]
 
   NSection {
     title: "BAR"
@@ -61,6 +68,26 @@ NPage {
         }
       }
     }
+  }
+
+  NSection {
+    title: "LAUNCHERS"
+    note: "The app buttons on the left of the bar. Removing them all brings back the four defaults."
+    LauncherList {
+      key: "bars.launchers"
+      fallback: page.defaultLaunchers
+    }
+    NRow {
+      title: "Back to the default launchers"
+      visible: Array.isArray(Settings.get("bars.launchers", null)) && Settings.get("bars.launchers", []).length > 0
+      NButton { text: "Reset"; onClicked: Settings.set("bars.launchers", null) }
+    }
+  }
+
+  NSection {
+    title: "EXTRA LAUNCHERS"
+    note: "Added after the launchers above, so a personal button does not mean listing the defaults again."
+    LauncherList { key: "bars.extraLaunchers" }
   }
 
   NSection {

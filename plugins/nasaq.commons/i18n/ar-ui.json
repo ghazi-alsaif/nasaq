@@ -344,5 +344,20 @@
 "Fast": "سريع",
 "Careful": "دقيق",
 "Fast uses the agent's quickest model (Claude: Haiku). Careful uses its default.": "سريع يستخدم أسرع نموذج عند الوكيل (Claude: Haiku)، ودقيق يستخدم نموذجه الافتراضي.",
-"Ask your agent (TEST)": "اسأل وكيلك (تجربة)"
+"Ask your agent (TEST)": "اسأل وكيلك (تجربة)",
+"LAUNCHERS": "أزرار التشغيل",
+"EXTRA LAUNCHERS": "أزرار تشغيل إضافية",
+"The app buttons on the left of the bar. Removing them all brings back the four defaults.": "أزرار التطبيقات في يسار الشريط. حذفها كلها يرجّع الأزرار الأربعة الافتراضية.",
+"Added after the launchers above, so a personal button does not mean listing the defaults again.": "تُضاف بعد الأزرار أعلاه، فإضافة زر شخصي لا تحتاج إعادة كتابة الأزرار الافتراضية.",
+"Back to the default launchers": "الرجوع للأزرار الافتراضية",
+"Add a launcher": "إضافة زر",
+"Icon": "الأيقونة",
+"A Nerd Font glyph": "رمز من خط Nerd Font",
+"Tooltip": "التلميح",
+"\\n starts a new line": "\\n يبدأ سطراً جديداً",
+"Right-click command": "أمر الزر الأيمن",
+"Optional": "اختياري",
+"Open in a terminal": "يفتح في الطرفية",
+"Cancel": "إلغاء",
+"Save": "حفظ"
 }

@@ -27,7 +27,7 @@ Singleton {
     "ocr": { "languages": "ara+eng" },
     "translate": { "target": "auto" },
     "ai": { "agent": "claude" },
-    "bars": { "perMonitor": {} },
+    "bars": { "perMonitor": {}, "extraLaunchers": [] },
     "automations": []
   })
 

@@ -98,7 +98,7 @@ Push the pointer into a corner to trigger an action. Defaults: top-left Mission 
 
 ![Settings](docs/screenshots/settings.png)
 
-`SUPER + ALT + N`. Pages: General (interface language and direction, font, screenshots, OCR languages), Appearance, Bars & Panels, Widgets, Launcher, Notifications, Workspaces & Windows, System (displays with automatic revert, auto-brightness, devices, health checks), Shortcuts, AI & Automation, Plugins, Advanced. Every setting takes effect immediately. **Save snapshot** records all of NASAQ's files in a local git repository; **Restore** goes back to any snapshot, and a restore can itself be undone.
+`SUPER + ALT + N`. Pages: General (interface language and direction, font, screenshots, OCR languages), Appearance, Bars & Panels (including the bar's app launchers, plus extra ones added after the defaults), Widgets, Launcher, Notifications, Workspaces & Windows, System (displays with automatic revert, auto-brightness, devices, health checks), Shortcuts, AI & Automation, Plugins, Advanced. Every setting takes effect immediately. **Save snapshot** records all of NASAQ's files in a local git repository; **Restore** goes back to any snapshot, and a restore can itself be undone.
 
 ![Plugins page](docs/screenshots/settings-plugins.png)
 

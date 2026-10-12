@@ -10,7 +10,8 @@ BarWidget {
   // Every icon is painted white rather than in the bar foreground or the
   // brand colours, so the row reads as one quiet set. Glyphs are Nerd Font
   // icons; Claude and Codex use their logos recoloured white in assets/.
-  // The list lives in NASAQ settings (bars.launchers):
+  // The list lives in NASAQ settings: bars.launchers replaces the defaults,
+  // bars.extraLaunchers is added after whichever list is active. Items:
   //   { glyph | svg, tooltip, command, rightCommand?, terminal? }
   // `terminal: true` opens the command in the default terminal.
   readonly property color iconColor: "#ffffff"
@@ -30,7 +31,9 @@ BarWidget {
 
   readonly property var launchers: {
     var l = Nasaq.Settings.get("bars.launchers", null)
-    return Array.isArray(l) && l.length ? l : defaults
+    var extra = Nasaq.Settings.get("bars.extraLaunchers", [])
+    var base = Array.isArray(l) && l.length ? l : defaults
+    return Array.isArray(extra) ? base.concat(extra.filter(function(x) { return x && x.command })) : base
   }
 
   implicitWidth: row.implicitWidth
