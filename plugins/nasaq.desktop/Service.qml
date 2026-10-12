@@ -139,6 +139,11 @@ Item {
       "ct=0; gt=0; for h in /sys/class/hwmon/hwmon*; do n=$(cat $h/name 2>/dev/null); " +
       "case $n in coretemp|k10temp|zenpower) for f in $h/temp*_input; do v=$(( $(cat $f)/1000 )); [ $v -gt $ct ] && ct=$v; done;; " +
       "amdgpu|radeon|nouveau) [ -r $h/temp1_input ] && gt=$(( $(cat $h/temp1_input)/1000 ));; esac; done; " +
+      // NVIDIA's own driver has no hwmon entry. Ask nvidia-smi, but only while
+      // the card is already awake, so the poll never wakes a sleeping laptop GPU.
+      "if [ $gt -eq 0 ] && command -v nvidia-smi >/dev/null; then for d in /sys/bus/pci/devices/*; do " +
+      "[ \"$(cat $d/vendor)\" = 0x10de ] && case $(cat $d/class) in 0x03*) " +
+      "[ \"$(cat $d/power/runtime_status 2>/dev/null)\" = suspended ] || gt=$(nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader,nounits 2>/dev/null | head -1);; esac; done; gt=${gt:-0}; fi; " +
       "printf '{\"cpu\":%d,\"mem\":%d,\"cpuTemp\":%d,\"gpuTemp\":%d}\\n' $cpu $(( 100*(mt-ma)/mt )) $ct $gt"]
     stdout: StdioCollector { onStreamFinished: { try { root.sys = JSON.parse(this.text) } catch (e) {} } }
   }

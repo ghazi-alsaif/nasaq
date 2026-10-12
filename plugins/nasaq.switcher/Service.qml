@@ -110,11 +110,22 @@ Item {
     stdout: SplitParser {
       onRead: function(line) {
         line = line.trim()
+        altWatch.failures = 0
         if (line === "down" || line === "up") { root.altState = line; if (line === "up" && root.open) root.confirm() }
         else if (line === "unavailable") root.altState = "unknown"
       }
     }
-    onRunningChanged: if (!running) { root.altState = "unknown"; restartWatch.restart() }
+    // Back off when the watcher keeps dying (binary missing, no /dev/input
+    // access): 3 s, 6 s, 12 s ... up to 5 minutes, instead of a warning every 3 s.
+    property int failures: 0
+    onRunningChanged: {
+      if (running) return
+      root.altState = "unknown"
+      failures++
+      restartWatch.interval = Math.min(300000, 3000 * Math.pow(2, Math.min(failures - 1, 7)))
+      if (failures === 3) console.warn("nasaq.switcher: nasaq-altwatch keeps exiting; ALT+TAB uses the timing fallback")
+      restartWatch.restart()
+    }
   }
   Timer { id: restartWatch; interval: 3000; onTriggered: altWatch.running = true }
 

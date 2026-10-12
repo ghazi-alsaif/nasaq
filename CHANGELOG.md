@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.4 — 2026-10-12
+- Fixed: `nasaq-altwatch` was missing from the repository, so ALT + TAB on a fresh install could not switch on releasing Alt and the shell logged a warning every 3 s. The watcher now ships, and the switcher backs off instead of retrying every 3 s if it cannot start.
+- Desktop widgets: GPU temperature on NVIDIA's proprietary driver (via nvidia-smi, never waking a suspended GPU). Found on an MSI laptop clean install.
+
 ## 1.0.3 — 2026-10-10
 - Notification Center: the first open after a shell start no longer sweeps in from the left; the panel is anchored to the right edge and slides by its own width.
 

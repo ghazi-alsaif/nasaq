@@ -9,7 +9,7 @@ mkdir -p "$R"/{plugins,hypr,bin,overrides,sounds,hooks/theme-set.d,hooks/post-up
 for d in "$C"/omarchy/plugins/nasaq.*/; do rsync -a --exclude .git --exclude '*.bak*' "$d" "$R/plugins/$(basename "$d")/"; done
 cp "$C"/hypr/nasaq-{pre,post,looknfeel,bindings}.lua "$R/hypr/"
 for s in nasaq-settings nasaq-sound nasaq-clone-check nasaq-auto-brightness nasaq-display-check nasaq-arabic-binds nasaq-keys \
-         nasaq-scratch nasaq-display nasaq-translate nasaq-ask nasaq-agent-ask nasaq-calendar nasaq-rules nasaq-auto hypr-quit-app screensaver-mode; do
+         nasaq-scratch nasaq-display nasaq-translate nasaq-ask nasaq-agent-ask nasaq-calendar nasaq-rules nasaq-auto nasaq-altwatch hypr-quit-app screensaver-mode; do
   cp -L "$B/$s" "$R/bin/$s"
 done
 cp -L "$HOME/.local/share/omarchy-overrides/omarchy-launch-screensaver" "$R/overrides/"
