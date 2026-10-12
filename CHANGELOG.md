@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.5 — 2026-10-12
 - Bar launchers: a new `bars.extraLaunchers` setting adds buttons after the default (or customised) launchers instead of replacing them. Settings > Bars & Panels now has editors for both lists (add, edit, remove).
 - Tasks and notes moved out of the clone folder: they now live in `~/.local/share/nasaq-data/notes.json`. The desktop widget moves the old `~/.local/share/nasaq/notes.json` there once on startup, so nothing NASAQ writes at runtime ends up inside the repository any more.
 - Omarchy menu: NASAQ now sits above About and System (… NASAQ, About, System). The installer replaces NASAQ's own menu block on every run, `--update` included, so existing installs get the new order too. uninstall.sh removes the whole block, including the hidden stock rows and their links.
@@ -8,6 +8,7 @@
 - Prayer "now" alert: fires up to ten minutes late again (it was one minute), so a laptop waking from sleep still announces the prayer. The 20-second prayer timer now checks the passed prayer before moving on to the next, so it isn't skipped after a wake. The "N minutes before" reminder is unchanged.
 - Island Clear: closing the card no longer clears at once. The five-second Undo keeps running, so the card can be reopened to undo; the clear happens when the timer ends. A Clear All from the Notification Center during those seconds cancels the pending one, so it can't dismiss toasts that arrive afterwards.
 - Comment wording left over from the rename (power, lock, windows, island, control center).
+- `tools/check-install.sh` reports whether a machine's installed NASAQ files match the checkout.
 
 ## 1.0.4 — 2026-10-12
 - Fixed: `nasaq-altwatch` was missing from the repository, so ALT + TAB on a fresh install could not switch on releasing Alt and the shell logged a warning every 3 s. The watcher now ships, and the switcher backs off instead of retrying every 3 s if it cannot start.
