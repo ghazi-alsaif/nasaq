@@ -2,6 +2,9 @@
 
 ## Unreleased
 - Bar launchers: a new `bars.extraLaunchers` setting adds buttons after the default (or customised) launchers instead of replacing them. Settings > Bars & Panels now has editors for both lists (add, edit, remove).
+- Tasks and notes moved out of the clone folder: they now live in `~/.local/share/nasaq-data/notes.json`. The desktop widget moves the old `~/.local/share/nasaq/notes.json` there once on startup, so nothing NASAQ writes at runtime ends up inside the repository any more.
+- Omarchy menu: NASAQ now sits above About and System (… NASAQ, About, System). The installer replaces NASAQ's own menu block on every run, `--update` included, so existing installs get the new order too. uninstall.sh removes the whole block, including the hidden stock rows and their links.
+- uninstall.sh restores the backup taken before the first install (a reinstall or `--update` no longer repoints it at an already-modified copy), and always strips NASAQ's Hyprland lines and menu block afterwards.
 
 ## 1.0.4 — 2026-10-12
 - Fixed: `nasaq-altwatch` was missing from the repository, so ALT + TAB on a fresh install could not switch on releasing Alt and the shell logged a warning every 3 s. The watcher now ships, and the switcher backs off instead of retrying every 3 s if it cannot start.

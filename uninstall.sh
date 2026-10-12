@@ -9,10 +9,20 @@ if [[ -n $backup && -d $backup ]]; then
   (cd "$backup" && find . -type f) | while read -r f; do cp "$backup/$f" "$C/${f#./}"; done
   echo " ✓ restored your files from ${backup/#$HOME/\~}"
 else
-  for f in "$C/hypr/hyprland.lua" "$C/hypr/looknfeel.lua" "$C/hypr/bindings.lua"; do
-    [[ -f $f ]] && sed -i '/-- NASAQ$/d' "$f"
-  done
-  echo " ! no backup found: removed the NASAQ lines from your Hyprland files"
+  echo " ! no backup found: removing NASAQ's lines from your files"
+fi
+rm -f "$HOME/.local/state/nasaq/last-install-backup"
+
+# Strip what NASAQ added even after a restore: an older backup (taken by a
+# reinstall) may already contain it.
+for f in "$C/hypr/hyprland.lua" "$C/hypr/looknfeel.lua" "$C/hypr/bindings.lua"; do
+  [[ -f $f ]] && sed -i '/-- NASAQ$/d' "$f"
+done
+# The menu block: NASAQ's rows, the hidden stock About/System rows and their links.
+menu="$C/omarchy/extensions/omarchy-menu.jsonc"
+if [[ -f $menu ]] && grep -q '// NASAQ (added by' "$menu"; then
+  sed -i '\#// NASAQ (added by#,\#^[[:space:]]*// /NASAQ[[:space:]]*$#d' "$menu"
+  echo " ✓ NASAQ removed from the Omarchy menu"
 fi
 
 find "${C:?}/omarchy/plugins" -maxdepth 1 -name 'nasaq.*' -exec rm -rf {} +

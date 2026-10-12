@@ -75,7 +75,7 @@ copy_pair ".config/omarchy/ghazi-windows-default.json" "$OM/nasaq/windows-defaul
 copy_pair ".config/omarchy/ghazi-island.json" "$OM/nasaq/island.json"
 copy_pair ".config/omarchy/ghazi-power.json" "$OM/nasaq/power.json"
 copy_pair ".config/omarchy/ghazi-overview.json" "$OM/nasaq/overview.json"
-copy_pair ".local/share/ghazi-notes.json" "$HOME/.local/share/nasaq/notes.json"
+copy_pair ".local/share/ghazi-notes.json" "$HOME/.local/share/nasaq-data/notes.json"
 
 # Every ghazi-* state file, whichever copy has it.
 declare -A state_names=()

@@ -2,7 +2,7 @@
 # NASAQ (نَسَق) installer — an opinionated shell layer for Omarchy by GHS.
 #   ./install.sh            install (or re-install) NASAQ for this user
 #   ./install.sh --yes      also install the optional packages without asking
-#   ./install.sh --update   refresh NASAQ's files only (keeps your bar layout and menu)
+#   ./install.sh --update   refresh NASAQ's files only (keeps your bar layout; refreshes NASAQ's menu rows)
 # Nothing under /usr/share/omarchy is touched. Every file changed is backed up first.
 set -euo pipefail
 R="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -22,7 +22,10 @@ mkdir -p "$backup"
 for f in omarchy/shell.json hypr/hyprland.lua hypr/looknfeel.lua hypr/bindings.lua omarchy/extensions/omarchy-menu.jsonc; do
   if [[ -f $C/$f ]]; then mkdir -p "$backup/$(dirname "$f")"; cp "$C/$f" "$backup/$f"; fi
 done
-echo "$backup" > "$HOME/.local/state/nasaq/last-install-backup"
+# uninstall.sh restores the backup taken before NASAQ first touched these
+# files, so a reinstall or --update must not repoint it at an already-NASAQ copy.
+ptr="$HOME/.local/state/nasaq/last-install-backup"
+[[ -d $(cat "$ptr" 2>/dev/null) ]] || echo "$backup" > "$ptr"
 say "backup in ${backup/#$HOME/\~}"
 
 # Files
@@ -77,19 +80,22 @@ d["disabledPlugins"] = sorted(set(d.get("disabledPlugins", [])) | set(patch["dis
 d["cloneSourceRestores"] = patch["cloneSourceRestores"]
 open(p, "w").write(json.dumps(d, indent=2) + "\n")
 PY
-  menu="$C/omarchy/extensions/omarchy-menu.jsonc"
-  [[ -f $menu ]] || printf '{\n}\n' > "$menu"
-  if ! grep -q '// NASAQ (added by' "$menu"; then
-    python3 - "$menu" "$R/defaults/menu-entries.jsonc" <<'PY'
-import sys
+  say "bar layout set up"
+fi
+
+# Omarchy menu: NASAQ's block (between its markers) is replaced on every run,
+# so an update brings new rows and the order ... NASAQ, About, System.
+menu="$C/omarchy/extensions/omarchy-menu.jsonc"
+[[ -f $menu ]] || printf '{\n}\n' > "$menu"
+python3 - "$menu" "$R/defaults/menu-entries.jsonc" <<'PY'
+import re, sys
 p = sys.argv[1]; s = open(p).read(); add = open(sys.argv[2]).read()
+s = re.sub(r"[ \t]*// NASAQ \(added by.*?// /NASAQ[ \t]*\n?", "", s, flags=re.S)
 i = s.rstrip().rfind("}"); head = s[:i].rstrip()
 s = head + ("\n" if head.endswith((",", "{")) else ",\n") + add + "}\n"
 open(p, "w").write(s)
 PY
-  fi
-  say "bar layout and menu set up"
-fi
+say "menu entries in place"
 
 # Optional packages
 opt=(tesseract-data-ara cava nwg-displays kitty ptyxis)

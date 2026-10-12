@@ -259,6 +259,7 @@ cd ~/.local/share/nasaq && ./uninstall.sh --purge  # ويحذف إعدادات �
 | `~/.local/bin/nasaq-*` | الأدوات المساعدة (لقطات الإعدادات، الشاشة، الترجمة، Scratchpads، ...) |
 | `~/.local/state/nasaq/` | النسخ الاحتياطية للتثبيت |
 | `~/.local/share/nasaq-settings/` | مستودع اللقطات |
+| `~/.local/share/nasaq-data/` | بياناتك: مهام وملاحظات سطح المكتب (`notes.json`) |
 
 ## اللغات
 

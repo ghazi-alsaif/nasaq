@@ -213,7 +213,18 @@ Item {
     onRunningChanged: if (!running) root.bars = []
   }
 
-  // ── Notes & tasks, kept in ~/.local/share/nasaq/notes.json ───────
+  // ── Notes & tasks, kept in ~/.local/share/nasaq-data/notes.json ──
+  // Up to 1.0.4 they lived in ~/.local/share/nasaq, which is also where the
+  // repository is cloned. Move the old file once; the FileView only gets its
+  // path after that, so nothing is ever written before the notes are moved.
+  readonly property string notesPath: home + "/.local/share/nasaq-data/notes.json"
+  property bool notesMoved: false
+  Process {
+    running: true
+    command: ["sh", "-c", "mkdir -p \"$(dirname \"$1\")\"; [ -e \"$1\" ] || [ ! -e \"$2\" ] || mv \"$2\" \"$1\"",
+              "sh", root.notesPath, root.home + "/.local/share/nasaq/notes.json"]
+    onRunningChanged: if (!running) root.notesMoved = true
+  }
   property string noteText: ""
   property var tasks: []
   property string notesTab: "tasks"   // NASAQ: always start on Tasks
@@ -222,7 +233,7 @@ Item {
   property bool notesLoaded: false
   FileView {
     id: notesFile
-    path: root.home + "/.local/share/nasaq/notes.json"
+    path: root.notesMoved ? root.notesPath : ""
     atomicWrites: true
     printErrors: false
     onLoaded: {

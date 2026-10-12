@@ -197,6 +197,7 @@ cd ~/.local/share/nasaq && ./uninstall.sh --purge  # also removes NASAQ's settin
 | `~/.local/bin/nasaq-*` | helper scripts (settings snapshots, display, translation, scratchpads, ...) |
 | `~/.local/state/nasaq/` | install backups |
 | `~/.local/share/nasaq-settings/` | the snapshot repository |
+| `~/.local/share/nasaq-data/` | your data: desktop tasks and notes (`notes.json`) |
 
 ## Languages
 

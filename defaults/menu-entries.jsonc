@@ -1,4 +1,9 @@
   // NASAQ (added by NASAQ's install.sh; removed by uninstall.sh)
+  // Menu rows keep first-seen order, so a new id lands below About and System.
+  // Hide those two stock rows and re-add them as links after NASAQ:
+  // ... NASAQ, About, System. The power-menu alias stays on the stock row.
+  "about": {"icon":"","label":"About","action":"omarchy-launch-about","when":"false"},
+  "system": {"icon":"","label":"System","aliases":["power-menu"],"when":"false"},
   "nasaq": {"icon":"󰒓","label":"NASAQ","aliases":["nasaq","nasaq-settings"]},
   "nasaq.settings": {"icon":"󰒓","label":"NASAQ Settings","description":"All NASAQ settings","action":"omarchy-shell shell toggle nasaq.settings '{}'"},
   "nasaq.save": {"icon":"󰆓","label":"Save Now","description":"Save the current settings","action":"omarchy-launch-floating-terminal-with-presentation $HOME/.local/bin/nasaq-settings save --ask"},
@@ -7,4 +12,6 @@
   "nasaq.stopwatch": {"icon":"󱎫","label":"Stopwatch","description":"Start or pause the island stopwatch","action":"omarchy-shell nasaq.stopwatch toggle"},
   "nasaq.pomodoro": {"icon":"󱎫","label":"Pomodoro","description":"Start or stop a focus timer in the island","action":"omarchy-shell nasaq.pomodoro toggle"},
   "nasaq.help": {"icon":"󰋗","label":"Shortcuts Guide","description":"What every key and corner does","action":"omarchy-launch-browser file://$HOME/.config/omarchy/nasaq/help/gestures.html"},
+  "about-link": {"icon":"","label":"About","action":"omarchy-launch-about"},
+  "system-link": {"icon":"","label":"System","target":"system"},
   // /NASAQ
