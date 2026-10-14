@@ -15,3 +15,7 @@ NTextField 1.0 NTextField.qml
 NKeyField 1.0 NKeyField.qml
 NPage 1.0 NPage.qml
 Rtl 1.0 Rtl.qml
+singleton Motion 1.0 Motion.qml
+NAnim 1.0 NAnim.qml
+NFade 1.0 NFade.qml
+NColour 1.0 NColour.qml

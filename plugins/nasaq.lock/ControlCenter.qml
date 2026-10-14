@@ -161,6 +161,18 @@ Item {
   // Text or icon drawn on an accent fill: dark on a light accent, white on a dark one.
   readonly property color onAccent: (0.299 * accent.r + 0.587 * accent.g + 0.114 * accent.b) > 0.6 ? "#16181d" : "white"
 
+  // Motion: NASAQ's shared rhythm (nasaq.commons/Motion.qml). The lock plugin
+  // must not depend on another plugin's folder, so the values live here and
+  // the bar's Quick Settings passes its motion scale in.
+  property real motionScale: 1
+  readonly property int mMicro: Math.round(120 * motionScale)
+  readonly property int mFast: Math.round(200 * motionScale)
+  readonly property int mBase: Math.round(320 * motionScale)
+  readonly property var cDecel: [0.23, 1.00, 0.32, 1.00, 1, 1]
+  readonly property var cStandard: [0.40, 0.00, 0.20, 1.00, 1, 1]
+  // The panel's final height, not the animating one (for the bar card).
+  readonly property real targetHeight: panel.targetHeight
+
   width: 320
   height: panel.height
   visible: panel.opacity > 0
@@ -614,7 +626,7 @@ Item {
     height: size
     radius: size / 2
     color: on ? root.accent : Util.alpha(Color.foreground, iconMouse.containsMouse ? 0.24 : 0.15)
-    Behavior on color { ColorAnimation { duration: 120 } }
+    Behavior on color { ColorAnimation { duration: root.mMicro; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cDecel } }
     Glyph {
       anchors.centerIn: parent
       text: parent.icon
@@ -640,7 +652,7 @@ Item {
     height: 22
     radius: 11
     color: checked ? root.accent : Util.alpha(Color.foreground, 0.22)
-    Behavior on color { ColorAnimation { duration: 140 } }
+    Behavior on color { ColorAnimation { duration: root.mMicro; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cDecel } }
     Rectangle {
       width: 18
       height: 18
@@ -648,7 +660,7 @@ Item {
       y: 2
       x: sw.checked ? sw.width - width - 2 : 2
       color: Color.foreground
-      Behavior on x { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+      Behavior on x { NumberAnimation { duration: root.mFast; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cDecel } }
     }
     MouseArea {
       anchors.fill: parent
@@ -669,6 +681,7 @@ Item {
     height: 40
     radius: 10
     color: rowMouse.containsMouse ? Util.alpha(Color.foreground, 0.07) : "transparent"
+    Behavior on color { ColorAnimation { duration: root.mMicro; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cDecel } }
     MouseArea {
       id: rowMouse
       anchors.fill: parent
@@ -718,6 +731,7 @@ Item {
     height: 36
     radius: 8
     color: lrMouse.containsMouse ? Util.alpha(Color.foreground, 0.08) : "transparent"
+    Behavior on color { ColorAnimation { duration: root.mMicro; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cDecel } }
     MouseArea {
       id: lrMouse
       anchors.fill: parent
@@ -780,6 +794,7 @@ Item {
       height: 26
       radius: 13
       color: backMouse.containsMouse ? Util.alpha(Color.foreground, 0.14) : "transparent"
+      Behavior on color { ColorAnimation { duration: root.mMicro; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cDecel } }
       Glyph { anchors.centerIn: parent; text: "󰅁"; font.pixelSize: 14 }
       MouseArea {
         id: backMouse
@@ -813,6 +828,7 @@ Item {
     height: 30
     radius: 8
     color: flMouse.containsMouse ? Util.alpha(Color.foreground, 0.08) : "transparent"
+    Behavior on color { ColorAnimation { duration: root.mMicro; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cDecel } }
     Label {
       anchors.left: parent.left
       anchors.leftMargin: 8
@@ -901,7 +917,7 @@ Item {
       height: 40
       radius: 20
       color: pb.armed ? Color.urgent : Util.alpha(Color.foreground, pbMouse.containsMouse ? 0.24 : 0.14)
-      Behavior on color { ColorAnimation { duration: 120 } }
+      Behavior on color { ColorAnimation { duration: root.mMicro; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cDecel } }
       Glyph {
         anchors.centerIn: parent
         text: pb.icon
@@ -931,7 +947,8 @@ Item {
   Rectangle {
     id: panel
     width: parent.width
-    height: (root.page === "wifi" ? wifiPage.implicitHeight
+    height: targetHeight
+    readonly property real targetHeight: (root.page === "wifi" ? wifiPage.implicitHeight
            : root.page === "bluetooth" ? btPage.implicitHeight
            : root.page === "sound" ? soundPage.implicitHeight
            : root.page === "windows" ? winLoader.implicitHeight
@@ -944,9 +961,9 @@ Item {
     transformOrigin: Item.TopRight
     opacity: root.opened ? 1 : 0
     scale: root.opened || root.chromeless ? 1 : 0.94
-    Behavior on opacity { NumberAnimation { duration: root.chromeless ? 200 : 140; easing.type: Easing.OutCubic } }
-    Behavior on scale { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-    Behavior on height { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+    Behavior on opacity { NumberAnimation { duration: root.mFast; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cDecel } }
+    Behavior on scale { NumberAnimation { duration: root.mFast; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cDecel } }
+    Behavior on height { NumberAnimation { duration: root.mBase; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cStandard } }
 
     // Swallow clicks on the panel's empty space so they don't close it.
     MouseArea { anchors.fill: parent; onClicked: root.interacted() }
@@ -960,8 +977,8 @@ Item {
       spacing: 10
       opacity: root.page === "" ? 1 : 0
       visible: opacity > 0
-      Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-      Behavior on opacity { NumberAnimation { duration: 160 } }
+      Behavior on x { NumberAnimation { duration: root.mBase; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cStandard } }
+      Behavior on opacity { NumberAnimation { duration: root.mBase; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cStandard } }
 
       Row {
         width: parent.width
@@ -1009,6 +1026,7 @@ Item {
             width: parent.width
             height: 56
             color: Util.alpha(Color.foreground, kbMouse.containsMouse ? 0.13 : 0.08)
+            Behavior on color { ColorAnimation { duration: root.mMicro; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cDecel } }
             Column {
               anchors.fill: parent
               anchors.margins: 10
@@ -1054,7 +1072,7 @@ Item {
             height: 56
             visible: root.showLock && root.batteryPercent < 0
             color: root.dnd ? root.accent : Util.alpha(Color.foreground, dndMouse.containsMouse ? 0.13 : 0.08)
-            Behavior on color { ColorAnimation { duration: 140 } }
+            Behavior on color { ColorAnimation { duration: root.mMicro; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cDecel } }
             Column {
               anchors.fill: parent
               anchors.margins: 10
@@ -1085,6 +1103,7 @@ Item {
         height: 46
         visible: root.showLock && root.batteryPercent >= 0
         color: Util.alpha(Color.foreground, dndRowMouse.containsMouse ? 0.13 : 0.08)
+        Behavior on color { ColorAnimation { duration: root.mMicro; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cDecel } }
         MouseArea {
           id: dndRowMouse
           anchors.fill: parent
@@ -1211,6 +1230,7 @@ Item {
         height: 52
         visible: root.showLock
         color: Util.alpha(Color.foreground, winMouse.containsMouse ? 0.13 : 0.08)
+        Behavior on color { ColorAnimation { duration: root.mMicro; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cDecel } }
         RoundIcon {
           id: winIcon
           anchors.left: parent.left
@@ -1283,7 +1303,7 @@ Item {
                 height: 30
                 radius: 15
                 color: current ? root.accent : Util.alpha(Color.foreground, modeMouse.containsMouse ? 0.16 : 0.08)
-                Behavior on color { ColorAnimation { duration: 140 } }
+                Behavior on color { ColorAnimation { duration: root.mMicro; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cDecel } }
                 Row {
                   anchors.centerIn: parent
                   spacing: 5
@@ -1342,8 +1362,8 @@ Item {
       spacing: 6
       opacity: root.page === "wifi" ? 1 : 0
       visible: opacity > 0
-      Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-      Behavior on opacity { NumberAnimation { duration: 160 } }
+      Behavior on x { NumberAnimation { duration: root.mBase; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cStandard } }
+      Behavior on opacity { NumberAnimation { duration: root.mBase; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cStandard } }
 
       PageHeader {
         title: "Wi-Fi"
@@ -1400,6 +1420,7 @@ Item {
             height: 28
             radius: 8
             color: Util.alpha(Color.foreground, stMouse.containsMouse ? 0.18 : 0.10)
+            Behavior on color { ColorAnimation { duration: root.mMicro; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cDecel } }
             Label {
               anchors.centerIn: parent
               text: "󰓅  Speed Test"
@@ -1443,6 +1464,7 @@ Item {
               height: 24
               radius: 12
               color: current ? root.accent : Util.alpha(Color.foreground, dnsMouse.containsMouse ? 0.18 : 0.10)
+              Behavior on color { ColorAnimation { duration: root.mMicro; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cDecel } }
               opacity: root.pendingDns && root.pendingDns === modelData ? 0.7 : 1
               Sub {
                 id: dnsText
@@ -1534,8 +1556,8 @@ Item {
       spacing: 6
       opacity: root.page === "bluetooth" ? 1 : 0
       visible: opacity > 0
-      Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-      Behavior on opacity { NumberAnimation { duration: 160 } }
+      Behavior on x { NumberAnimation { duration: root.mBase; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cStandard } }
+      Behavior on opacity { NumberAnimation { duration: root.mBase; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cStandard } }
 
       PageHeader {
         title: "Bluetooth"
@@ -1636,8 +1658,8 @@ Item {
       opacity: root.page === "windows" ? 1 : 0
       visible: opacity > 0
       onLoaded: item.showBack = true
-      Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-      Behavior on opacity { NumberAnimation { duration: 160 } }
+      Behavior on x { NumberAnimation { duration: root.mBase; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cStandard } }
+      Behavior on opacity { NumberAnimation { duration: root.mBase; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cStandard } }
     }
     // Keeps the page alive while it slides out.
     Timer { id: winKeep; interval: 400 }
@@ -1656,8 +1678,8 @@ Item {
       spacing: 6
       opacity: root.page === "sound" ? 1 : 0
       visible: opacity > 0
-      Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-      Behavior on opacity { NumberAnimation { duration: 160 } }
+      Behavior on x { NumberAnimation { duration: root.mBase; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cStandard } }
+      Behavior on opacity { NumberAnimation { duration: root.mBase; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cStandard } }
 
       PageHeader {
         title: "Sound"
@@ -1773,6 +1795,7 @@ Item {
         height: 34
         radius: 17
         color: Util.alpha(Color.foreground, fixMouse.containsMouse ? 0.18 : 0.10)
+        Behavior on color { ColorAnimation { duration: root.mMicro; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cDecel } }
         Row {
           anchors.centerIn: parent
           spacing: 8

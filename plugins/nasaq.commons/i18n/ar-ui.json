@@ -359,5 +359,10 @@
 "Cancel": "إلغاء",
 "Save": "حفظ",
 "Island": "الجزيرة",
-"Prayer times in the island": "أوقات الصلاة في الجزيرة"
+"Prayer times in the island": "أوقات الصلاة في الجزيرة",
+"MOTION": "الحركة",
+"Motion": "الحركة",
+"How panels, the island and lists move. Power saver turns motion off by itself.": "كيف تتحرك اللوحات والجزيرة والقوائم. وضع توفير الطاقة يطفئ الحركة تلقائيًا.",
+"Off while power saver is on": "مطفأة أثناء توفير الطاقة",
+"Reduced": "مخفّفة"
 }

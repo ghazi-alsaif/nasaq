@@ -40,6 +40,21 @@ NPage {
   }
 
   NSection {
+    title: "MOTION"
+    note: "How panels, the island and lists move. Power saver turns motion off by itself."
+    NRow {
+      title: "Motion"
+      subtitle: Motion.saver ? "Off while power saver is on" : ""
+      NDropdown {
+        width: 200
+        model: [{ value: 1, label: "Normal" }, { value: 0.5, label: "Reduced" }, { value: 0, label: "Off" }]
+        value: Number(Settings.get("motion.scale", 1))
+        onActivated: function(v) { Settings.set("motion.scale", v) }
+      }
+    }
+  }
+
+  NSection {
     title: "SCREEN FRAME (TEST)"
     note: "A rounded frame around the screen in the theme colour, inside the window gaps. Turn it on in Plugins › Screen Frame."
     NRow { title: "Thickness"; NSlider { width: 220; from: 2; to: 10; stepSize: 1; value: Settings.get("frame.thickness", 6); valueText: Math.round(value) + " px"; onMoved: function(v) { Settings.set("frame.thickness", Math.round(v)) } } }
