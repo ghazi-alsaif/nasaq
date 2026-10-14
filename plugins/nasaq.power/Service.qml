@@ -3,7 +3,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Services.UPower
 
-// NASAQ: Apple-style power behaviour on top of power-profiles-daemon.
+// NASAQ: power behaviour on top of power-profiles-daemon.
 //
 // • Low Power Mode turns itself on when the battery drops to `lowPowerAt`
 //   (20 %) while unplugged, and off again once the charger is connected
@@ -150,7 +150,7 @@ Item {
         "hl.config({ decoration = { blur = { enabled = false } }, animations = { enabled = false } })"])
     } else if (before === "saver") {
       // Leaving Saver: put back what the config says (the user may have blur
-      // switched off in Control Center > Windows) rather than forcing it on.
+      // switched off in Quick Settings > Windows) rather than forcing it on.
       Quickshell.execDetached(["hyprctl", "reload"])
     }
     // Normal at startup: nothing to do, the config is already in effect.

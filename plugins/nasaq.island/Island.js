@@ -1,4 +1,4 @@
-// NASAQ: helpers for the Dynamic Island (OSD payloads, prayer times).
+// NASAQ: helpers for the island (OSD payloads, prayer times).
 
 // ── OSD: same payload contract as omarchy-osd / omarchy.osd ──────────
 function iconFor(name, percent) {

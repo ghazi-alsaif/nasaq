@@ -178,7 +178,7 @@ NPage {
 
   NSection {
     title: "CONNECTIVITY AND SOUND"
-    NRow { title: "Wi-Fi, Bluetooth, sound, brightness"; subtitle: "SUPER + ALT + C"; NButton { text: "Control Center"; onClicked: Sys.ipc("nasaq.control-center", "open") } }
+    NRow { title: "Wi-Fi, Bluetooth, sound, brightness"; subtitle: "SUPER + ALT + C"; NButton { text: "Quick Settings"; onClicked: Sys.ipc("nasaq.control-center", "open") } }
   }
 
   Timer { id: rescan; interval: 900; onTriggered: scale.refresh() }

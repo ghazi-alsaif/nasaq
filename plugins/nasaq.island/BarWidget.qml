@@ -9,7 +9,7 @@ import "Island.js" as Island
 import "Weather.js" as Weather
 import "../nasaq.commons" as Nasaq
 
-// NASAQ: Apple-style Dynamic Island in the middle of the bar.
+// NASAQ: the island, a morphing pill in the middle of the bar.
 //
 // Compact, it is the clock pill, with album art + a live waveform while music
 // plays, or the next prayer's countdown when it is close. Click it to expand
@@ -90,7 +90,7 @@ BarWidget {
   property string alertSubtitle: ""
   readonly property bool overlayWanted: expanded || osdActive || alertActive || notifActive
 
-  // ── Notifications (iPhone-style: the island turns into the toast) ──
+  // ── Notifications (the island turns into the toast) ──
   // nasaq.notifications writes its newest toast to this file and owns the
   // timers; the island shows it and answers over IPC.
   property var notif: ({ count: 0 })
@@ -337,7 +337,7 @@ BarWidget {
 
   function showOsd(payloadJson) {
     osd = Island.osdState(payloadJson)
-    // NASAQ: macOS-style pop on volume changes (throttled; silent when muted).
+    // NASAQ: a soft pop on volume changes (throttled; silent when muted).
     var osdIcon = ""
     try { osdIcon = String(JSON.parse(payloadJson || "{}").icon || "") } catch (e) {}
     if (/^volume/i.test(osdIcon) && !/mute/i.test(osdIcon) && osd.hasProgress && osd.fraction > 0 && !popThrottle.running) {

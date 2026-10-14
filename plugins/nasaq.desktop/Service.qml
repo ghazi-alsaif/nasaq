@@ -1,4 +1,4 @@
-// NASAQ: macOS-style desktop widgets on the wallpaper — clock (with Hijri
+// NASAQ: desktop widgets on the wallpaper — clock (with Hijri
 // date), next prayer, weather and now playing. They live on the Bottom layer,
 // so windows cover them and they show on an empty desktop.
 

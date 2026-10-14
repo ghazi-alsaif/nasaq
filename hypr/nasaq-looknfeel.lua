@@ -4,7 +4,7 @@
 -- Loaded after Omarchy's defaults, so everything here wins.
 
 -- NOTE: the window look (opacity, blur and its colours, dim, shadows,
--- rounding, border, gaps_in) is set from Control Center > Windows and written
+-- rounding, border, gaps_in) is set from Quick Settings > Windows and written
 -- to nasaq-windows.lua, which is loaded at the end of this file and overrides
 -- the values below. The values here are only the fallback if that file is gone.
 -- https://wiki.hypr.land/Configuring/Basics/Variables/#decoration
@@ -35,7 +35,7 @@ hl.config({
     },
 
     -- Subtle depth so the rounded edges read against the blur.
-    -- No shadows: the NASAQ look is a flat look (tried macOS-style shadows 2026-10-06, rejected).
+    -- No shadows: the NASAQ look is a flat look (shadows tried 2026-10-06, rejected).
     shadow = {
       enabled = false,
     },
@@ -83,19 +83,19 @@ hl.config({
 })
 
 -- easeOutBack: overshoots past the target, then settles back.
-hl.curve("overshoot", { type = "bezier", points = { { 0.34, 1.56 }, { 0.64, 1 } } })
-hl.animation({ leaf = "windowsMove", enabled = true, speed = 5.5, bezier = "overshoot" })
+hl.curve("nasaqBounce", { type = "bezier", points = { { 0.34, 1.56 }, { 0.64, 1 } } })
+hl.animation({ leaf = "windowsMove", enabled = true, speed = 5.5, bezier = "nasaqBounce" })
 
 -- ── حركات نوافذ على طريقة أبل (نَسَق) ─────────────────
 -- للتراجع عنها لاحقاً: احذف هذا الجزء كاملاً إلى نهاية الملف.
--- فتح: النافذة تكبر من 70% وتتجاوز قليلاً ثم تستقر (macOpen).
+-- فتح: النافذة تكبر من 70% وتتجاوز قليلاً ثم تستقر (nasaqEnter).
 -- إغلاق: تصغر وتختفي بسرعة بلا ارتداد.
-hl.curve("macOpen", { type = "bezier", points = { { 0.22, 1.28 }, { 0.36, 1 } } })
-hl.curve("macClose", { type = "bezier", points = { { 0.55, 0 }, { 0.75, 0.6 } } })
-hl.animation({ leaf = "windowsIn", enabled = true, speed = 4.6, bezier = "macOpen", style = "popin 70%" })
-hl.animation({ leaf = "windowsOut", enabled = true, speed = 2.4, bezier = "macClose", style = "popin 80%" })
+hl.curve("nasaqEnter", { type = "bezier", points = { { 0.22, 1.28 }, { 0.36, 1 } } })
+hl.curve("nasaqExit", { type = "bezier", points = { { 0.55, 0 }, { 0.75, 0.6 } } })
+hl.animation({ leaf = "windowsIn", enabled = true, speed = 4.6, bezier = "nasaqEnter", style = "popin 70%" })
+hl.animation({ leaf = "windowsOut", enabled = true, speed = 2.4, bezier = "nasaqExit", style = "popin 80%" })
 hl.animation({ leaf = "fadeIn", enabled = true, speed = 2.2, bezier = "easeOutQuint" })
-hl.animation({ leaf = "fadeOut", enabled = true, speed = 2.0, bezier = "macClose" })
+hl.animation({ leaf = "fadeOut", enabled = true, speed = 2.0, bezier = "nasaqExit" })
 
 -- iMac (2026-10-06): no black dimming on inactive windows. Opacity stays as on the laptop.
 hl.config({
@@ -147,7 +147,7 @@ do
   end
 end
 
--- Window look chosen in Control Center > Windows (transparency, blur, dim,
+-- Window look chosen in Quick Settings > Windows (transparency, blur, dim,
 -- shadows, shape). Loaded last so it wins; delete the file to fall back to the
 -- above. pcall: a broken file must not stop the rules that follow.
 do
@@ -159,14 +159,14 @@ do
   end
 end
 
--- Dynamic Island and control center cards: glass. Their layers are larger
+-- Island and quick settings cards: glass. Their layers are larger
 -- than the card, so ignore_alpha keeps the blur to the card itself (its alpha
 -- is the active-window opacity, never below 0.2) and off the transparent rest
 -- and the closed pill (alpha 0.16).
 hl.layer_rule({ match = { namespace = "nasaq-island" }, blur = true, ignore_alpha = 0.19 })
 hl.layer_rule({ match = { namespace = "nasaq-control-center" }, blur = true, ignore_alpha = 0.19 })
 
--- Mission Control (nasaq.overview): Hyprland blurs behind its full-screen
+-- Overview (nasaq.overview): Hyprland blurs behind its full-screen
 -- layer with the same blur settings as the windows; xray shows only the
 -- wallpaper underneath, not the windows.
 hl.layer_rule({ match = { namespace = "nasaq-overview" }, blur = true, xray = true })

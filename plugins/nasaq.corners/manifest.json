@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "id": "nasaq.corners",
   "name": "Hot Corners",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "author": "NASAQ (GHS)",
-  "description": "Push the pointer into a screen corner to open Mission Control, show the desktop, lock, and more. Set in NASAQ Settings > Workspaces & Windows.",
+  "description": "Push the pointer into a screen corner to open the Overview, show the desktop, lock, and more. Set in NASAQ Settings > Workspaces & Windows.",
   "kinds": ["service"],
   "keepLoaded": true,
   "entryPoints": { "service": "Service.qml" }

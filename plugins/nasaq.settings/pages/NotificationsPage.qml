@@ -7,7 +7,7 @@ import ".."
 NPage {
   id: page
   title: Tr.t("page.notifications")
-  subtitle: "Every notification appears from the Dynamic Island."
+  subtitle: "Every notification appears from the island."
 
   Cmd { id: dnd; script: "omarchy-shell notifications dndState" }
   property bool soundsOff: false

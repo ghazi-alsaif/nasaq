@@ -1,5 +1,5 @@
 import QtQuick
-// Apple-style switch (same as the control center's).
+// Pill switch (same as the quick settings').
 Rectangle {
   id: sw
   property bool checked: false

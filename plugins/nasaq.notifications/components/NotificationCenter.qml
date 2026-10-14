@@ -1,4 +1,4 @@
-// NASAQ: macOS-style Notification Center. A glass panel that slides in from
+// NASAQ: Notification Center. A glass panel that slides in from
 // the right with the date (and Hijri date), a month calendar, the weather,
 // Do Not Disturb, and the notification history grouped by app.
 

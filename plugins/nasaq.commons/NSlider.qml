@@ -1,5 +1,5 @@
 import QtQuick
-// Pill slider like the control center's MacSlider, with min/max/step and a
+// Pill slider like the quick settings' PillSlider, with min/max/step and a
 // value label. `moved(value)` fires while dragging; `committed(value)` on release.
 Item {
   id: s

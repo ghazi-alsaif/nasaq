@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 1.1.2 — 2026-10-14
+- New tagline: one consistent line across the whole Omarchy desktop, from power-on to power-off; inspired by the best of every operating system, built for Hyprland.
+- Linux names in the interface, the Plugins page, the Shortcuts list and the README: Island (was Dynamic Island), Quick Settings (was Control Center), Overview (was Mission Control), Search (was Spotlight), Preview (was Quick Look), Workspace N in the Overview (was Desktop N). The features and the IPC targets (`nasaq.island`, `nasaq.control-center`, `nasaq.overview`, `nasaq.spotlight`) are unchanged, so scripts and binds keep working. Arabic labels follow.
+- Hyprland curves renamed to `nasaqEnter`, `nasaqExit` and `nasaqBounce` (same values).
+- README no longer promises middle-click to close a window in the Overview; it was never implemented.
 - Omarchy updates: a new `nasaq-doctor` puts NASAQ back when Omarchy moves things under it: the Hyprland lines, the bar (id, centre anchor, NASAQ widgets), its plugins and the Omarchy plugins it replaces staying off, the menu block, and the login screen selection (through the existing root helper). It runs after every `omarchy update` (replacing the separate clone-check hook, so there is one notification), and through a systemd user path unit whenever `~/.config/hypr/hyprland.lua` is rewritten, since Update › Config › Hyprland resets that folder without running the update hooks. `--restore-hypr` brings back the user's own Hyprland files from the reset's `.bak` copies. It also reports plugin copies whose Omarchy originals changed, and NASAQ plugins that logged load errors. Settings › Advanced runs it on demand.
 - Clone check: the login-theme entry no longer records the active SDDM selection, so installing NASAQ's own login screen no longer looks like an Omarchy change after the next update.
 - Fixed: the Clear / Undo button in the expanded island did nothing beyond its label. It sat in a delegate that could not reach the island's timer (ReferenceError: clearTimer is not defined), so a Clear never completed.

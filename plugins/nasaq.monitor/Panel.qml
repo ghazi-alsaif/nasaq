@@ -56,7 +56,7 @@ Panel {
   property int selectedIndex: 0
   property bool cursorActive: false
 
-  // Text size slider — curated macOS-style notches (px). The panel snaps to
+  // Text size slider — curated notches (px). The panel snaps to
   // these stops; the CLI (omarchy-display-text-size) accepts any integer in range.
   readonly property var textSizeStops: [9, 10, 11, 12, 14, 16, 20]
   // While a change is in flight, the chosen stop index overrides the live

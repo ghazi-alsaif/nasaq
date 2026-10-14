@@ -244,7 +244,7 @@ describe_path() {
     hypr/bindings.lua) echo "Keyboard shortcuts" ;;
     hypr/monitors.lua) echo "Display setup" ;;
     hypr/*) echo "Hyprland settings" ;;
-    omarchy/plugins/nasaq.island/*) echo "Dynamic Island" ;;
+    omarchy/plugins/nasaq.island/*) echo "Island" ;;
     omarchy/plugins/nasaq.notifications/*) echo "Notifications" ;;
     omarchy/plugins/nasaq.lock/*|omarchy/plugins/nasaq.control-center/*) echo "Control center and lock screen" ;;
     omarchy/plugins/nasaq.windows/*) echo "Window settings page" ;;
@@ -254,9 +254,9 @@ describe_path() {
     omarchy/nasaq/help/*) echo "Shortcuts guide page" ;;
     omarchy/nasaq/clone-baseline.txt|omarchy/hooks/post-update.d/nasaq-clone-check.sh) echo "Clone check after updates" ;;
     omarchy/nasaq/bin/*) echo "Your commands (nasaq-*)" ;;
-    omarchy/plugins/nasaq.overview/*) echo "Mission Control" ;;
+    omarchy/plugins/nasaq.overview/*) echo "Overview" ;;
     omarchy/plugins/nasaq.desktop/*) echo "Desktop widgets" ;;
-    omarchy/plugins/nasaq.spotlight/*) echo "Spotlight" ;;
+    omarchy/plugins/nasaq.spotlight/*) echo "Search" ;;
     omarchy/plugins/nasaq.bar/*|omarchy/plugins/nasaq.launchers/*|omarchy/plugins/nasaq.workspaces/*) echo "Bar" ;;
     omarchy/plugins/*) echo "Other bar pieces" ;;
     omarchy/extensions/*) echo "Omarchy menu" ;;

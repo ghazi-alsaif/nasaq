@@ -8,7 +8,7 @@ import qs.Commons
 import "Spot.js" as Spot
 import "../nasaq.commons" as Nasaq
 
-// NASAQ: macOS Spotlight. `omarchy-shell nasaq.spotlight toggle`.
+// NASAQ: Search (apps, windows, files, calculator, agent). `omarchy-shell nasaq.spotlight toggle`.
 // One field for apps, files, arithmetic, currency (live rates, SAR by
 // default), units and the web. Arabic digits and words work too.
 Item {
@@ -97,7 +97,7 @@ Item {
     return out
   }
 
-  // ── Quick Look: preview of the selected file (NASAQ Settings > Launcher) ──
+  // ── Preview: preview of the selected file (NASAQ Settings > Launcher) ──
   readonly property bool previewOn: Nasaq.Settings.get("launcher.preview", true)
   readonly property var currentItem: results.length ? results[Math.min(selected, results.length - 1)] : null
   readonly property bool showPreview: previewOn && open && currentItem !== null && currentItem.kind === "file"
@@ -473,7 +473,7 @@ Item {
             anchors.fill: parent
             verticalAlignment: Text.AlignVCenter
             visible: input.text.length === 0
-            text: "Spotlight Search"
+            text: "Search"
             color: Qt.rgba(1, 1, 1, 0.35)
             font: input.font
           }
@@ -484,7 +484,7 @@ Item {
         }
       }
 
-      // Quick Look pane
+      // Preview pane
       Item {
         visible: root.showPreview
         x: card.listWidth

@@ -63,12 +63,12 @@ o.bind("SUPER + code:55", "Universal paste", clipboard_shortcut(KEY_V))
 -- القص داخل الطرفية لا وجود له، لكن CTRL+SHIFT+X غير مؤذٍ، ونبقي القاعدة واحدة.
 o.bind("SUPER + code:53", "Universal cut", clipboard_shortcut(KEY_X))
 
--- ── Mission Control و Spotlight (إضافات nasaq.overview و nasaq.spotlight) ──
+-- ── Overview و Search (إضافات nasaq.overview و nasaq.spotlight) ──
 -- SUPER+TAB كان "المساحة التالية"؛ التنقل بين المساحات صار من داخل Mission
 -- Control بالنقر أو بالأرقام 1-9.
 hl.unbind("SUPER + TAB")
-o.bind("SUPER + TAB", "Mission Control", "omarchy-shell nasaq.overview toggle")
-o.bind("ALT + SPACE", "Spotlight", "omarchy-shell nasaq.spotlight toggle")
+o.bind("SUPER + TAB", "Overview", "omarchy-shell nasaq.overview toggle")
+o.bind("ALT + SPACE", "Search", "omarchy-shell nasaq.spotlight toggle")
 o.bind("SUPER + N", "Notification Center", "omarchy-shell nasaq.notifcenter toggle")
 
 -- Mac-style quit (SUPER + Q): close every window of the focused app.
@@ -78,7 +78,7 @@ o.bind("SUPER + code:24", "Quit app", os.getenv("HOME") .. "/.local/bin/hypr-qui
 -- ── Control center, desktop widgets, speakers fix (added with the 2026-10-06 audit) ──
 -- Keycodes rather than letters, so they work under the Arabic layout too:
 -- code:54 = C, code:40 = D, code:38 = A.
-o.bind("SUPER + ALT + code:54", "Control Center", "omarchy-shell nasaq.control-center toggle")
+o.bind("SUPER + ALT + code:54", "Quick Settings", "omarchy-shell nasaq.control-center toggle")
 o.bind("SUPER + ALT + code:40", "Show / hide desktop widgets", "omarchy-shell nasaq.desktop toggle")
 -- Only on a machine that has the fix (the iMac).
 do

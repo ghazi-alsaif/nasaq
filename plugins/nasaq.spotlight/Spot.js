@@ -1,4 +1,4 @@
-// NASAQ: Spotlight helpers — calculator, currency and unit conversion, app ranking.
+// NASAQ: Search helpers — calculator, currency and unit conversion, app ranking.
 
 function normalizeDigits(s) {
   return String(s || "")

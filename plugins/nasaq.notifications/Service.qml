@@ -91,7 +91,7 @@ Item {
   // to it. QML ids aren't visible to external consumers without the alias.
   property alias popupModel: popupModel
 
-  // NASAQ: toasts are shown by the Dynamic Island (nasaq.island), iPhone-style.
+  // NASAQ: toasts are shown by the island (nasaq.island).
   // The toast column below still exists, invisible, because its delegates own
   // each toast's lifetime timer. The island sets islandHovered so a toast
   // under the pointer doesn't time out. Set islandToasts false to get the
@@ -1006,7 +1006,7 @@ Item {
 
   // ---------------------------------------------------- server
 
-  // NASAQ: macOS-style Notification Center (Super+N, or right-click the island).
+  // NASAQ: Notification Center (Super+N, or right-click the island).
   NotificationCenter {
     id: notificationCenter
     service: service
@@ -1033,9 +1033,9 @@ Item {
     }
   }
 
-  // ------------------------------------------------- Dynamic Island toasts
+  // ------------------------------------------------- island toasts
   //
-  // NASAQ: iPhone-style. The island itself turns into the newest toast and
+  // NASAQ: the island itself turns into the newest toast and
   // back. Plugins can't reach each other's services, so the newest toast is
   // written to ~/.local/state/nasaq/island-toast.json; nasaq.island watches it
   // and calls back over IPC (notifications islandInvoke / islandDismiss with
@@ -1107,7 +1107,7 @@ Item {
       // rest of the (invisible) full-screen overlay never eats input.
       mask: Region { item: popupColumn }
 
-      // NASAQ: toasts drop out of the Dynamic Island — centred under the bar
+      // NASAQ: toasts drop out of the island — centred under the bar
       // instead of the top-right corner.
       ColumnLayout {
         id: popupColumn

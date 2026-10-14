@@ -7,7 +7,7 @@ import qs.Commons
 import "../nasaq.lock" as Lock
 
 // NASAQ: the lock screen's control center, summoned from the bar. The card
-// lives in its own overlay so it keeps the exact Apple look; clicking outside
+// lives in its own overlay so it keeps its exact look; clicking outside
 // it (or Escape) closes it.
 BarWidget {
   id: root
@@ -98,7 +98,7 @@ BarWidget {
         Text {
           anchors.verticalCenter: parent.verticalCenter
           text: controls.batteryIcon
-          // Yellow while in Saver / Low Power Mode, like iOS/macOS.
+          // Yellow while in Saver mode.
           color: controls.powerProfile === "power-saver" ? "#ffd60a" : root.barForeground
           font.family: Style.font.family
           font.pixelSize: Style.bar.iconFont
@@ -131,7 +131,7 @@ BarWidget {
   Timer { id: collapseHide; interval: 420; onTriggered: root.overlayShown = false }
   Timer { id: leaveTimer; interval: 650; onTriggered: root.close() }
 
-  // ── The card grows out of the pill, like the Dynamic Island ──────
+  // ── The card grows out of the pill, like the island ──────
   PanelWindow {
     id: overlay
     screen: pill.QsWindow.window ? pill.QsWindow.window.screen : null

@@ -11,10 +11,10 @@ import qs.Commons
 // this file, so it must not depend on another plugin's folder being present.
 import "AudioModel.js" as AudioModel
 
-// NASAQ: macOS-style control center, shared by the lock screen (LockView) and
+// NASAQ: quick settings, shared by the lock screen (LockView) and
 // the bar (nasaq.control-center). The main page has the Wi-Fi/Bluetooth tile,
 // keyboard, battery, brightness, sound and power; clicking Wi-Fi or Bluetooth
-// slides to a detail page with the network / device list, like Apple's.
+// slides to a detail page with the network / device list.
 Item {
   id: root
 
@@ -631,7 +631,7 @@ Item {
     }
   }
 
-  // Apple-style switch.
+  // Pill switch.
   component Switch: Rectangle {
     id: sw
     property bool checked: false
@@ -829,7 +829,7 @@ Item {
     }
   }
 
-  component MacSlider: Item {
+  component PillSlider: Item {
     id: slider
     property real value: 0          // 0..1
     property string icon: ""
@@ -1139,7 +1139,7 @@ Item {
               }
             }
           }
-          MacSlider {
+          PillSlider {
             id: brightnessSlider
             width: parent.width
             icon: "󰃠"
@@ -1187,7 +1187,7 @@ Item {
               onClicked: root.openPage("sound")
             }
           }
-          MacSlider {
+          PillSlider {
             width: parent.width
             icon: root.muted ? "󰝟" : (root.volume < 0.34 ? "󰕿" : root.volume < 0.67 ? "󰖀" : "󰕾")
             value: root.muted ? 0 : root.volume
@@ -1679,7 +1679,7 @@ Item {
           spacing: 2
 
           SectionTitle { text: "Output" }
-          MacSlider {
+          PillSlider {
             width: parent.width
             icon: root.volumeIcon(root.volume, root.muted)
             value: root.muted ? 0 : root.volume
@@ -1705,7 +1705,7 @@ Item {
           }
 
           SectionTitle { visible: root.shownSources.length > 0; text: "Input" }
-          MacSlider {
+          PillSlider {
             visible: !!root.source
             width: parent.width
             icon: root.inputMuted ? "󰍭" : "󰍬"
@@ -1745,7 +1745,7 @@ Item {
                 leftPadding: 4
                 text: AudioModel.friendlyStreamLabel(AudioModel.rawStreamLabel(modelData)) || "App"
               }
-              MacSlider {
+              PillSlider {
                 width: parent.width
                 readonly property bool m: !!modelData.audio && modelData.audio.muted
                 readonly property real v: modelData.audio ? modelData.audio.volume : 0
@@ -1798,7 +1798,7 @@ Item {
     }
   }
 
-  // Wi-Fi network row with Apple's inline password prompt for new secured
+  // Wi-Fi network row with an inline password prompt for new secured
   // networks.
   component NetworkRow: Column {
     id: nr

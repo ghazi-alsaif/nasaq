@@ -1,6 +1,6 @@
 #!/bin/bash
 # NASAQ: translate the selected text (or the clipboard) with Claude and show
-# the result in the Dynamic Island; the translation is also copied.
+# the result in the island; the translation is also copied.
 #   nasaq-translate            Arabic → English, anything else → Arabic
 #   nasaq-translate en|ar      force the target language
 #   nasaq-translate --summary  summarise instead of translating

@@ -1,6 +1,7 @@
 <h1 align="center">NASAQ</h1>
 
-<p align="center"><strong>An opinionated, macOS-flavoured desktop layer for <a href="https://omarchy.org">Omarchy</a>.</strong><br>
+<p align="center"><strong>One consistent line across your whole <a href="https://omarchy.org">Omarchy</a> desktop, from power-on to power-off.</strong><br>
+Inspired by the best of every operating system, built for Hyprland.<br>
 Also available in <a href="README.ar.md">Arabic</a>.</p>
 
 <p align="center">
@@ -32,13 +33,13 @@ NASAQ is an Arabic word for *order, harmony, a consistent pattern*: things arran
 <p align="center"><img src="docs/screenshots/bar-left.png" alt="Bar, left" width="760"><br>
 <img src="docs/screenshots/bar-center.png" alt="Bar, centre" width="420">&nbsp;&nbsp;<img src="docs/screenshots/bar-right.png" alt="Bar, right" width="400"></p>
 
-Left: the Omarchy menu, pinned app launchers, and the **workspace numbers**. The active workspace is highlighted, workspaces that hold windows are shown in full, empty ones are dimmed. Centre: the Dynamic Island with the clock and the next prayer countdown. Right: tray, keyboard layout, Wi-Fi and power state. The bar is Omarchy's bar. NASAQ adds its widgets to it through `shell.json`, so `omarchy bar` commands still work.
+Left: the Omarchy menu, pinned app launchers, and the **workspace numbers**. The active workspace is highlighted, workspaces that hold windows are shown in full, empty ones are dimmed. Centre: the island with the clock and the next prayer countdown. Right: tray, keyboard layout, Wi-Fi and power state. The bar is Omarchy's bar. NASAQ adds its widgets to it through `shell.json`, so `omarchy bar` commands still work.
 
-### Dynamic Island
+### The island
 
-<p align="center"><img src="docs/screenshots/island.png" alt="Dynamic Island" width="420"></p>
+<p align="center"><img src="docs/screenshots/island.png" alt="The island" width="420"></p>
 
-The island in the top centre is a living element, in the spirit of Apple's Dynamic Island. Collapsed, it shows the time, and optionally a countdown to the next prayer. Click it and it expands into a card with the date (Gregorian, and Hijri if you want it), the weather, what is playing, and a stopwatch and Pomodoro timer. Volume and brightness OSDs, and notifications, appear by morphing the island itself rather than as separate pop-ups.
+The island in the top centre is a living element: one pill that changes shape for whatever needs your attention. Collapsed, it shows the time, and optionally a countdown to the next prayer. Click it and it expands into a card with the date (Gregorian, and Hijri if you want it), the weather, what is playing, and a stopwatch and Pomodoro timer. Volume and brightness OSDs, and notifications, appear by morphing the island itself rather than as separate pop-ups.
 
 ### Notifications and Notification Center
 
@@ -50,11 +51,11 @@ A notification grows out of the island, with the app icon, title and body, then 
 
 `SUPER + N` slides the Notification Center in from the right: history grouped by app, clear-all, and a Do Not Disturb switch.
 
-### Control Center
+### Quick Settings
 
-<p align="center"><img src="docs/screenshots/control-center.png" alt="Control Center" width="420"></p>
+<p align="center"><img src="docs/screenshots/control-center.png" alt="Quick Settings" width="420"></p>
 
-`SUPER + ALT + C`, or a hot corner, opens a macOS-style Control Center: Wi-Fi, Bluetooth, keyboard layout, Do Not Disturb, display brightness with auto-brightness, sound with an output picker, a Windows page (transparency, blur, shadows, shape), power profile, and lock / sleep / restart / shut down.
+`SUPER + ALT + C`, or a hot corner, opens Quick Settings: Wi-Fi, Bluetooth, keyboard layout, Do Not Disturb, display brightness with auto-brightness, sound with an output picker, a Windows page (transparency, blur, shadows, shape), power profile, and lock / sleep / restart / shut down.
 
 ### Desktop widgets
 
@@ -65,29 +66,29 @@ Make the column yours, in Settings > Widgets:
 - Every card has an on/off switch. The column closes the gap where a card is off.
 - Drag the handle next to a card to put the cards in any order.
 - The Tasks / Notes card stretches to the bottom of the screen when it is last. Anywhere else it keeps a fixed height.
-- Prayer times, in the column and in the Dynamic Island, are off with one switch if you do not need them.
+- Prayer times, in the column and in the island, are off with one switch if you do not need them.
 
-### Spotlight
+### Search
 
-![Spotlight](docs/screenshots/spotlight.png)
+![Search](docs/screenshots/spotlight.png)
 
-`ALT + SPACE` opens Spotlight. Type to find apps (ranked by how often and how recently you open them), open windows, and files, with a Quick Look pane on the right that previews images, text and documents and shows size and date. Spotlight also does arithmetic, currency and unit conversion, and web search. Start a line with `?` and the rest is a question for your default Omarchy agent (Claude, Codex, OpenCode, Copilot or Gemini, whichever `omarchy default agent` points at). The answer appears inline.
+`ALT + SPACE` opens Search. Type to find apps (ranked by how often and how recently you open them), open windows, and files, with a preview pane on the right that previews images, text and documents and shows size and date. Search also does arithmetic, currency and unit conversion, and web search. Start a line with `?` and the rest is a question for your default Omarchy agent (Claude, Codex, OpenCode, Copilot or Gemini, whichever `omarchy default agent` points at). The answer appears inline.
 
-### Mission Control
+### Overview
 
-![Mission Control](docs/screenshots/mission-control.png)
+![Overview](docs/screenshots/mission-control.png)
 
-`SUPER + TAB`, a three-finger swipe up, or the top-left hot corner opens Mission Control: live previews of every window on the current workspace, with the workspace strip at the top. Click a window to focus it, drag it to another workspace, or middle-click to close it.
+`SUPER + TAB`, a three-finger swipe up, or the top-left hot corner opens the Overview: live previews of every window on the current workspace, with the workspace strip at the top. Click a window to focus it, or drag it to another workspace.
 
 ### App Switcher
 
 <p align="center"><img src="docs/screenshots/app-switcher.png" alt="App Switcher" width="720"></p>
 
-`ALT + TAB` cycles windows in most-recently-used order with live previews, exactly like macOS: hold ALT, press TAB to move, release ALT to switch instantly. This needs one udev rule, which the installer offers; without it the switcher falls back to a short timer.
+`ALT + TAB` cycles windows in most-recently-used order with live previews: hold ALT, press TAB to move, release ALT to switch instantly. This needs one udev rule, which the installer offers; without it the switcher falls back to a short timer.
 
 ### Hot corners
 
-Push the pointer into a corner to trigger an action. Defaults: top-left Mission Control, top-right Notification Center, bottom-left show desktop, bottom-right lock. Each corner is set from Settings > Workspaces & Windows.
+Push the pointer into a corner to trigger an action. Defaults: top-left Overview, top-right Notification Center, bottom-left show desktop, bottom-right lock. Each corner is set from Settings > Workspaces & Windows.
 
 ### Scratchpads
 
@@ -123,7 +124,7 @@ From the moment the machine starts until it shuts down, every screen has the sam
 ### More
 
 - **Terminal greeting** (optional installer step): system info from fastfetch each time a terminal opens.
-- **Power**: an Apple-style Low Power Mode and per-profile behaviour (Saver, Balanced, Performance).
+- **Power**: a power-saving mode and per-profile behaviour (Saver, Balanced, Performance).
 - **Display**: resolution, scale and position with a 15-second automatic revert, and auto-brightness from the ambient sensor or the clock.
 - **Translation**: `SUPER + CTRL + ALT + L` translates the selected text; add SHIFT to OCR and translate a region of the screen. Both use your default Omarchy agent.
 - **Universal clipboard**: `SUPER + C / V / X` copy, paste and cut in every app, including terminals.
@@ -139,11 +140,11 @@ From the moment the machine starts until it shuts down, every screen has the sam
 | Keys | Action |
 |---|---|
 | `SUPER + ALT + N` | NASAQ Settings |
-| `ALT + SPACE` | Spotlight |
+| `ALT + SPACE` | Search |
 | `ALT + TAB` | App Switcher |
-| `SUPER + TAB` | Mission Control |
+| `SUPER + TAB` | Overview |
 | `SUPER + N` | Notification Center |
-| `SUPER + ALT + C` | Control Center |
+| `SUPER + ALT + C` | Quick Settings |
 | `SUPER + ALT + D` | Show / hide desktop widgets |
 | `` SUPER + ` `` | Terminal scratchpad |
 | `SUPER + Q` | Quit app |
@@ -151,7 +152,7 @@ From the moment the machine starts until it shuts down, every screen has the sam
 | `SUPER + CTRL + ALT + L` | Translate selection |
 | `SUPER + CTRL + ALT + SHIFT + L` | Translate a screen region (OCR) |
 | `SUPER + ALT + A` | Fix speakers |
-| `?` in Spotlight | Ask the default agent |
+| `?` in Search | Ask the default agent |
 
 All of Omarchy's own shortcuts stay as they are, and any of them can be changed from the Shortcuts page.
 
@@ -160,7 +161,7 @@ All of Omarchy's own shortcuts stay as they are, and any of them can be changed 
 - Omarchy 4.0.4 or newer, which brings Hyprland 0.56+ and Quickshell 0.3+. NASAQ uses Hyprland's Lua configuration and Omarchy's plugin system.
 - Optional packages the installer offers: `tesseract-data-ara` (OCR data for Arabic; add other `tesseract-data-*` packages for your languages), `cava` (audio visualiser), `nwg-displays` (graphical display layout), `kitty` and `ptyxis` (scratchpad terminals).
 - For the login and boot screens: SDDM and Plymouth (both part of Omarchy), ImageMagick and a monospace font (JetBrains Mono or its Nerd Font build, else any monospace).
-- Optional: one of the Omarchy agents (`claude`, `codex`, `opencode`, `copilot`, `gemini`) for Spotlight questions and translation.
+- Optional: one of the Omarchy agents (`claude`, `codex`, `opencode`, `copilot`, `gemini`) for questions in Search and for translation.
 - Optional prayer times come from [AlAdhan](https://aladhan.com), weather from [Open-Meteo](https://open-meteo.com), currency rates from [open.er-api.com](https://open.er-api.com). All are free and need no key.
 
 ## Install

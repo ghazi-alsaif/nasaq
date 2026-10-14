@@ -5,7 +5,7 @@ import Quickshell.Io
 import qs.Commons
 import qs.Ui
 
-// NASAQ: macOS-style lock screen. The open windows (captured just before the
+// NASAQ: lock screen. The open windows (captured just before the
 // lock) sit blurred behind a large clock, the password pill sits low and
 // centred, and a control-center popover hangs off the top-right status icons.
 Item {

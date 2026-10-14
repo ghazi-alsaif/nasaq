@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""NASAQ: ask Claude from Spotlight ("? question").
+"""NASAQ: ask the agent from Search ("? question").
 Prints JSON {"answer": str, "command": str|null}. A command is only suggested
-when it matches the allow-list below; Spotlight runs it only after Enter.
+when it matches the allow-list below; Search runs it only after Enter.
 """
 import json, re, subprocess, sys
 ALLOW = re.compile(r"^(omarchy[ -][\w -]+|nasaq-[\w-]+( [\w.:+\"' -]*)?|systemctl --user (start|stop|restart|status) [\w.@-]+|"

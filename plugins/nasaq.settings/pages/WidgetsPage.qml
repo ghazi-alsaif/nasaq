@@ -7,7 +7,7 @@ import ".."
 NPage {
   id: page
   title: Tr.t("page.widgets")
-  subtitle: "Desktop widget column, Dynamic Island and prayer times."
+  subtitle: "Desktop widget column, the island and prayer times."
 
   readonly property string islandPath: Sys.home + "/.config/omarchy/nasaq/island.json"
   property var island: ({})
@@ -204,7 +204,7 @@ NPage {
     title: "PRAYER TIMES"
     note: "City: " + (page.island.city || "not set") + ". Change the city from the island's settings."
     NRow {
-      title: "Prayer times in the Dynamic Island"
+      title: "Prayer times in the island"
       subtitle: "The countdown in the bar and the prayer row in the island card. The desktop prayer card has its own switch above."
       NSwitch { checked: Settings.get("island.prayer", true); onToggled: function(c) { Settings.set("island.prayer", c) } }
     }

@@ -7,11 +7,11 @@ import ".."
 NPage {
   id: page
   title: Tr.t("page.windows")
-  subtitle: "Window look, Mission Control and gaps."
+  subtitle: "Window look, the Overview and gaps."
 
   NSection {
-    title: "MISSION CONTROL"
-    NRow { title: "Open Mission Control"; subtitle: "SUPER + TAB"; NButton { text: "Open"; onClicked: Sys.ipc("nasaq.overview", "open") } }
+    title: "OVERVIEW"
+    NRow { title: "Open the Overview"; subtitle: "SUPER + TAB"; NButton { text: "Open"; onClicked: Sys.ipc("nasaq.overview", "open") } }
     NRow { title: "App switcher (ALT + TAB)"; subtitle: "Live previews in most-recently-used order. Off = Omarchy's plain cycling."
       NSwitch { checked: Settings.get("switcher.enabled", true); onToggled: function(c) { Settings.set("switcher.enabled", c) } } }
     NRow { title: "Switch after the last TAB (fallback)"; subtitle: "Used only when the Alt key cannot be read directly."
@@ -107,8 +107,8 @@ NPage {
     title: "HOT CORNERS"
     note: "Rest the pointer in a corner to run the action."
     readonly property var choices: [
-      { value: "none", label: "Nothing" }, { value: "overview", label: "Mission Control" }, { value: "desktop", label: "Desktop widgets" },
-      { value: "spotlight", label: "Spotlight" }, { value: "notifcenter", label: "Notification Center" }, { value: "control", label: "Control Center" },
+      { value: "none", label: "Nothing" }, { value: "overview", label: "Overview" }, { value: "desktop", label: "Desktop widgets" },
+      { value: "spotlight", label: "Search" }, { value: "notifcenter", label: "Notification Center" }, { value: "control", label: "Quick Settings" },
       { value: "island", label: "Expand island" }, { value: "menu", label: "Omarchy menu" }, { value: "screensaver", label: "Screensaver" }, { value: "lock", label: "Lock screen" }]
     Repeater {
       model: [{ c: "tl", t: "Top left" }, { c: "tr", t: "Top right" }, { c: "bl", t: "Bottom left" }, { c: "br", t: "Bottom right" }]

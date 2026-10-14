@@ -8,7 +8,7 @@ import Quickshell.Hyprland
 import Quickshell.Widgets
 import qs.Commons
 
-// NASAQ: macOS Mission Control for Hyprland.
+// NASAQ: Overview of windows and workspaces for Hyprland.
 //
 // `omarchy-shell nasaq.overview toggle` blurs the screen, flies the current
 // workspace's windows (live previews) from where they sit into a grid, and
@@ -375,7 +375,7 @@ Item {
 
           Text {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: wsDelegate.isNew ? "New" : "Desktop " + wsDelegate.modelData
+            text: wsDelegate.isNew ? "New" : "Workspace " + wsDelegate.modelData
             color: wsDelegate.isActive ? "white" : Qt.rgba(1, 1, 1, 0.6)
             font.family: root.textFont
             font.pixelSize: 12

@@ -6,7 +6,7 @@ import qs.Commons as QsCommons
 
 // NASAQ visual identity: the control center's glass look, shared by every
 // nasaq.* surface. Colours follow the active Omarchy theme (accent) and the
-// window opacity chosen in Control Center > Windows (nasaq/windows.json).
+// window opacity chosen in Quick Settings > Windows (nasaq/windows.json).
 Singleton {
   id: root
 

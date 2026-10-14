@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "nasaq.tray",
   "name": "System Tray",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "author": "NASAQ (GHS)",
   "description": "Status notifier items",
   "kinds": [
