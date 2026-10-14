@@ -49,6 +49,20 @@ BarWidget {
   implicitWidth: grid.implicitWidth + trailingGap
   implicitHeight: grid.implicitHeight
 
+  // Wheel over the numbers moves to the next or previous workspace. Deltas are
+  // collected to one notch (120) so a touchpad does not skip several at once.
+  property real wheelAcc: 0
+  WheelHandler {
+    acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+    onWheel: function(event) {
+      root.wheelAcc += event.angleDelta.y || -event.angleDelta.x
+      if (Math.abs(root.wheelAcc) < 120 || !root.bar) return
+      var step = root.wheelAcc > 0 ? "-1" : "+1"
+      root.wheelAcc = 0
+      root.bar.run("hyprctl dispatch " + Util.shellQuote("hl.dsp.focus({ workspace = \"r" + step + "\" })"))
+    }
+  }
+
   GridLayout {
     id: grid
     anchors.fill: parent

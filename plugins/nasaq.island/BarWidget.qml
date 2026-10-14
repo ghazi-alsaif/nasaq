@@ -577,6 +577,16 @@ BarWidget {
       anchors.fill: parent
       hoverEnabled: true
       acceptedButtons: Qt.LeftButton | Qt.RightButton
+      // Wheel over the island changes the volume; the volume OSD shows in the
+      // island itself. One notch (120) = one volume step, as the volume keys.
+      property real wheelAcc: 0
+      onWheel: function(wheel) {
+        wheelAcc += wheel.angleDelta.y
+        if (Math.abs(wheelAcc) < 120) return
+        var up = wheelAcc > 0
+        wheelAcc = 0
+        Quickshell.execDetached(["omarchy-audio-output-volume", up ? "raise" : "lower"])
+      }
       cursorShape: Qt.PointingHandCursor
       onClicked: function(mouse) {
         if (mouse.button === Qt.RightButton) {
