@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import "../../nasaq.commons"
+import "../../nasaq.commons" as Nasaq
 import ".."
 
 NPage {
@@ -44,7 +45,7 @@ NPage {
     note: "How panels, the island and lists move. Power saver turns motion off by itself."
     NRow {
       title: "Motion"
-      subtitle: Motion.saver ? "Off while power saver is on" : ""
+      subtitle: Nasaq.Motion.saver ? "Off while power saver is on" : ""
       NDropdown {
         width: 200
         model: [{ value: 1, label: "Normal" }, { value: 0.5, label: "Reduced" }, { value: 0, label: "Off" }]

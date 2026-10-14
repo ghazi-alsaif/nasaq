@@ -45,6 +45,11 @@ Item {
     }
     padding: 4
     modal: false
+    enter: Transition {
+      NFade { property: "opacity"; from: 0; to: 1 }
+      NAnim { property: "scale"; from: 0.96; to: 1; kind: "fast" }
+    }
+    exit: Transition { NFade { property: "opacity"; from: 1; to: 0; duration: Motion.micro } }
     closePolicy: QQC.Popup.CloseOnEscape | QQC.Popup.CloseOnPressOutside
     background: Rectangle {
       radius: 10

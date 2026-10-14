@@ -129,7 +129,7 @@ PY
 say "menu entries in place"
 
 # Optional packages
-opt=(tesseract-data-ara cava nwg-displays kitty ptyxis)
+opt=(tesseract-data-ara cava nwg-displays kitty ptyxis libqalculate)
 missing=()
 for p in "${opt[@]}"; do pacman -Q "$p" >/dev/null 2>&1 || missing+=("$p"); done
 if ((${#missing[@]})); then

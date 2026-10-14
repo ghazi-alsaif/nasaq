@@ -381,6 +381,8 @@ Item {
   // ── UI ───────────────────────────────────────────────────────────
   component Card: Rectangle {
     property string key: ""
+    // Cards glide to their new place when one is turned on, off or moved.
+    Behavior on y { enabled: widgets.ready; Nasaq.NAnim { kind: "move" } }
     width: 320
     radius: 26
     color: root.glass
@@ -434,6 +436,7 @@ Item {
         transformOrigin: Item.TopLeft
         // Cards are placed by hand in root.cardOrder; hidden cards leave no gap.
         property string lastKey: ""
+        property bool ready: false
         implicitHeight: 0
         function cardFor(key) { for (var i = 0; i < children.length; i++) if (children[i].key === key) return children[i]; return null }
         function relayout() {
@@ -455,6 +458,7 @@ Item {
             children[i].heightChanged.connect(relayout)
           }
           relayout()
+          Qt.callLater(function() { widgets.ready = true })
         }
         Connections { target: root; function onCardOrderChanged() { widgets.relayout() } }
         onSpacingChanged: relayout()

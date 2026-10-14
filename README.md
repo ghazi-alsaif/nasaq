@@ -33,7 +33,7 @@ NASAQ is an Arabic word for *order, harmony, a consistent pattern*: things arran
 <p align="center"><img src="docs/screenshots/bar-left.png" alt="Bar, left" width="760"><br>
 <img src="docs/screenshots/bar-center.png" alt="Bar, centre" width="420">&nbsp;&nbsp;<img src="docs/screenshots/bar-right.png" alt="Bar, right" width="400"></p>
 
-Left: the Omarchy menu, pinned app launchers, and the **workspace numbers**. The active workspace is highlighted, workspaces that hold windows are shown in full, empty ones are dimmed. Centre: the island with the clock and the next prayer countdown. Right: tray, keyboard layout, Wi-Fi and power state. The bar is Omarchy's bar. NASAQ adds its widgets to it through `shell.json`, so `omarchy bar` commands still work.
+Left: the Omarchy menu, pinned app launchers, and the **workspace numbers**. The active workspace is highlighted, workspaces that hold windows are shown in full, empty ones are dimmed. Centre: the island with the clock and the next prayer countdown. Right: tray, keyboard layout, Wi-Fi and power state. Scroll over the workspace numbers to change workspace, or over the island to change the volume. The bar is Omarchy's bar. NASAQ adds its widgets to it through `shell.json`, so `omarchy bar` commands still work.
 
 ### The island
 
@@ -78,7 +78,7 @@ Make the column yours, in Settings > Widgets:
 
 ![Overview](docs/screenshots/mission-control.png)
 
-`SUPER + TAB`, a three-finger swipe up, or the top-left hot corner opens the Overview: live previews of every window on the current workspace, with the workspace strip at the top. Click a window to focus it, or drag it to another workspace.
+`SUPER + TAB`, a three-finger swipe up, or the top-left hot corner opens the Overview: live previews of every window on the current workspace, with the workspace strip at the top. Click a window to focus it, or drag it to another workspace. Middle-click closes a window; right-click shows its actions (float or tile, fullscreen, move to a workspace, window rules, close).
 
 ### App Switcher
 
@@ -159,7 +159,7 @@ All of Omarchy's own shortcuts stay as they are, and any of them can be changed 
 ## Requirements
 
 - Omarchy 4.0.4 or newer, which brings Hyprland 0.56+ and Quickshell 0.3+. NASAQ uses Hyprland's Lua configuration and Omarchy's plugin system.
-- Optional packages the installer offers: `tesseract-data-ara` (OCR data for Arabic; add other `tesseract-data-*` packages for your languages), `cava` (audio visualiser), `nwg-displays` (graphical display layout), `kitty` and `ptyxis` (scratchpad terminals).
+- Optional packages the installer offers: `tesseract-data-ara` (OCR data for Arabic; add other `tesseract-data-*` packages for your languages), `cava` (audio visualiser), `nwg-displays` (graphical display layout), `kitty` and `ptyxis` (scratchpad terminals), `libqalculate` (stronger calculator in Search).
 - For the login and boot screens: SDDM and Plymouth (both part of Omarchy), ImageMagick and a monospace font (JetBrains Mono or its Nerd Font build, else any monospace).
 - Optional: one of the Omarchy agents (`claude`, `codex`, `opencode`, `copilot`, `gemini`) for questions in Search and for translation.
 - Optional prayer times come from [AlAdhan](https://aladhan.com), weather from [Open-Meteo](https://open-meteo.com), currency rates from [open.er-api.com](https://open.er-api.com). All are free and need no key.
