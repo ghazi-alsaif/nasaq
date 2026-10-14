@@ -415,7 +415,7 @@ Item {
       height: searchRow.height + (list.count > 0 ? Math.max(list.height, root.showPreview ? 380 : 0) + 9 : 0)
       Behavior on width { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
       radius: 22
-      color: Util.alpha(Color.background, 0.96)
+      color: Util.alpha(Color.background, Math.max(0.55, Nasaq.Theme.glassAlpha))
       border.color: Qt.rgba(1, 1, 1, 0.14)
       border.width: 1
       clip: true

@@ -105,6 +105,8 @@ Item {
   // NASAQ: 50 so the notification center has a real backlog to show.
   readonly property int historyLimit: 50
 
+  Nasaq.Fullscreen { id: fullscreen }
+
   // NASAQ Settings > Notifications > "Show for" (seconds). Low-urgency toasts
   // get 60 % of it; critical ones stay until dismissed.
   readonly property int normalPopupDuration: Math.max(2, Number(Nasaq.Settings.get("notifications.duration", 8))) * 1000
@@ -222,7 +224,10 @@ Item {
     // DND bypass rules: chat apps abuse urgency=critical to force
     // visibility, so critical alone isn't enough — we also require the
     // sender to be CLI-style. See shouldBypassDnd().
-    if (service.doNotDisturb && !shouldBypassDnd(notification)) {
+    // While a film or game is fullscreen only critical notifications show,
+    // without the chime; the rest go straight to history like Do Not Disturb.
+    var fullscreenQuiet = fullscreen.active && notification.urgency !== NotificationUrgency.Critical
+    if ((service.doNotDisturb && !shouldBypassDnd(notification)) || fullscreenQuiet) {
       // The toast never shows, so the only record a silenced notification
       // can leave is a history entry. Write it straight into history —
       // "what did I miss while silenced" is exactly what history is for.
@@ -239,7 +244,7 @@ Item {
     watchForUpdates(notification, snapshot)
     // NASAQ: soft chime for real notifications (not low-urgency or our own
     // action toasts). DND already returned above.
-    if (!silentRule && notification.urgency !== NotificationUrgency.Low && snapshot.app !== "omarchy-action")
+    if (!silentRule && !fullscreen.active && notification.urgency !== NotificationUrgency.Low && snapshot.app !== "omarchy-action")
       Quickshell.execDetached(["nasaq-sound", "notify"])
     // Qt.callLater avoids "QV4::Object::insertMember" crashes when a
     // Repeater is mid-incubation while we mutate its model.

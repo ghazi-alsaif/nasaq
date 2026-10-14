@@ -176,7 +176,7 @@ Item {
       width: row.implicitWidth + 32
       height: row.implicitHeight + 32
       radius: 26
-      color: Qt.rgba(0.11, 0.11, 0.12, Math.max(0.7, Nasaq.Theme.glassAlpha))
+      color: Util.alpha(Color.background, Math.max(0.55, Nasaq.Theme.glassAlpha))
       border.color: Qt.rgba(1, 1, 1, 0.12)
       Row {
         id: row

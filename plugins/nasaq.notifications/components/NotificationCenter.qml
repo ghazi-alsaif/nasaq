@@ -25,7 +25,7 @@ Item {
   readonly property string textFont: "IBM Plex Sans Arabic"
   readonly property string iconFont: Style.font.family
   readonly property color accent: Color.accent
-  readonly property color cardColor: Util.alpha(Color.background, 0.94)
+  readonly property color cardColor: Util.alpha(Color.background, Math.max(0.55, Nasaq.Theme.glassAlpha))
   readonly property color tileColor: Qt.rgba(1, 1, 1, 0.07)
   readonly property string home: Quickshell.env("HOME")
 
@@ -67,9 +67,12 @@ Item {
   }
   function close() {
     shown = false
-    hideTimer.restart()
   }
-  Timer { id: hideTimer; interval: 260; onTriggered: root.open = false }
+  // One number drives the slide and the fade together (0 = in place, 1 = out),
+  // so they can never drift apart; the window unmaps when it reaches 1.
+  property real hideT: shown ? 0 : 1
+  Behavior on hideT { Nasaq.NAnim { kind: root.shown ? "move" : "close" } }  // no overshoot on a large panel
+  onHideTChanged: if (hideT >= 1 && !shown) open = false
   Timer { interval: 30000; running: root.open; repeat: true; onTriggered: root.now = new Date() }
 
   function reload() {
@@ -184,8 +187,7 @@ Item {
       anchors.right: parent.right
       anchors.rightMargin: Style.gapsOut + 4
       transform: Translate {
-        x: root.shown ? 0 : panel.width + Style.gapsOut + 24
-        Behavior on x { SpringAnimation { spring: 3.2; damping: 0.34; epsilon: 0.5 } }
+        x: root.hideT * (panel.width + Style.gapsOut + 24)
       }
       height: Math.min(content.implicitHeight + 28, win.height - win.topGap - Style.gapsOut - 4)
       radius: 24
@@ -193,8 +195,7 @@ Item {
       border.color: Qt.rgba(1, 1, 1, 0.14)
       border.width: 1
       clip: true
-      opacity: root.shown ? 1 : 0
-      Behavior on opacity { NumberAnimation { duration: 180 } }
+      opacity: Math.max(0, Math.min(1, 1 - root.hideT))
 
       MouseArea { anchors.fill: parent }
 
@@ -452,7 +453,7 @@ Item {
               height: 22
               radius: 11
               color: checked ? Color.accent : Qt.rgba(1, 1, 1, 0.22)
-              Behavior on color { ColorAnimation { duration: 140 } }
+              Behavior on color { Nasaq.NColour { duration: Nasaq.Motion.micro } }
               Rectangle {
                 width: 18
                 height: 18
@@ -460,7 +461,7 @@ Item {
                 y: 2
                 x: sw.checked ? sw.width - width - 2 : 2
                 color: "white"
-                Behavior on x { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+                Behavior on x { Nasaq.NAnim { kind: "fast" } }
               }
               MouseArea {
                 anchors.fill: parent
