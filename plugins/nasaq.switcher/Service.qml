@@ -178,6 +178,20 @@ Item {
       radius: 26
       color: Util.alpha(Color.background, Math.max(0.55, Nasaq.Theme.glassAlpha))
       border.color: Qt.rgba(1, 1, 1, 0.12)
+      // Fades and grows in a touch on open; closing stays instant so the
+      // switch itself is never delayed.
+      property bool appeared: false
+      opacity: appeared ? 1 : 0
+      scale: appeared ? 1 : 0.96
+      Behavior on opacity { enabled: root.open; Nasaq.NFade {} }
+      Behavior on scale { enabled: root.open; Nasaq.NAnim { kind: "fast" } }
+      Connections {
+        target: root
+        function onOpenChanged() {
+          card.appeared = false
+          if (root.open) Qt.callLater(function() { card.appeared = true })
+        }
+      }
       Row {
         id: row
         anchors.centerIn: parent
@@ -194,6 +208,8 @@ Item {
               width: 220; height: 140; radius: 14
               color: Qt.rgba(1, 1, 1, cell.current ? 0.16 : 0.05)
               border.color: cell.current ? Color.accent : "transparent"
+              Behavior on color { Nasaq.NColour { duration: Nasaq.Motion.micro } }
+              Behavior on border.color { Nasaq.NColour { duration: Nasaq.Motion.micro } }
               border.width: 2
               clip: true
               ScreencopyView {
