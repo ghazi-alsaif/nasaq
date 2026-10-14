@@ -9,14 +9,14 @@ mkdir -p "$R"/{plugins,hypr,bin,overrides,sounds,hooks/theme-set.d,hooks/post-up
 for d in "$C"/omarchy/plugins/nasaq.*/; do rsync -a --exclude .git --exclude '*.bak*' "$d" "$R/plugins/$(basename "$d")/"; done
 cp "$C"/hypr/nasaq-{pre,post,looknfeel,bindings}.lua "$R/hypr/"
 for s in nasaq-settings nasaq-sound nasaq-clone-check nasaq-auto-brightness nasaq-display-check nasaq-arabic-binds nasaq-keys \
-         nasaq-scratch nasaq-display nasaq-translate nasaq-ask nasaq-agent-ask nasaq-calendar nasaq-rules nasaq-auto nasaq-altwatch nasaq-login-sync hypr-quit-app screensaver-mode; do
+         nasaq-scratch nasaq-display nasaq-translate nasaq-ask nasaq-agent-ask nasaq-calendar nasaq-rules nasaq-auto nasaq-altwatch nasaq-login-sync nasaq-doctor hypr-quit-app screensaver-mode; do
   cp -L "$B/$s" "$R/bin/$s"
 done
 cp -L "$HOME/.local/share/omarchy-overrides/omarchy-launch-screensaver" "$R/overrides/"
 rsync -a "$HOME/.local/share/screensaver-matrix/" "$R/overrides/screensaver-matrix/"
 rsync -a "$HOME/.local/share/sounds/nasaq/" "$R/sounds/"
 cp "$C"/omarchy/hooks/theme-set.d/{ptyxis,mlterm}-theme.sh "$C"/omarchy/hooks/theme-set.d/nasaq-login.sh "$R/hooks/theme-set.d/"
-cp "$C"/omarchy/hooks/post-update.d/nasaq-{clone-check,arabic-binds}.sh "$R/hooks/post-update.d/"
+cp "$C"/omarchy/hooks/post-update.d/nasaq-{doctor,arabic-binds}.sh "$R/hooks/post-update.d/"
 rsync -a "$C/omarchy/nasaq/help/" "$R/help/"
 cp "$C/omarchy/nasaq/windows-default.json" "$R/defaults/windows.json"
 cp "$C/omarchy/nasaq/windows-default.json" "$R/defaults/windows-default.json"

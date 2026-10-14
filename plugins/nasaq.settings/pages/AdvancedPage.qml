@@ -14,7 +14,7 @@ NPage {
     script: "for u in nasaq-auto-brightness voxtype rclone-mount hermes-gateway srsd-codex-monitor; do systemctl --user cat $u >/dev/null 2>&1 && echo \"svc|$u|$(systemctl --user is-active $u)\"; done; " +
             "for c in claude tensaku-edit matugen cava nwg-displays tesseract quickshell hyprctl; do command -v $c >/dev/null && echo \"dep|$c|ok\" || echo \"dep|$c|missing\"; done; " +
             "tesseract --list-langs 2>/dev/null | grep -qx ara && echo 'dep|arabic OCR data|ok' || echo 'dep|arabic OCR data|missing'; " +
-            "echo \"check|$(nasaq-clone-check 2>&1 | head -1)\"; echo \"hypr|$(hyprctl configerrors | grep -c .)\""
+            "echo \"check|$(nasaq-doctor --summary 2>&1 | head -1)\"; echo \"hypr|$(hyprctl configerrors | grep -c .)\""
   }
   readonly property var lines: health.out ? health.out.split("\n") : []
   function rowsOf(kind) { return lines.filter(function(l) { return l.indexOf(kind + "|") === 0 }).map(function(l) { return l.split("|") }) }
@@ -46,7 +46,8 @@ NPage {
   }
   NSection {
     title: "UPDATE SAFETY"
-    NRow { title: "Check plugin copies against Omarchy"; subtitle: "Runs after every Omarchy update."; NButton { text: "Check now"; onClicked: Sys.term("nasaq-clone-check; read -n1 -p 'Press any key'") } }
+    NRow { title: "Check NASAQ after updates"; subtitle: "Runs after every Omarchy update and repairs what an update moved: Hyprland lines, bar, menu, login screen."; NButton { text: "Check and repair"; onClicked: Sys.term("nasaq-doctor --fix; read -n1 -p 'Press any key'") } }
+    NRow { title: "Compare plugin copies with Omarchy"; NButton { text: "Check"; onClicked: Sys.term("nasaq-clone-check; read -n1 -p 'Press any key'") } }
     NRow { title: "Saved snapshots"; NButton { text: "List"; onClicked: Sys.term("nasaq-settings log; read -n1 -p 'Press any key'") } }
   }
   NSection {

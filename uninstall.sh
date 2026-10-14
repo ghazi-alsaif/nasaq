@@ -41,13 +41,16 @@ fi
 find "${C:?}/omarchy/plugins" -maxdepth 1 -name 'nasaq.*' -exec rm -rf {} +
 find "${C:?}/hypr" -maxdepth 1 -name 'nasaq-*.lua' -delete
 for s in nasaq-settings nasaq-sound nasaq-clone-check nasaq-auto-brightness nasaq-display-check nasaq-arabic-binds nasaq-keys \
-         nasaq-scratch nasaq-display nasaq-translate nasaq-ask nasaq-agent-ask nasaq-calendar nasaq-rules nasaq-auto nasaq-altwatch nasaq-login-sync \
+         nasaq-scratch nasaq-display nasaq-translate nasaq-ask nasaq-agent-ask nasaq-calendar nasaq-rules nasaq-auto nasaq-altwatch nasaq-login-sync nasaq-doctor \
          hypr-quit-app screensaver-mode; do
   rm -f "${B:?}/${s:?}"
 done
 rm -f "${S:?}/omarchy-overrides/omarchy-launch-screensaver" "${S:?}/omarchy-overrides/omarchy-screensaver"
 find "${C:?}/omarchy/hooks/post-update.d" "${C:?}/omarchy/hooks/theme-set.d" -maxdepth 1 -name 'nasaq-*.sh' -delete 2>/dev/null || true
 systemctl --user disable --now nasaq-auto-brightness.service >/dev/null 2>&1 || true
+systemctl --user disable --now nasaq-doctor.path >/dev/null 2>&1 || true
+rm -f "${C:?}/systemd/user/nasaq-doctor.path" "${C:?}/systemd/user/nasaq-doctor.service"
+systemctl --user daemon-reload >/dev/null 2>&1 || true
 for t in "$C"/systemd/user/nasaq-auto-*.timer; do [[ -e $t ]] && systemctl --user disable --now "$(basename "$t")" >/dev/null 2>&1; done || true
 
 if [[ ${1:-} == --purge ]]; then

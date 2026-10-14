@@ -1,0 +1,258 @@
+#!/bin/bash
+# NASAQ doctor: keeps NASAQ in place across Omarchy updates.
+#   nasaq-doctor                check only: list what is out of place (exit 1 if anything is)
+#   nasaq-doctor --fix          put NASAQ's own pieces back, then report
+#   nasaq-doctor --summary      one line, for NASAQ Settings > Advanced
+#   nasaq-doctor --restore-hypr [epoch]
+#                               after Omarchy reset ~/.config/hypr (Update › Config ›
+#                               Hyprland): bring back all your files from that reset's
+#                               *.lua.bak.<epoch> copies (the latest one by default)
+#   add --notify                also send one desktop notification with the result
+#   add --notify-changes        notify only when something was repaired or needs the user
+#                               (used by the watcher on ~/.config/hypr/hyprland.lua)
+# Runs as `--fix --notify` after every `omarchy update` (hooks/post-update.d).
+#
+# What an Omarchy update can disturb, and what is checked:
+#   1. Hyprland: the pcall lines in hyprland.lua, looknfeel.lua and bindings.lua
+#      that load NASAQ's layers (an update or Update › Config › Hyprland rewrites them).
+#   2. shell.json: NASAQ's bar (id, centre anchor, its widgets), its plugins, and
+#      the Omarchy plugins NASAQ replaces staying off (migrations edit this file).
+#   3. The Omarchy menu: NASAQ's block between its markers.
+#   4. Login and boot screens: the SDDM selection (repaired through the root helper
+#      nasaq-login-sync, the one sudoers rule) and the Plymouth selection (reported
+#      only: Style › Unlock is a choice the user makes).
+#   5. The plugin copies: Omarchy's originals compared with the recorded baseline.
+#   6. The running shell: NASAQ plugins that failed to load.
+# It repairs only what NASAQ itself added, merging into the user's files (a copy
+# of each file goes to ~/.local/state/nasaq/doctor-backup/ first) and never
+# re-enables a NASAQ plugin the user turned off.
+set -uo pipefail
+FIX=false NOTIFY=false SUMMARY=false CHANGES_ONLY=false
+HY="$HOME/.config/hypr"
+# The newest Omarchy reset of ~/.config/hypr whose hyprland.lua copy still had NASAQ's lines.
+last_reset() {
+  local f e
+  for e in $(for f in "$HY"/hyprland.lua.bak.*; do e=${f##*.}; [[ $e =~ ^[0-9]+$ ]] && echo "$e"; done | sort -rn); do
+    grep -qs 'nasaq-pre.lua' "$HY/hyprland.lua.bak.$e" && { echo "$e"; return; }
+  done
+}
+if [[ ${1:-} == --restore-hypr ]]; then
+  e=${2:-$(last_reset)}
+  [[ $e =~ ^[0-9]+$ ]] && compgen -G "$HY/*.lua.bak.$e" >/dev/null || { echo "No Hyprland backup set to restore." >&2; exit 1; }
+  keep="$HOME/.local/state/nasaq/doctor-backup/hypr-before-restore-$(date +%Y%m%d-%H%M%S)"
+  mkdir -p "$keep"
+  for f in "$HY"/*.lua.bak."$e"; do
+    o=${f%.bak.$e}; [[ -f $o ]] && cp -a "$o" "$keep/"
+    cp -a "$f" "$o"; echo " ✓ ${o##*/} restored from $(date -d "@$e" '+%F %T')"
+  done
+  hyprctl reload >/dev/null 2>&1 || true
+  echo "Current files kept in ${keep/#$HOME/\~}. hyprctl configerrors: $(hyprctl configerrors 2>/dev/null | grep -c .)"
+  exit 0
+fi
+for a in "$@"; do
+  case $a in
+    --fix) FIX=true ;; --notify) NOTIFY=true ;; --notify-changes) NOTIFY=true; CHANGES_ONLY=true ;; --summary) SUMMARY=true ;;
+    -h|--help) sed -n '2,7p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) echo "Unknown option: $a" >&2; exit 2 ;;
+  esac
+done
+C="$HOME/.config"
+D="$C/omarchy/nasaq/defaults"          # copies of the repository defaults (install.sh)
+STATE="$HOME/.local/state/nasaq"
+LOG="$STATE/doctor.log"
+BK="$STATE/doctor-backup/$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$STATE"
+problems=() fixed=() notes=()
+problem() { problems+=("$1"); }
+note() { notes+=("$1"); }
+backup() { [[ -f $1 ]] || return 0; mkdir -p "$BK"; cp -a "$1" "$BK/"; }
+
+# ── 1. Hyprland hooks ─────────────────────────────────────────────────────────
+HL="$C/hypr/hyprland.lua" LF="$C/hypr/looknfeel.lua" BD="$C/hypr/bindings.lua"
+hypr_missing=()
+grep -qs 'nasaq-pre.lua' "$HL" || hypr_missing+=("hyprland.lua (nasaq-pre)")
+grep -qs 'nasaq-post.lua' "$HL" || hypr_missing+=("hyprland.lua (nasaq-post)")
+grep -qs 'nasaq-looknfeel.lua' "$LF" || hypr_missing+=("looknfeel.lua")
+grep -qs 'nasaq-bindings.lua' "$BD" || hypr_missing+=("bindings.lua")
+if ((${#hypr_missing[@]})); then
+  # Omarchy resets the whole folder, the user's own lines too (input, monitors…).
+  if e=$(last_reset) && [[ -n $e ]]; then
+    note "Omarchy reset your Hyprland files on $(date -d "@$e" '+%F %T'). Your own changes from before are in ~/.config/hypr/*.lua.bak.$e; 'nasaq-doctor --restore-hypr $e' brings all of them back"
+  fi
+  if $FIX; then
+    backup "$HL"; backup "$LF"; backup "$BD"
+    python3 - "$HL" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+pre = 'pcall(dofile, (os.getenv("HOME") or "") .. "/.config/hypr/nasaq-pre.lua")  -- NASAQ\n'
+post = '\npcall(dofile, (os.getenv("HOME") or "") .. "/.config/hypr/nasaq-post.lua")  -- NASAQ\n'
+key = 'require("default.hypr.omarchy")'
+if "nasaq-pre.lua" not in s:
+    s = s.replace(key, pre + key, 1) if key in s else pre + s
+if "nasaq-post.lua" not in s:
+    s += post
+open(p, "w").write(s)
+PY
+    grep -qs 'nasaq-looknfeel.lua' "$LF" || printf '\npcall(dofile, (os.getenv("HOME") or "") .. "/.config/hypr/nasaq-looknfeel.lua")  -- NASAQ\n' >> "$LF"
+    grep -qs 'nasaq-bindings.lua' "$BD" || printf '\npcall(dofile, (os.getenv("HOME") or "") .. "/.config/hypr/nasaq-bindings.lua")  -- NASAQ\n' >> "$BD"
+    hyprctl reload >/dev/null 2>&1 || true
+    fixed+=("Hyprland: NASAQ's lines back in ${hypr_missing[*]}")
+  else
+    problem "Hyprland: NASAQ's lines missing from ${hypr_missing[*]}"
+  fi
+fi
+for g in nasaq-pre nasaq-post nasaq-looknfeel nasaq-bindings; do
+  [[ -f $C/hypr/$g.lua ]] || problem "Hyprland: $g.lua is missing (run install.sh --update)"
+done
+errs=$(hyprctl configerrors 2>/dev/null | grep -c . || true)
+[[ ${errs:-0} -eq 0 ]] || problem "Hyprland: $errs config error line(s) (hyprctl configerrors)"
+
+# ── 2. shell.json ─────────────────────────────────────────────────────────────
+SJ="$C/omarchy/shell.json" PATCH="$D/shell.json.patch.json"
+if [[ -f $SJ && -f $PATCH ]]; then
+  $FIX && backup "$SJ"
+  out=$(python3 - "$SJ" "$PATCH" "$FIX" <<'PY'
+import json, sys
+p, patch, fix = sys.argv[1], json.load(open(sys.argv[2])), sys.argv[3] == "true"
+d = json.load(open(p))
+issues = []
+bar = d.setdefault("bar", {})
+off = set(d.get("disabledPlugins", []))
+for k in ("id", "centerAnchor"):
+    if bar.get(k) != patch["bar"][k]:
+        issues.append(f"bar {k} is {bar.get(k)!r}, NASAQ uses {patch['bar'][k]!r}")
+        bar[k] = patch["bar"][k]
+layout = bar.setdefault("layout", {})
+present = {w.get("id") for sec in layout.values() if isinstance(sec, list) for w in sec if isinstance(w, dict)}
+for sec, widgets in patch["bar"]["layout"].items():
+    for i, w in enumerate(widgets):
+        wid = w["id"]
+        if not wid.startswith("nasaq.") or wid in present or wid in off:
+            continue
+        issues.append(f"bar widget {wid} missing from the {sec} side")
+        lst = layout.setdefault(sec, [])
+        lst.insert(min(i, len(lst)), dict(w))
+ids = [x.get("id") if isinstance(x, dict) else x for x in d.get("plugins", [])]
+for pid in patch["plugins"]:
+    if pid not in ids:
+        issues.append(f"plugin {pid} missing from the plugin list")
+        d.setdefault("plugins", []).append({"id": pid})
+# The Omarchy plugins NASAQ replaces stay off while their replacement is on.
+replaced_by = {"omarchy.lock": "nasaq.lock", "omarchy.notifications": "nasaq.notifications", "omarchy.osd": "nasaq.island"}
+for stock in patch["disabledPlugins"]:
+    if stock not in off and replaced_by.get(stock, "") not in off:
+        issues.append(f"{stock} is on again next to its NASAQ replacement")
+        d["disabledPlugins"] = sorted(set(d.get("disabledPlugins", [])) | {stock})
+for i in issues:
+    print(i)
+if issues and fix:
+    open(p, "w").write(json.dumps(d, indent=2) + "\n")
+PY
+)
+  if [[ -n $out ]]; then
+    if $FIX; then
+      while IFS= read -r l; do fixed+=("shell.json: $l (restored)"); done <<<"$out"
+      omarchy-shell -q shell rescanPlugins >/dev/null 2>&1 || true
+    else
+      while IFS= read -r l; do problem "shell.json: $l"; done <<<"$out"
+    fi
+  fi
+elif [[ ! -f $PATCH ]]; then
+  note "shell.json not checked: $PATCH is missing (run install.sh --update)"
+fi
+
+# ── 3. Omarchy menu ───────────────────────────────────────────────────────────
+MENU="$C/omarchy/extensions/omarchy-menu.jsonc" ME="$D/menu-entries.jsonc"
+if [[ -f $ME ]]; then
+  want=$(cat "$ME")
+  have=$(sed -n '\#// NASAQ (added by#,\#^[[:space:]]*// /NASAQ#p' "$MENU" 2>/dev/null)
+  if [[ "$have" != "${want%$'\n'}" ]]; then
+    if $FIX; then
+      backup "$MENU"
+      [[ -f $MENU ]] || printf '{\n}\n' > "$MENU"
+      python3 - "$MENU" "$ME" <<'PY'
+import re, sys
+p = sys.argv[1]; s = open(p).read(); add = open(sys.argv[2]).read()
+s = re.sub(r"[ \t]*// NASAQ \(added by.*?// /NASAQ[ \t]*\n?", "", s, flags=re.S)
+i = s.rstrip().rfind("}"); head = s[:i].rstrip()
+s = head + ("\n" if head.endswith((",", "{")) else ",\n") + add + "}\n"
+open(p, "w").write(s)
+PY
+      fixed+=("Omarchy menu: NASAQ's entries restored")
+    else
+      problem "Omarchy menu: NASAQ's entries are missing or out of date"
+    fi
+  fi
+fi
+
+# ── 4. Login and boot screens (system files; read here, repaired by the helper) ─
+if [[ -d /usr/share/sddm/themes/nasaq-login ]]; then
+  last=$(grep -hs '^Current=' /etc/sddm.conf.d/*.conf | tail -1)
+  if [[ $last != "Current=nasaq-login" ]]; then
+    if $FIX && [[ -x /usr/local/bin/nasaq-login-sync ]] && sudo -n /usr/local/bin/nasaq-login-sync >/dev/null 2>&1 \
+       && [[ $(grep -hs '^Current=' /etc/sddm.conf.d/*.conf | tail -1) == "Current=nasaq-login" ]]; then
+      fixed+=("Login screen: NASAQ's SDDM selection restored")
+    else
+      problem "Login screen: SDDM uses ${last#Current=} instead of nasaq-login (fix: login/install-login.sh)"
+    fi
+  fi
+fi
+if [[ -d /usr/share/plymouth/themes/nasaq ]] && command -v plymouth-set-default-theme >/dev/null; then
+  cur=$(plymouth-set-default-theme 2>/dev/null)
+  [[ $cur == nasaq ]] || note "Boot screens: Plymouth uses \"$cur\" (chosen in Style › Unlock?). To use NASAQ's again: login/install-plymouth.sh"
+fi
+
+# ── 5. Plugin copies vs Omarchy's originals ───────────────────────────────────
+if command -v nasaq-clone-check >/dev/null; then
+  cc=$(NASAQ_CLONE_QUIET=1 nasaq-clone-check 2>&1)
+  if grep -q '^Omarchy changed' <<<"$cc"; then
+    note "Omarchy changed the originals of: $(grep '•' <<<"$cc" | sed 's/^ *• //' | paste -sd, -). The copies keep working; compare when convenient, then nasaq-clone-check accept"
+  fi
+fi
+
+# ── 6. NASAQ plugins that failed to load in the running shell ─────────────────
+pid=$(pgrep -f '^quickshell .*omarchy/shell' | head -1)
+if [[ -n $pid ]]; then
+  since=$(ps -o lstart= -p "$pid" 2>/dev/null)
+  bad=$(journalctl --user -t omarchy-shell --since "$(date -d "$since" '+%F %T' 2>/dev/null || echo '-10 min')" --no-pager 2>/dev/null \
+    | grep -E 'plugins/nasaq\.[a-z-]+/' \
+    | grep -E 'is not a type|is not installed|module .* not found|failed to load|Type .* unavailable|Cannot assign to non-existent|ReferenceError|TypeError' \
+    | grep -oE 'plugins/nasaq\.[a-z-]+' | sed 's#plugins/##' | sort -u | paste -sd' ' -)
+  [[ -n $bad ]] && problem "Shell: errors from ${bad// /, } since the shell started (journalctl --user -t omarchy-shell)"
+fi
+
+# ── Report ────────────────────────────────────────────────────────────────────
+{
+  echo "== $(date '+%F %T') nasaq-doctor $*"
+  for x in "${fixed[@]}"; do echo "fixed:   $x"; done
+  for x in "${problems[@]}"; do echo "problem: $x"; done
+  for x in "${notes[@]}"; do echo "note:    $x"; done
+} >> "$LOG"
+
+if $SUMMARY; then
+  if ((${#problems[@]})); then echo "${#problems[@]} issue(s): ${problems[0]}"
+  elif ((${#notes[@]})); then echo "In place. Note: ${notes[0]}"
+  else echo "NASAQ is in place."; fi
+  exit 0
+fi
+
+if ((${#fixed[@]} + ${#problems[@]} + ${#notes[@]} == 0)); then
+  echo "NASAQ is in place: nothing to do."
+else
+  for x in "${fixed[@]}"; do echo " ✓ $x"; done
+  for x in "${problems[@]}"; do echo " ✗ $x"; done
+  for x in "${notes[@]}"; do echo " • $x"; done
+  $FIX || ((${#problems[@]} == 0)) || echo "Run 'nasaq-doctor --fix' to repair what NASAQ can."
+fi
+
+if $NOTIFY && ! { $CHANGES_ONLY && ((${#fixed[@]} + ${#problems[@]} == 0)); }; then
+  if ((${#problems[@]})); then
+    title="NASAQ needs attention"; body=$(printf '%s\n' "${problems[@]}" "${notes[@]}")
+  elif ((${#fixed[@]})); then
+    title="NASAQ put itself back"; body=$(printf '%s\n' "${fixed[@]}" "${notes[@]}")
+  else
+    title="NASAQ is in place"; body=$( ((${#notes[@]})) && printf '%s\n' "${notes[@]}" || echo "Nothing needed repair.")
+  fi
+  notify-send ${problems:+-u critical} -a NASAQ "$title" "$body" 2>/dev/null || true
+fi
+((${#problems[@]} == 0))
