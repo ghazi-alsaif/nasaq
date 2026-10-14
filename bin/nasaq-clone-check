@@ -10,8 +10,9 @@
 # Also watched: the packaged commands NASAQ overrides (~/.local/share/omarchy-overrides),
 # Omarchy's SDDM theme next to NASAQ's login theme, and the NASAQ hook in
 # ~/.config/hypr/hyprland.lua (a `omarchy refresh hyprland` would drop it).
-# Run automatically after `omarchy update` (hook post-update.d). It only tells;
-# it never changes a plugin.
+# Run after `omarchy update` by nasaq-doctor (hook post-update.d), which folds
+# its result into one notification (NASAQ_CLONE_QUIET=1). It only tells; it
+# never changes a plugin.
 plugins="$HOME/.config/omarchy/plugins"
 stock="${OMARCHY_PATH:-/usr/share/omarchy}/shell/plugins"
 base="$HOME/.config/omarchy/nasaq/clone-baseline.txt"
@@ -34,7 +35,7 @@ snapshot() {
     [[ -f $pkg ]] && echo "override:$name $name $pkg $(sha256sum < "$pkg" | cut -c1-16)"
   done
   [[ -d ${OMARCHY_PATH:-/usr/share/omarchy}/default/sddm ]] && \
-    echo "login-theme omarchy-sddm - $(find "${OMARCHY_PATH:-/usr/share/omarchy}/default/sddm" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -c1-16) $(grep -hs "^Current=" /etc/sddm.conf.d/*.conf | tail -1)"
+    echo "login-theme omarchy-sddm - $(find "${OMARCHY_PATH:-/usr/share/omarchy}/default/sddm" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -c1-16)"
   echo "hyprland-hook nasaq - $(grep -q 'nasaq-remap.lua' "$HOME/.config/hypr/hyprland.lua" && echo present || echo missing)"
 }
 
@@ -43,8 +44,11 @@ case ${1:-} in
 esac
 [[ -f $base ]] || { snapshot > "$base"; echo "First run: baseline recorded."; exit 0; }
 
-changed=$(diff <(sort "$base") <(snapshot | sort) | sed -n 's/^> \(\S*\) \(\S*\) .*/\1 (from \2)/p')
+# The login-theme line used to carry the active SDDM "Current=" too; NASAQ's own
+# login screen changes that, so it is left out of the comparison.
+norm() { sed -E 's/^(login-theme .*) Current=.*$/\1/'; }
+changed=$(diff <(norm < "$base" | sort) <(snapshot | norm | sort) | sed -n 's/^> \(\S*\) \(\S*\) .*/\1 (from \2)/p')
 if [[ -z $changed ]]; then echo "Omarchy's originals are unchanged since the copies were made."; exit 0; fi
 echo "Omarchy changed the originals of:"; echo "$changed" | sed 's/^/  • /'
 echo "The copies still work as they are, but may miss a fix. Ask your agent to compare, then: nasaq-clone-check accept"
-notify-send -u critical -a "Omarchy" "Omarchy update changed plugins you customised" "$(echo "$changed" | tr '\n' ' ')— ask your agent to compare them (nasaq-clone-check)." 2>/dev/null || true
+[[ -n ${NASAQ_CLONE_QUIET:-} ]] || notify-send -u critical -a "Omarchy" "Omarchy update changed plugins you customised" "$(echo "$changed" | tr '\n' ' ')— ask your agent to compare them (nasaq-clone-check)." 2>/dev/null || true

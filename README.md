@@ -194,6 +194,10 @@ cd ~/.local/share/nasaq && ./update.sh
 
 `update.sh` pulls the latest release and runs `install.sh --update`, which refreshes NASAQ's files and leaves your bar layout, menu and settings alone.
 
+### Omarchy updates
+
+NASAQ keeps itself in place when Omarchy changes things under it. `nasaq-doctor` runs after every `omarchy update`, and a watcher runs it whenever `~/.config/hypr/hyprland.lua` is rewritten (Omarchy's Update › Config › Hyprland resets that folder without running the update hooks). It puts back what NASAQ added: its lines in your Hyprland files, its bar widgets and anchor in `shell.json`, the Omarchy plugins it replaces staying off, its menu entries and the login screen selection. It merges into your files (a copy goes to `~/.local/state/nasaq/doctor-backup/` first) and never re-enables a NASAQ plugin you turned off. You get one notification saying what it did. When Omarchy reset your whole Hyprland folder, `nasaq-doctor --restore-hypr` brings back your own lines from before the reset too. Run `nasaq-doctor` any time to check, or use Settings › Advanced.
+
 ## Uninstall
 
 ```bash

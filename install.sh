@@ -49,6 +49,37 @@ rsync -a "$R/help/" "$C/omarchy/nasaq/help/"
 for f in island.json windows.json windows-default.json; do
   [[ -f $C/omarchy/nasaq/$f ]] || cp "$R/defaults/$f" "$C/omarchy/nasaq/$f"
 done
+# The doctor (bin/nasaq-doctor) compares against these after Omarchy updates.
+mkdir -p "$C/omarchy/nasaq/defaults"
+cp "$R/defaults/shell.json.patch.json" "$R/defaults/menu-entries.jsonc" "$C/omarchy/nasaq/defaults/"
+# nasaq-doctor runs the clone check now; the old separate hook would notify twice.
+rm -f "$C/omarchy/hooks/post-update.d/nasaq-clone-check.sh"
+# Omarchy's Update › Config › Hyprland resets ~/.config/hypr without running the
+# post-update hooks; a watcher on hyprland.lua runs the doctor after any rewrite.
+mkdir -p "$C/systemd/user"
+cat > "$C/systemd/user/nasaq-doctor.path" <<'EOF'
+[Unit]
+Description=NASAQ: put NASAQ back when ~/.config/hypr/hyprland.lua is rewritten
+
+[Path]
+PathChanged=%h/.config/hypr/hyprland.lua
+Unit=nasaq-doctor.service
+
+[Install]
+WantedBy=default.target
+EOF
+cat > "$C/systemd/user/nasaq-doctor.service" <<'EOF'
+[Unit]
+Description=NASAQ doctor (repair after a Hyprland config reset)
+
+[Service]
+Type=oneshot
+# Give a refresh that rewrites several files a moment to finish.
+ExecStartPre=/bin/sleep 3
+ExecStart=%h/.local/bin/nasaq-doctor --fix --notify-changes
+EOF
+systemctl --user daemon-reload >/dev/null 2>&1 || true
+systemctl --user enable --now nasaq-doctor.path >/dev/null 2>&1 || warn "could not enable the Hyprland watcher (nasaq-doctor.path)"
 say "files installed"
 
 # Hyprland: one line in each of your own files loads NASAQ's modules.

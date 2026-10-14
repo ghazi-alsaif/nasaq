@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+- Omarchy updates: a new `nasaq-doctor` puts NASAQ back when Omarchy moves things under it: the Hyprland lines, the bar (id, centre anchor, NASAQ widgets), its plugins and the Omarchy plugins it replaces staying off, the menu block, and the login screen selection (through the existing root helper). It runs after every `omarchy update` (replacing the separate clone-check hook, so there is one notification), and through a systemd user path unit whenever `~/.config/hypr/hyprland.lua` is rewritten, since Update › Config › Hyprland resets that folder without running the update hooks. `--restore-hypr` brings back the user's own Hyprland files from the reset's `.bak` copies. It also reports plugin copies whose Omarchy originals changed, and NASAQ plugins that logged load errors. Settings › Advanced runs it on demand.
+- Clone check: the login-theme entry no longer records the active SDDM selection, so installing NASAQ's own login screen no longer looks like an Omarchy change after the next update.
 - Fixed: the Clear / Undo button in the expanded island did nothing beyond its label. It sat in a delegate that could not reach the island's timer (ReferenceError: clearTimer is not defined), so a Clear never completed.
 
 ## 1.1.1 — 2026-10-12

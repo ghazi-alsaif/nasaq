@@ -95,6 +95,14 @@ if [[ -n $wall ]]; then
 fi
 
 if $login; then
+  # Keep NASAQ's selection in place (an update or a reset may have removed it).
+  CONF=/etc/sddm.conf.d/zz-nasaq-login.conf
+  if ! grep -qs '^Current=nasaq-login$' "$CONF"; then
+    printf '%s\n[Theme]\nCurrent=nasaq-login\n' "# Written by NASAQ (login/install-login.sh)" > "$rtmp/zz-nasaq-login.conf"
+    install -d -o root -g root -m 0755 /etc/sddm.conf.d
+    install -o root -g root -m 0644 "$rtmp/zz-nasaq-login.conf" "$CONF"
+    echo "login screen selection restored"
+  fi
   cat > "$rtmp/theme.conf" <<EOF
 [General]
 uiScale=$scale
