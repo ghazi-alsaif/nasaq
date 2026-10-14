@@ -215,6 +215,10 @@ BarWidget {
   // Clear waits five seconds behind an Undo before it really deletes.
   property bool clearPending: false
   Timer { id: clearTimer; interval: 5000; onTriggered: root.doClear() }
+  // Called from the card's Clear / Undo button, which sits in a delegate that
+  // cannot see clearTimer by id.
+  function startClear() { clearPending = true; clearTimer.restart() }
+  function undoClear() { clearPending = false; clearTimer.stop() }
   function doClear() {
     if (!clearPending) return
     clearPending = false
@@ -1514,8 +1518,8 @@ BarWidget {
                   cursorShape: Qt.PointingHandCursor
                   onClicked: {
                     if (modelData.act === "clear") {
-                      if (root.clearPending) { root.clearPending = false; clearTimer.stop() }
-                      else { root.clearPending = true; clearTimer.restart() }
+                      if (root.clearPending) root.undoClear()
+                      else root.startClear()
                     } else {
                       root.expanded = false
                       Quickshell.execDetached(["omarchy-shell", "nasaq.notifcenter", "open"])

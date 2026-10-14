@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- Fixed: the Clear / Undo button in the expanded island did nothing beyond its label. It sat in a delegate that could not reach the island's timer (ReferenceError: clearTimer is not defined), so a Clear never completed.
+
 ## 1.1.1 — 2026-10-12
 - README screenshots retaken on a laptop at 1920x1080, with a new "Session screens" section (lock, login, boot).
 - One name rule on the lock, login and boot screens: the account's full name (first GECOS field) when it is set, otherwise the user name exactly as it is. The lock screen no longer capitalises the user name, and the avatar shows the first letter of the shown name.
