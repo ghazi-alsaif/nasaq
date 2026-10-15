@@ -238,11 +238,14 @@ Item {
   readonly property bool awakeForMedia: Nasaq.Settings.get("power.awakeForMedia", true)
     && (mediaPlaying || (fullscreen.active && fullscreen.windowClass !== "org.omarchy.screensaver"))
 
-  // The inhibitor needs a surface: a 1 px layer with no input and no space,
-  // mapped only while it is needed.
+  // The inhibitor needs a surface: a 1 px layer with no input and no space.
+  // It stays mapped all the time and only the inhibitor comes and goes:
+  // Hyprland checks inhibitors when one is created or destroyed, not when a
+  // layer maps, so an inhibitor made together with its surface didn't count
+  // (fullscreen didn't keep the screen awake), and destroying the surface
+  // with it left idle blocked until the next window focus change.
   PanelWindow {
     id: inhibitSurface
-    visible: root.awakeForMedia
     implicitWidth: 1
     implicitHeight: 1
     color: "transparent"
