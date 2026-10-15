@@ -53,6 +53,15 @@ wait_for_terminal_resize() {
 
 wait_for_terminal_resize
 
+# Moving the mouse or clicking ends it too, like any screensaver. The stock
+# loop only ends on a key (or a middle-click paste): ask kitty to report every
+# mouse move and button to the terminal (any-motion tracking, SGR encoding),
+# where the `read` below sees it. The pointer entering the new window can send
+# one report as it maps, so give it a moment and drop what arrived.
+printf '\033[?1003h\033[?1006h'
+sleep 0.6
+while read -r -n1 -t 0.05; do :; done
+
 while true; do
   ttfx -i ~/.config/omarchy/branding/screensaver.txt \
     --frame-rate 120 --canvas-width 0 --canvas-height 0 --reuse-canvas --anchor-canvas c --anchor-text c \

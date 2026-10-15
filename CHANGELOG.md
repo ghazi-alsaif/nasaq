@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased (1.3.0)
+- Stay awake while media plays now holds reliably: the 1 px surface stays mapped and only the idle inhibitor comes and goes. Before, a fullscreen window often didn't keep the screen awake, and when media stopped the screensaver could stay blocked until the next focus change. Omarchy's own screensaver window no longer counts as "fullscreen".
+- The Matrix screensaver closes when the mouse moves or a button is pressed, not only on a key.
 - Caps Lock is Caps Lock: NASAQ removes Omarchy's `compose:caps` and `shift:both_capslock_cancel` from whatever the keyboard options are (layout switching and the rest stay), in `nasaq-post.lua`. Settings › Shortcuts › Keyboard brings Omarchy's Compose key back (`~/.config/omarchy/nasaq/compose-caps`).
 - Settings › Widgets: the island section is called "Island" (the 1.1.2 rename missed it).
 - Stay awake while media plays: while a video or music plays (any MPRIS player: browsers, Spotify, mpv) or a window is fullscreen, a Wayland idle inhibitor keeps the screensaver and the auto-lock away. Omarchy's own Stay awake switch is left alone. Settings › System, on by default.
