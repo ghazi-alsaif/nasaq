@@ -195,7 +195,10 @@ Item {
       border.color: Qt.rgba(1, 1, 1, 0.14)
       border.width: 1
       clip: true
-      opacity: Math.max(0, Math.min(1, 1 - root.hideT))
+      // Solid both ways: the panel slides fully off screen, so it needs no
+      // fade (a fade on the slow-starting close curve read as the panel
+      // dissolving on the way out, unlike the solid slide in).
+      opacity: root.hideT >= 1 ? 0 : 1
 
       MouseArea { anchors.fill: parent }
 
