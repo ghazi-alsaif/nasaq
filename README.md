@@ -19,7 +19,7 @@ Also available in <a href="README.ar.md">Arabic</a>.</p>
 - **Nothing under `/usr/share/omarchy` is touched.** NASAQ lives in `~/.config/omarchy/plugins`, `~/.config/hypr/nasaq-*.lua`, `~/.local/bin` and `~/.config/omarchy/nasaq`. A post-update check warns you if an Omarchy update changed something NASAQ builds on.
 - **Reversible.** The installer backs up every file it changes. `uninstall.sh` puts them back.
 - **One settings window.** `SUPER + ALT + N` opens NASAQ Settings: 12 pages with real controls for every feature, including a Plugins page that turns any shell plugin on or off, whether NASAQ's, Omarchy's or a community one.
-- **One look from power-on to power-off.** Optional boot, login, lock and shutdown screens share the lock screen's design and take their colours and wallpaper from the active Omarchy theme.
+- **One look from power-on to power-off.** Boot, login, lock and shutdown screens share the lock screen's design and take their colours and wallpaper from the active Omarchy theme.
 - **Built for more than one language.** The interface ships in English, with Arabic as the first additional language, including right-to-left layout. Translations are plain JSON files, so another language is one file away. Shortcuts keep working under non-Latin keyboard layouts, and OCR reads whichever languages you install.
 
 ## The name
@@ -122,12 +122,12 @@ The Shortcuts page lists all shortcuts, Omarchy's and NASAQ's. Each can be chang
 From the moment the machine starts until it shuts down, every screen has the same design: your wallpaper blurred, a large clock or greeting, the Matrix rain in the theme's accent, and glass pills for the name and password. All of them take their colours from the active Omarchy theme and change with it.
 
 - **Lock screen** (`SUPER + CTRL + SPACE`): part of NASAQ's shell, with separate password and fingerprint flows. Theme changes repaint it live, even while it is up.
-- **Login screen** (optional installer step): an SDDM theme. A small root-owned helper rewrites its colours and wallpaper on every theme change; it is the only thing NASAQ installs outside your home directory, together with one sudoers rule that allows that helper alone. With autologin it only shows after logging out.
-- **Boot and shutdown screens** (optional installer step): a Plymouth theme with the disk-unlock pill and a greeting per mode: Hello on boot, See you soon on restart, Goodbye on shutdown. The same helper renders the images in the theme's colours and rebuilds the boot image once, only when they changed (up to a minute, in the background).
+- **Login screen**: an SDDM theme. A small root-owned helper rewrites its colours and wallpaper on every theme change; it is the only thing NASAQ installs outside your home directory, together with one sudoers rule that allows that helper alone. With autologin it only shows after logging out.
+- **Boot and shutdown screens**: a Plymouth theme with the disk-unlock pill and a greeting per mode: Hello on boot, See you soon on restart, Goodbye on shutdown. The same helper renders the images in the theme's colours and rebuilds the boot image once, only when they changed (up to a minute, in the background).
 
 ### More
 
-- **Terminal greeting** (optional installer step): system info from fastfetch each time a terminal opens.
+- **Terminal greeting**: system info from fastfetch each time a terminal opens.
 - **Fullscreen**: while a film or game is fullscreen, notifications wait quietly in the Notification Center (critical ones still show, without the sound) and hot corners are off.
 - **Power**: a power-saving mode and per-profile behaviour (Saver, Balanced, Performance).
 - **Display**: resolution, scale and position with a 15-second automatic revert, and auto-brightness from the ambient sensor or the clock.
@@ -164,7 +164,7 @@ All of Omarchy's own shortcuts stay as they are, and any of them can be changed 
 ## Requirements
 
 - Omarchy 4.0.4 or newer, which brings Hyprland 0.56+ and Quickshell 0.3+. NASAQ uses Hyprland's Lua configuration and Omarchy's plugin system.
-- Optional packages the installer offers: `tesseract-data-ara` (OCR data for Arabic; add other `tesseract-data-*` packages for your languages), `cava` (audio visualiser), `nwg-displays` (graphical display layout), `kitty` and `ptyxis` (scratchpad terminals), `libqalculate` (stronger calculator in Search).
+- Packages the installer adds when they are missing (ones already installed are left alone): `tesseract-data-ara` (OCR data for Arabic; add other `tesseract-data-*` packages for your languages), `cava` (audio visualiser), `nwg-displays` (graphical display layout), `kitty` and `ptyxis` (scratchpad terminals), `libqalculate` (stronger calculator in Search), `fastfetch` (terminal greeting).
 - For the login and boot screens: SDDM and Plymouth (both part of Omarchy), ImageMagick and a monospace font (JetBrains Mono or its Nerd Font build, else any monospace).
 - Optional: one of the Omarchy agents (`claude`, `codex`, `opencode`, `copilot`, `gemini`) for questions in Search and for translation.
 - Optional prayer times come from [AlAdhan](https://aladhan.com), weather from [Open-Meteo](https://open-meteo.com), currency rates from [open.er-api.com](https://open.er-api.com). All are free and need no key.
@@ -183,12 +183,12 @@ The installer:
 2. copies the plugins, scripts, hooks, sounds and defaults into your home directory;
 3. adds one `pcall(dofile, ...)` line to each of `hyprland.lua`, `looknfeel.lua` and `bindings.lua`, so NASAQ's layers load with yours;
 4. adds NASAQ's widgets to the bar and NASAQ's entries to the Omarchy menu;
-5. offers the optional packages and the udev rule for the App Switcher (`sudo` for that one step);
-6. offers the NASAQ login screen (`sudo`; installs the theme to `/usr/share/sddm/themes/nasaq-login` and selects it in `/etc/sddm.conf.d/zz-nasaq-login.conf`; to follow theme changes it adds one sudoers rule, `/etc/sudoers.d/nasaq-login`, that lets you run a single root-owned helper, `/usr/local/bin/nasaq-login-sync`, and nothing else) and the terminal greeting (a marked block in `~/.bashrc`; an existing `~/.config/fastfetch` is never overwritten). `--update` offers them too while they are not installed;
-7. offers the NASAQ boot and shutdown screens (`sudo`; installs the Plymouth theme `nasaq`, selects it, remembers the previous one, and rebuilds the boot image once; it uses the same single helper and sudoers rule as the login screen);
+5. installs the missing packages and the udev rule for the App Switcher;
+6. installs the NASAQ login screen (`sudo`; installs the theme to `/usr/share/sddm/themes/nasaq-login` and selects it in `/etc/sddm.conf.d/zz-nasaq-login.conf`; to follow theme changes it adds one sudoers rule, `/etc/sudoers.d/nasaq-login`, that lets you run a single root-owned helper, `/usr/local/bin/nasaq-login-sync`, and nothing else) and the terminal greeting (a marked block in `~/.bashrc`; an existing `~/.config/fastfetch` is never overwritten). `--update` installs them too while they are missing;
+7. installs the NASAQ boot and shutdown screens (`sudo`; installs the Plymouth theme `nasaq`, selects it, remembers the previous one, and rebuilds the boot image once; it uses the same single helper and sudoers rule as the login screen);
 8. restarts the shell.
 
-`./install.sh --yes` accepts every optional step. When it finishes, press `SUPER + ALT + N`.
+Nothing is optional and nothing is asked: NASAQ is meant to be used whole. If a step fails (no password, offline), the rest still installs and running `./install.sh --update` later finishes it. Then press `SUPER + ALT + N`.
 
 Set your city for weather (and prayer times, if you use them) in Settings > Widgets. Pick the interface language in Settings > General.
 
@@ -224,8 +224,8 @@ The boot screens and the login screen go back to the ones you had before (the bo
 | `~/.local/bin/nasaq-*` | helper scripts (settings snapshots, display, translation, scratchpads, ...) |
 | `~/.local/share/nasaq-data/` | tasks and notes |
 | `~/.local/share/nasaq-login/`, `~/.local/share/nasaq-plymouth/` | your copies of the login and boot themes |
-| `/usr/share/sddm/themes/nasaq-login`, `/usr/share/plymouth/themes/nasaq` | the installed login and boot themes (optional, root-owned) |
-| `/usr/local/bin/nasaq-login-sync`, `/etc/sudoers.d/nasaq-login` | the helper that keeps them on the theme, and the one rule that allows it (optional) |
+| `/usr/share/sddm/themes/nasaq-login`, `/usr/share/plymouth/themes/nasaq` | the installed login and boot themes (root-owned) |
+| `/usr/local/bin/nasaq-login-sync`, `/etc/sudoers.d/nasaq-login` | the helper that keeps them on the theme, and the one rule that allows it |
 | `~/.local/state/nasaq/` | install backups |
 | `~/.local/share/nasaq-settings/` | the snapshot repository |
 | `~/.local/share/nasaq-data/` | your data: desktop tasks and notes (`notes.json`) |

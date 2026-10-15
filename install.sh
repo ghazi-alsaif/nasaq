@@ -1,7 +1,7 @@
 #!/bin/bash
 # NASAQ (نَسَق) installer — an opinionated shell layer for Omarchy by GHS.
 #   ./install.sh            install (or re-install) NASAQ for this user
-#   ./install.sh --yes      also install the optional packages without asking
+#   (--yes is still accepted; everything is installed without asking anyway)
 #   ./install.sh --update   refresh NASAQ's files only (keeps your bar layout; refreshes NASAQ's menu rows)
 # Nothing under /usr/share/omarchy is touched. Every file changed is backed up first.
 set -euo pipefail
@@ -130,74 +130,63 @@ open(p, "w").write(s)
 PY
 say "menu entries in place"
 
-# Optional packages
-opt=(tesseract-data-ara cava nwg-displays kitty ptyxis libqalculate)
+# The steps below use sudo only for what is missing; sudo remembers the password,
+# so it is asked once at most, and not at all when everything is in place.
+# Packages. NASAQ is one experience, so nothing here is optional: whatever is
+# missing is installed, whatever is already there is left alone.
+pkgs=(tesseract-data-ara cava nwg-displays kitty ptyxis libqalculate fastfetch)
 missing=()
-for p in "${opt[@]}"; do pacman -Q "$p" >/dev/null 2>&1 || missing+=("$p"); done
+for p in "${pkgs[@]}"; do pacman -Q "$p" >/dev/null 2>&1 || missing+=("$p"); done
 if ((${#missing[@]})); then
-  if $YES || { command -v gum >/dev/null && gum confirm "Install optional packages: ${missing[*]}?"; }; then
-    # A failed package install (no sudo, offline) must not stop the rest of the update.
-    omarchy pkg add "${missing[@]}" || warn "optional packages not installed: ${missing[*]} (later: omarchy pkg add ${missing[*]})"
-  else
-    warn "optional, not installed: ${missing[*]}"
-  fi
+  # A failed package install (no sudo, offline) must not stop the rest of the update.
+  omarchy pkg add "${missing[@]}" && say "packages installed: ${missing[*]}" ||
+    warn "packages not installed: ${missing[*]} (run ./install.sh --update again)"
 fi
 
 # The app switcher reads the Alt key from the kernel (Hyprland never reports a
 # modifier's release). That needs read access to /dev/input: one udev rule.
 if [[ ! -f /etc/udev/rules.d/69-nasaq-input.rules ]]; then
-  if $YES || { command -v gum >/dev/null && gum confirm "Install the udev rule that lets the app switcher read the Alt key (needs sudo)?"; }; then
-    sudo install -m644 "$R/defaults/69-nasaq-input.rules" /etc/udev/rules.d/69-nasaq-input.rules &&
-      sudo udevadm control --reload && sudo udevadm trigger --subsystem-match=input --action=add && say "udev rule installed"
+  if sudo install -m644 "$R/defaults/69-nasaq-input.rules" /etc/udev/rules.d/69-nasaq-input.rules &&
+     sudo udevadm control --reload && sudo udevadm trigger --subsystem-match=input --action=add; then
+    say "udev rule installed"
   else
-    warn "without the udev rule ALT+TAB uses a timing fallback"
+    warn "udev rule not installed, so ALT+TAB uses a timing fallback (run ./install.sh --update again)"
   fi
 fi
 
-# Optional: the NASAQ login screen (SDDM theme following the Omarchy theme,
-# see login/install-login.sh for the files and the one sudoers rule). Offered while it is not
-# installed (--update too); once installed it is refreshed when the repository's
-# copy changed.
+# The NASAQ login screen (SDDM theme following the Omarchy theme, see
+# login/install-login.sh for the files and the one sudoers rule). Installed
+# while missing (--update too); refreshed when the repository's copy changed.
 if [[ ! -f /etc/sddm.conf.d/zz-nasaq-login.conf ]]; then
-  if $YES || { command -v gum >/dev/null && gum confirm "Install the NASAQ login screen (SDDM theme, needs sudo)?"; }; then
-    "$R/login/install-login.sh" || warn "login screen not installed"
-  else
-    warn "optional, not installed: the NASAQ login screen (later: login/install-login.sh)"
-  fi
+  "$R/login/install-login.sh" || warn "login screen not installed (run ./install.sh --update again)"
 elif ! cmp -s "$R/login/nasaq-login/Main.qml" /usr/share/sddm/themes/nasaq-login/Main.qml ||
      ! cmp -s "$R/login/nasaq-login/MatrixRain.qml" /usr/share/sddm/themes/nasaq-login/MatrixRain.qml ||
      ! cmp -s "$R/bin/nasaq-login-sync" /usr/local/bin/nasaq-login-sync; then
   "$R/login/install-login.sh" || warn "login screen not refreshed"
 fi
 
-# Optional: the NASAQ boot and shutdown screens (Plymouth, following the theme
-# like the login screen; see login/install-plymouth.sh). Offered while not
-# installed; refreshed when the repository's templates changed.
+# The NASAQ boot and shutdown screens (Plymouth, following the theme like the
+# login screen; see login/install-plymouth.sh). Installed while missing;
+# refreshed when the repository's templates changed.
 if command -v plymouth-set-default-theme >/dev/null; then
   # "Installed" means selected too: a folder left by an interrupted install, or
-  # another theme chosen since, counts as not installed and is offered again.
+  # another theme chosen since, counts as not installed and is installed again.
   if [[ ! -d /usr/share/plymouth/themes/nasaq || $(plymouth-set-default-theme 2>/dev/null) != nasaq ]]; then
-    if $YES || { command -v gum >/dev/null && gum confirm "Install the NASAQ boot and shutdown screens (Plymouth, needs sudo, rebuilds the boot image)?"; }; then
-      "$R/login/install-plymouth.sh" || warn "boot screens not installed"
-    else
-      warn "optional, not installed: the NASAQ boot screens (later: login/install-plymouth.sh)"
-    fi
+    "$R/login/install-plymouth.sh" || warn "boot screens not installed (run ./install.sh --update again)"
   elif ! cmp -s "$R/login/nasaq-plymouth/nasaq.script.in" /usr/share/plymouth/themes/nasaq/templates/nasaq.script.in ||
        ! cmp -s "$R/bin/nasaq-login-sync" /usr/local/bin/nasaq-login-sync; then
     "$R/login/install-plymouth.sh" || warn "boot screens not refreshed"
   fi
 fi
 
-# Optional: system info (fastfetch) when a terminal opens. Never overwrites an
+# System info (fastfetch) when a terminal opens. Never overwrites an
 # existing ~/.config/fastfetch; the ~/.bashrc block sits between markers so
 # uninstall.sh can take exactly it out again.
 if ! grep -qs '# >>> NASAQ fastfetch >>>' "$HOME/.bashrc"; then
-  if $YES || { command -v gum >/dev/null && gum confirm "Show system info (fastfetch) when a terminal opens?"; }; then
-    command -v fastfetch >/dev/null || omarchy pkg add fastfetch || true
-    if command -v fastfetch >/dev/null; then
-      [[ -e $C/fastfetch ]] || { mkdir -p "$C/fastfetch" && cp "$R"/fastfetch/* "$C/fastfetch/"; }
-      [[ ! -s $HOME/.bashrc || $(tail -c1 "$HOME/.bashrc") == "" ]] || echo >> "$HOME/.bashrc"
-      cat >> "$HOME/.bashrc" <<'EOF'
+  if command -v fastfetch >/dev/null; then
+    [[ -e $C/fastfetch ]] || { mkdir -p "$C/fastfetch" && cp "$R"/fastfetch/* "$C/fastfetch/"; }
+    [[ ! -s $HOME/.bashrc || $(tail -c1 "$HOME/.bashrc") == "" ]] || echo >> "$HOME/.bashrc"
+    cat >> "$HOME/.bashrc" <<'EOF'
 # >>> NASAQ fastfetch >>>
 # System info when a terminal opens (added by NASAQ's install.sh, removed by uninstall.sh).
 if [[ $- == *i* && -t 1 ]] && command -v fastfetch >/dev/null; then
@@ -205,12 +194,9 @@ if [[ $- == *i* && -t 1 ]] && command -v fastfetch >/dev/null; then
 fi
 # <<< NASAQ fastfetch <<<
 EOF
-      say "terminal greeting added to ~/.bashrc"
-    else
-      warn "fastfetch is not installed, so no terminal greeting"
-    fi
+    say "terminal greeting added to ~/.bashrc"
   else
-    warn "optional, not installed: the terminal greeting (fastfetch)"
+    warn "fastfetch is not installed, so no terminal greeting"
   fi
 fi
 

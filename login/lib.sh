@@ -1,5 +1,5 @@
 # Shared by login/install-login.sh and login/install-plymouth.sh (sourced).
-# Both optional system steps use one root-owned helper and one sudoers rule:
+# Both system steps use one root-owned helper and one sudoers rule:
 #   /usr/local/bin/nasaq-login-sync   follows the theme for the login and boot screens
 #   /etc/sudoers.d/nasaq-login        lets the installing user run exactly that helper
 HELPER=/usr/local/bin/nasaq-login-sync

@@ -25,7 +25,7 @@ if [[ -f $menu ]] && grep -q '// NASAQ (added by' "$menu"; then
   echo " ✓ NASAQ removed from the Omarchy menu"
 fi
 
-# Optional parts: the boot screens and the login screen (back to the previous ones) and the
+# System parts: the boot screens and the login screen (back to the previous ones) and the
 # terminal greeting block. ~/.config/fastfetch is left alone: it may be yours.
 if [[ -d /usr/share/plymouth/themes/nasaq ]]; then
   "$(dirname "$(readlink -f "$0")")/login/install-plymouth.sh" --remove || echo " ! could not remove the boot screens (needs sudo)"

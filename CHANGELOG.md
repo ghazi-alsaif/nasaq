@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.1 — 2026-10-15
+- Nothing optional any more: NASAQ is one experience, so the installer no longer asks. It installs whatever is missing (the packages `tesseract-data-ara`, `cava`, `nwg-displays`, `kitty`, `ptyxis`, `libqalculate` and `fastfetch`, the App Switcher's udev rule, the login screen, the boot and shutdown screens and the terminal greeting) and leaves alone what is already there. `--update` does the same, so an existing install gets the parts it skipped. sudo is used only when something is missing. `--yes` is still accepted and changes nothing.
+- README (English and Arabic): the Motion section, fullscreen behaviour, Search keys and calculator, the switcher's frame and the Overview's order and glass.
+
 ## 1.2.0 — 2026-10-15
 Motion: every part of NASAQ now moves on one rhythm, the same as the windows. Tested item by item on the MSI laptop.
 
