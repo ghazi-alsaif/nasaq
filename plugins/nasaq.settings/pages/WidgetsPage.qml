@@ -207,7 +207,7 @@ NPage {
   }
 
   NSection {
-    title: "DYNAMIC ISLAND"
+    title: "ISLAND"
     NRow {
       title: "Date in the island card"
       NDropdown {
