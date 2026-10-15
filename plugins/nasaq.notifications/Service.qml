@@ -107,6 +107,20 @@ Item {
 
   Nasaq.Fullscreen { id: fullscreen }
 
+  // NASAQ: while the screen is locked, toasts would only play behind the lock
+  // and expire before anyone sees them. They go to history quietly instead, and
+  // the island's unseen dot is waiting after unlock. nasaq.lock publishes the state.
+  property bool screenLocked: false
+  readonly property bool lockQuiet: screenLocked && Nasaq.Settings.get("notifications.quietWhenLocked", true)
+  FileView {
+    path: Quickshell.env("HOME") + "/.local/state/nasaq/locked"
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoaded: service.screenLocked = text().trim() === "1"
+    onLoadFailed: service.screenLocked = false
+  }
+
   // NASAQ Settings > Notifications > "Show for" (seconds). Low-urgency toasts
   // get 60 % of it; critical ones stay until dismissed.
   readonly property int normalPopupDuration: Math.max(2, Number(Nasaq.Settings.get("notifications.duration", 8))) * 1000
@@ -226,7 +240,8 @@ Item {
     // sender to be CLI-style. See shouldBypassDnd().
     // While a film or game is fullscreen only critical notifications show,
     // without the chime; the rest go straight to history like Do Not Disturb.
-    var fullscreenQuiet = fullscreen.active && notification.urgency !== NotificationUrgency.Critical
+    // The same while the screen is locked.
+    var fullscreenQuiet = (fullscreen.active || service.lockQuiet) && notification.urgency !== NotificationUrgency.Critical
     if ((service.doNotDisturb && !shouldBypassDnd(notification)) || fullscreenQuiet) {
       // The toast never shows, so the only record a silenced notification
       // can leave is a history entry. Write it straight into history —

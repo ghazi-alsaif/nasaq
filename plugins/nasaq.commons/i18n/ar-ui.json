@@ -371,5 +371,7 @@
 "Caps Lock on": "Caps Lock يعمل",
 "Caps Lock off": "Caps Lock متوقف",
 "On battery": "على البطارية",
-"Charging": "يشحن"
+"Charging": "يشحن",
+"Quiet while locked": "هدوء أثناء القفل",
+"Nothing pops up or chimes behind the lock screen; you find them in the history after unlocking. Critical alerts still sound.": "لا شيء يظهر أو يرنّ خلف شاشة القفل، وتجدها في السجل بعد فتح القفل. التنبيهات الحرجة تبقى بصوت."
 }
