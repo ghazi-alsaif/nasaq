@@ -14,11 +14,14 @@ for r in rules:
     if r.get("float"): o["float"] = True
     if r.get("center"): o["center"] = True
     if r.get("pin"): o["pin"] = True
-    if r.get("width") and r.get("height"): o["size"] = f'{int(r["width"])} {int(r["height"])}'
+    # Hyprland's Lua rules take the size as a pair ({ w, h }, as Omarchy's own
+    # app rules do); a "w h" string was ignored, so width and height never applied.
+    if r.get("width") and r.get("height"): o["size"] = [int(r["width"]), int(r["height"])]
     if r.get("workspace"): o["workspace"] = str(r["workspace"])
     if r.get("opacity"): o["opacity"] = f'{float(r["opacity"]):.2f} {float(r["opacity"]):.2f}'; o["tag"] = "-default-opacity"
     if not o: continue
-    body = ", ".join(f"{k} = {json.dumps(v)}" for k, v in o.items())
+    lua = lambda v: "{ " + ", ".join(str(x) for x in v) + " }" if isinstance(v, list) else json.dumps(v)
+    body = ", ".join(f"{k} = {lua(v)}" for k, v in o.items())
     lines.append(f'pcall(o.window, {{ class = {json.dumps("^" + r["class"] + "$")} }}, {{ {body} }})')
 OUT.write_text("\n".join(lines) + "\n")
 subprocess.run(["hyprctl", "reload"], capture_output=True)
