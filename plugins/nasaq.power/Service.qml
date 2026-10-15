@@ -22,8 +22,9 @@ import "../nasaq.commons" as Nasaq
 //   mpv) or a window is fullscreen (a film, a game), a Wayland idle inhibitor
 //   keeps the screensaver and the auto-lock away. It never touches Omarchy's
 //   own Stay awake switch. Settings › System › "Stay awake while media plays".
-// • Game mode (SUPER + ALT + G, Quick Settings): Hyprland animations, blur and
-//   shadows off, notifications quiet, hot corners off. Off puts the config back.
+// • Game mode (SUPER + ALT + G, Quick Settings): animations off; windows opaque,
+//   unblurred and shadowless (the desktop widgets and panels keep their glass);
+//   notifications quiet, hot corners off. Off puts the config back.
 //   State in ~/.local/state/nasaq/gamemode ("1"/"0") so it survives a shell
 //   restart and the notification service and hot corners can read it.
 // Settings: ~/.config/omarchy/nasaq/power.json (all keys optional).
@@ -286,13 +287,16 @@ Item {
     applyGameMode(on, true)
   }
   function applyGameLook() {
-    // Window transparency comes from window rules (Omarchy's default-opacity tag
-    // and NASAQ's own opacity), which decoration options do not override; one
-    // runtime rule makes every window opaque. Leaving game mode reloads the
-    // config, which drops it.
+    // Windows only: one runtime rule makes every window opaque, unblurred and
+    // shadowless (their transparency comes from window rules, which decoration
+    // options do not override). Blur itself stays on, so the desktop widgets and
+    // the shell's panels keep their glass. Leaving game mode reloads the
+    // config, which drops the rule.
     Quickshell.execDetached(["hyprctl", "eval",
-      "hl.config({ animations = { enabled = false }, decoration = { blur = { enabled = false }, shadow = { enabled = false } } }); " +
-      "hl.window_rule({ match = { class = \".*\" }, opaque = true })"])
+      "hl.config({ animations = { enabled = false }, decoration = { shadow = { enabled = false } } }); " +
+      "hl.window_rule({ match = { class = \".*\" }, opaque = true, no_blur = true, no_shadow = true }); " +
+      // NASAQ's own windows (Settings) are shell glass like the island: excluded.
+      "hl.window_rule({ match = { class = \"^org\\\\.quickshell$\" }, opaque = false, no_blur = false, no_shadow = false })"])
   }
   // A config reload (an edit, the Windows card) brings the effects back; re-apply.
   Connections {
