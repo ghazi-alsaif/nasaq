@@ -7,6 +7,7 @@ import Quickshell.Wayland
 import Quickshell.Hyprland
 import Quickshell.Widgets
 import qs.Commons
+import "../nasaq.commons" as Nasaq
 
 // NASAQ: Overview of windows and workspaces for Hyprland.
 //
@@ -60,7 +61,7 @@ Item {
   }
   // True once the opening animation has finished; previews go live then.
   property bool settled: false
-  Timer { id: settleTimer; interval: 320; onTriggered: root.settled = true }
+  Timer { id: settleTimer; interval: Nasaq.Motion.open + 20; onTriggered: root.settled = true }
   readonly property int activeWsId: focusedMonitor && focusedMonitor.activeWorkspace ? focusedMonitor.activeWorkspace.id : 1
 
   readonly property var allToplevels: Hyprland.toplevels ? Hyprland.toplevels.values : []
@@ -72,6 +73,15 @@ Item {
       if (!ipc || !ipc.workspace || ipc.workspace.id !== wsId || !ipc.mapped || ipc.hidden) continue
       out.push(t)
     }
+    // Same order as on screen: the top half before the bottom half, then left
+    // to right, so the grid keeps the windows where the eye expects them
+    // (Hyprland's list is in opening order, which swapped left and right).
+    var half = (monitorInfo && monitorInfo.height ? monitorInfo.height / monScale : 1080) / 2
+    function key(t) {
+      var ipc = t.lastIpcObject, at = ipc.at || [0, 0], sz = ipc.size || [0, 0]
+      return { row: Math.floor((at[1] - monY + sz[1] / 2) / half), x: at[0] + sz[0] / 2 }
+    }
+    out.sort(function(a, b) { var ka = key(a), kb = key(b); return ka.row - kb.row || ka.x - kb.x })
     return out
   }
   readonly property var currentWindows: windowsOn(activeWsId)
@@ -110,6 +120,11 @@ Item {
   }
   readonly property int edgeRounding: Math.round(look.rounding !== undefined ? look.rounding : 14)
   readonly property int edgeBorder: Math.round(look.border !== undefined ? look.border : 2)
+  // Window transparency from the same settings. Captures come out opaque
+  // (Hyprland applies opacity when compositing), so the thumbnails get it here
+  // and the Overview looks like the desktop it shows.
+  readonly property real activeOpacity: Math.max(0.2, Math.min(1, look.activeOpacity !== undefined ? Number(look.activeOpacity) : 1))
+  readonly property real inactiveOpacity: Math.max(0.2, Math.min(1, look.inactiveOpacity !== undefined ? Number(look.inactiveOpacity) : 1))
   property var activeBorder: ({ colors: ["#ee5e7d92", "#eef6cc78"], angle: 45 })
   property var inactiveBorder: ({ colors: ["#aa2a3140"], angle: 0 })
   // "ee5e7d92 eef6cc78 45deg" → { colors: ["#ee5e7d92", …], angle: 45 }
@@ -174,6 +189,25 @@ Item {
     close()
   }
 
+  // Act on a window from its card: focus it, then run the action on the
+  // active window (the same two-step the drag-to-workspace move uses).
+  function actOn(t, expr, keepOpen) {
+    if (!t) return
+    var addr = "0x" + String(t.address).replace(/^0x/, "")
+    dispatch('hl.dsp.focus({ window = "address:' + addr + '" })')
+    moveTimer.expr = expr
+    moveTimer.restart()
+    if (!keepOpen) close()
+  }
+  // Closed by address, without focusing it first: a focus change makes Hyprland
+  // warp the pointer to the window's real position behind the Overview, so
+  // after one middle-click the next ones landed somewhere else.
+  function closeWindow(t) {
+    if (!t) return
+    dispatch('hl.dsp.window.close({ window = "address:0x' + String(t.address).replace(/^0x/, "") + '" })')
+    refreshTimer.restart()
+  }
+
   function goToWorkspace(id) {
     dispatch('hl.dsp.focus({ workspace = "' + id + '" })')
     close()
@@ -199,7 +233,7 @@ Item {
   Timer { id: refreshTimer; interval: 150; onTriggered: { Hyprland.refreshToplevels(); Hyprland.refreshWorkspaces() } }
   // Closing plays the opening in reverse (same durations, mirrored easing),
   // so the overlay stays until the longest animation (300 ms) has finished.
-  Timer { id: hideTimer; interval: 300; onTriggered: root.open = false }
+  Timer { id: hideTimer; interval: Nasaq.Motion.close + 20; onTriggered: root.open = false }
 
 
   IpcHandler {
@@ -293,7 +327,7 @@ Item {
 
     MouseArea {
       anchors.fill: parent
-      onClicked: root.close()
+      onClicked: winMenu.visible ? winMenu.visible = false : root.close()
     }
 
     // ── Workspace strip ──
@@ -303,8 +337,8 @@ Item {
       y: root.shown ? 26 : -overlay.stripH
       spacing: 18
       opacity: root.shown ? 1 : 0
-      Behavior on y { NumberAnimation { duration: 260; easing.type: root.shown ? Easing.OutCubic : Easing.InCubic } }
-      Behavior on opacity { NumberAnimation { duration: 200 } }
+      Behavior on y { Nasaq.NAnim { kind: root.shown ? "open" : "close" } }
+      Behavior on opacity { Nasaq.NFade {} }
 
       Repeater {
         model: root.workspaceIds
@@ -330,7 +364,7 @@ Item {
             border.color: wsDelegate.dropHover ? "white" : wsDelegate.isActive ? Color.accent : Qt.rgba(1, 1, 1, 0.18)
             clip: true
             scale: thumbMouse.containsMouse || wsDelegate.dropHover ? 1.04 : 1
-            Behavior on scale { NumberAnimation { duration: 120 } }
+            Behavior on scale { Nasaq.NAnim { kind: "fast" } }
 
             Image {
               anchors.fill: parent
@@ -353,6 +387,7 @@ Item {
                 height: ipc.size[1] / root.monScale * k
                 captureSource: root.open && modelData.wayland ? modelData.wayland : null
                 live: false
+                opacity: Hyprland.activeToplevel === modelData ? root.activeOpacity : root.inactiveOpacity
               }
             }
 
@@ -419,13 +454,13 @@ Item {
           origin.y: 0
           xScale: root.heavy && !root.shown && win.gridW > 0 ? win.realW / win.gridW : 1
           yScale: root.heavy && !root.shown && win.gridH > 0 ? (win.realH + 30) / (win.gridH + 30) : 1
-          Behavior on xScale { enabled: root.heavy; NumberAnimation { duration: 300; easing.type: root.shown ? Easing.OutCubic : Easing.InCubic } }
-          Behavior on yScale { enabled: root.heavy; NumberAnimation { duration: 300; easing.type: root.shown ? Easing.OutCubic : Easing.InCubic } }
+          Behavior on xScale { enabled: root.heavy; Nasaq.NAnim { kind: root.shown ? "open" : "close" } }
+          Behavior on yScale { enabled: root.heavy; Nasaq.NAnim { kind: root.shown ? "open" : "close" } }
         }
-        Behavior on x { enabled: !win.dragging; NumberAnimation { duration: 300; easing.type: root.shown ? Easing.OutCubic : Easing.InCubic } }
-        Behavior on y { enabled: !win.dragging; NumberAnimation { duration: 300; easing.type: root.shown ? Easing.OutCubic : Easing.InCubic } }
-        Behavior on width { enabled: !root.heavy; NumberAnimation { duration: 300; easing.type: root.shown ? Easing.OutCubic : Easing.InCubic } }
-        Behavior on height { enabled: !root.heavy; NumberAnimation { duration: 300; easing.type: root.shown ? Easing.OutCubic : Easing.InCubic } }
+        Behavior on x { enabled: !win.dragging; Nasaq.NAnim { kind: root.shown ? "open" : "close" } }
+        Behavior on y { enabled: !win.dragging; Nasaq.NAnim { kind: root.shown ? "open" : "close" } }
+        Behavior on width { enabled: !root.heavy; Nasaq.NAnim { kind: root.shown ? "open" : "close" } }
+        Behavior on height { enabled: !root.heavy; Nasaq.NAnim { kind: root.shown ? "open" : "close" } }
 
         // Same edges as the real window: rounding + border from the window
         // settings, theme border colours (active gradient for the focused or
@@ -435,7 +470,7 @@ Item {
           width: parent.width
           height: parent.height - 30
           scale: win.dragging ? 0.6 : (win.hot && root.shown ? 1.03 : 1)
-          Behavior on scale { NumberAnimation { duration: 140 } }
+          Behavior on scale { Nasaq.NAnim { kind: "fast" } }
           readonly property var edge: win.hot || Hyprland.activeToplevel === win.modelData ? root.activeBorder : root.inactiveBorder
           readonly property real bw: root.edgeBorder
           readonly property real rad: Math.min(root.edgeRounding, width / 2, height / 2)
@@ -479,9 +514,57 @@ Item {
               visible: false
               layer.enabled: true
             }
+            // The same glass as on the desktop: Hyprland blurs what is behind a
+            // window (the wallpaper) and lays the window over it at its opacity.
+            // Captures are opaque, so the Overview rebuilds that here: the piece
+            // of wallpaper behind the window, blurred with the window blur
+            // settings, then the capture at the active / inactive opacity.
+            // (Over the Overview's own darker backdrop the windows looked grey
+            // and washed out instead.)
+            readonly property real k: win.realW > 0 ? win.width / win.realW : 1
+            Item {
+              id: wallPiece
+              anchors.fill: parent
+              clip: true
+              visible: false
+              Image {
+                source: backdrop.source
+                sourceSize: backdrop.sourceSize
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                width: overlay.width * content.k
+                height: overlay.height * content.k
+                x: -win.realX * content.k - frame.bw
+                y: -win.realY * content.k - frame.bw
+              }
+            }
+            Item {
+              id: glassStack
+              anchors.fill: parent
+              visible: false
+              layer.enabled: true
+              MultiEffect {
+                anchors.fill: parent
+                source: wallPiece
+                autoPaddingEnabled: false
+                blurEnabled: root.look.blur !== false
+                blurMax: 64
+                blurMultiplier: 1.5
+                // Hyprland's dual-kawase blur spreads far wider than its numbers
+                // suggest (about size × 2^(passes+1), and MultiEffect's blur is
+                // softer than Gaussian), scaled down with the thumbnail. Matched by
+                // eye against the desktop at blurSize 4, 2 passes.
+                blur: Math.min(1, (root.look.blurSize || 4) * Math.pow(2, (root.look.blurPasses || 2) + 1) * content.k / 40)
+              }
+              MultiEffect {
+                anchors.fill: parent
+                source: shot
+                opacity: Hyprland.activeToplevel === win.modelData ? root.activeOpacity : root.inactiveOpacity
+              }
+            }
             MultiEffect {
               anchors.fill: parent
-              source: shot
+              source: glassStack
               maskEnabled: true
               maskSource: roundMask
               maskThresholdMin: 0.5
@@ -496,7 +579,7 @@ Item {
           spacing: 6
           height: 24
           opacity: root.shown && !win.dragging ? 1 : 0
-          Behavior on opacity { NumberAnimation { duration: 200 } }
+          Behavior on opacity { Nasaq.NFade {} }
           IconImage {
             anchors.verticalCenter: parent.verticalCenter
             implicitSize: 18
@@ -520,7 +603,9 @@ Item {
           anchors.fill: frame
           hoverEnabled: true
           cursorShape: Qt.PointingHandCursor
-          drag.target: win
+          // Left: focus or drag to a workspace. Middle: close. Right: actions.
+          acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
+          drag.target: pressedButtons & Qt.LeftButton ? win : null
           drag.threshold: 12
           property var hoverThumb: null
           onEntered: root.selected = win.index
@@ -550,7 +635,81 @@ Item {
             win.x = Qt.binding(function() { return win.targetX })
             win.y = Qt.binding(function() { return win.targetY })
           }
-          onClicked: if (!win.dragging) root.focusWindow(win.modelData)
+          onClicked: function(m) {
+            if (win.dragging) return
+            if (m.button === Qt.MiddleButton) { root.closeWindow(win.modelData); return }
+            if (m.button === Qt.RightButton) {
+              var p = mapToItem(winMenu.parent, m.x, m.y)
+              winMenu.openFor(win.modelData, p.x, p.y)
+              return
+            }
+            root.focusWindow(win.modelData)
+          }
+        }
+      }
+    }
+
+    // ── Window actions (right-click a card) ──
+    Rectangle {
+      id: winMenu
+      property var target: null
+      function openFor(t, px, py) {
+        target = t
+        x = Math.min(px, parent.width - width - 12)
+        y = Math.min(py, parent.height - height - 12)
+        visible = true
+      }
+      visible: false
+      z: 100
+      width: 230
+      height: menuCol.implicitHeight + 12
+      radius: 14
+      color: Util.alpha(Color.background, 0.96)
+      border.color: Qt.rgba(1, 1, 1, 0.14)
+      onVisibleChanged: if (!visible) target = null
+      Connections { target: root; function onOpenChanged() { if (!root.open) winMenu.visible = false } }
+      Column {
+        id: menuCol
+        x: 6; y: 6
+        width: parent.width - 12
+        Repeater {
+          model: [
+            { label: "Float or tile", expr: "hl.dsp.window.float({ action = \"toggle\" })" },
+            { label: "Fullscreen", expr: "hl.dsp.window.fullscreen({ mode = \"fullscreen\" })" },
+            { label: "Move to workspace 1", ws: 1 }, { label: "Move to workspace 2", ws: 2 },
+            { label: "Move to workspace 3", ws: 3 }, { label: "Move to workspace 4", ws: 4 },
+            { label: "Move to workspace 5", ws: 5 },
+            { label: "Close", close: true }
+          ]
+          delegate: Rectangle {
+            required property var modelData
+            width: menuCol.width
+            height: 32
+            radius: 8
+            color: itemMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : "transparent"
+            Text {
+              anchors.verticalCenter: parent.verticalCenter
+              x: 10
+              text: modelData.label
+              color: modelData.close ? Color.urgent : "white"
+              font.family: root.textFont
+              font.pixelSize: 13
+            }
+            MouseArea {
+              id: itemMouse
+              anchors.fill: parent
+              hoverEnabled: true
+              cursorShape: Qt.PointingHandCursor
+              onClicked: {
+                var t = winMenu.target
+                winMenu.visible = false
+                if (!t) return
+                if (modelData.close) root.closeWindow(t)
+                else if (modelData.ws) root.moveWindow(t, modelData.ws)
+                else root.actOn(t, modelData.expr, false)
+              }
+            }
+          }
         }
       }
     }
@@ -558,12 +717,12 @@ Item {
     Text {
       anchors.centerIn: parent
       visible: root.open && root.currentWindows.length === 0
-      text: "No windows on this desktop"
+      text: "No windows on this workspace"
       color: Qt.rgba(1, 1, 1, 0.5)
       font.family: root.textFont
       font.pixelSize: 16
       opacity: root.shown ? 1 : 0
-      Behavior on opacity { NumberAnimation { duration: 200 } }
+      Behavior on opacity { Nasaq.NFade {} }
     }
   }
 }

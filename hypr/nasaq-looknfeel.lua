@@ -165,6 +165,11 @@ end
 -- and the closed pill (alpha 0.16).
 hl.layer_rule({ match = { namespace = "nasaq-island" }, blur = true, ignore_alpha = 0.19 })
 hl.layer_rule({ match = { namespace = "nasaq-control-center" }, blur = true, ignore_alpha = 0.19 })
+-- The same glass for every other NASAQ card (search, switcher, notification
+-- centre, window look, desktop widgets): one material everywhere.
+for _, ns in ipairs({ "nasaq-spotlight", "nasaq-switcher", "nasaq-notification-center", "nasaq-windows", "nasaq-desktop-widgets" }) do
+  hl.layer_rule({ match = { namespace = ns }, blur = true, ignore_alpha = 0.19 })
+end
 
 -- Overview (nasaq.overview): Hyprland blurs behind its full-screen
 -- layer with the same blur settings as the windows; xray shows only the
@@ -174,7 +179,7 @@ hl.layer_rule({ match = { namespace = "nasaq-overview" }, blur = true, xray = tr
 -- ── NASAQ generated layers (written by NASAQ Settings; never edit by hand) ──
 -- Each file is optional and loaded in a pcall, so a missing or broken file
 -- never stops Hyprland from loading the rest.
-for _, name in ipairs({ "nasaq-env", "nasaq-monitors", "nasaq-rules", "nasaq-corners" }) do
+for _, name in ipairs({ "nasaq-env", "nasaq-monitors", "nasaq-corners" }) do
   local path = (os.getenv("HOME") or "") .. "/.config/hypr/" .. name .. ".lua"
   local f = io.open(path, "r")
   if f then

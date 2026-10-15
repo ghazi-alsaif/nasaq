@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import "../../nasaq.commons"
+import "../../nasaq.commons" as Nasaq
 import ".."
 
 NPage {
@@ -35,6 +36,21 @@ NPage {
         spacing: 8
         NButton { text: "Next"; icon: "󰒭"; onClicked: Sys.run("omarchy-theme-bg-next") }
         NButton { text: "Choose…"; icon: "󰋩"; onClicked: Sys.run("omarchy-theme-bg-switcher") }
+      }
+    }
+  }
+
+  NSection {
+    title: "MOTION"
+    note: "How panels, the island and lists move. Power saver turns motion off by itself."
+    NRow {
+      title: "Motion"
+      subtitle: Nasaq.Motion.saver ? "Off while power saver is on" : ""
+      NDropdown {
+        width: 200
+        model: [{ value: 1, label: "Normal" }, { value: 0.5, label: "Reduced" }, { value: 0, label: "Off" }]
+        value: Number(Settings.get("motion.scale", 1))
+        onActivated: function(v) { Settings.set("motion.scale", v) }
       }
     }
   }

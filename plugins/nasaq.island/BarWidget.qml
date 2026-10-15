@@ -97,8 +97,13 @@ BarWidget {
   readonly property bool notifActive: (notif.count || 0) > 0
   // The last toast, kept while the island shrinks back.
   property var notifShown: ({})
+  property double silencedAt: 0
   onNotifChanged: {
     if ((notif.count || 0) > 0) notifShown = notif
+    // A notification filed without a toast (fullscreen, Do Not Disturb): look
+    // at the history now so the unseen dot appears right away.
+    var s = Number(notif.silencedAt) || 0
+    if (s > silencedAt) { silencedAt = s; historyRefresh.restart() }
     // Cleared from the notification center (or by us): drop the list now
     // instead of waiting for the next reload, so the pill's dot goes too.
     var c = Number(notif.clearedAt) || 0
@@ -285,13 +290,27 @@ BarWidget {
     Quickshell.execDetached(cmd)
   }
   property bool overlayShown: false
+  // The bar pill hides only once the overlay has painted its identical
+  // lookalike, and shows again before the overlay unmaps, so the handoff
+  // between the two never flashes or changes brightness.
+  property bool pillHidden: false
 
   onOverlayWantedChanged: {
-    if (overlayWanted) { collapseHide.stop(); overlayShown = true }
-    else collapseHide.restart()
+    if (overlayWanted) {
+      collapseHide.stop(); handoffOut.stop()
+      overlayShown = true
+      handoffIn.restart()
+    } else {
+      handoffIn.stop()
+      collapseHide.restart()
+    }
   }
 
-  Timer { id: collapseHide; interval: 420; onTriggered: root.overlayShown = false }
+  Timer { id: handoffIn; interval: 32; onTriggered: root.pillHidden = true }
+  // The shape closes on fixed-length curves (Nasaq.Motion.close), so the
+  // overlay can unmap right after the close finishes instead of on a guess.
+  Timer { id: collapseHide; interval: Nasaq.Motion.close + 40; onTriggered: { root.pillHidden = false; handoffOut.restart() } }
+  Timer { id: handoffOut; interval: 32; onTriggered: root.overlayShown = false }
   Timer { id: osdTimer; onTriggered: root.osdActive = false }
   Timer { id: popThrottle; interval: 90 }
   Timer { id: alertTimer; interval: 9000; onTriggered: root.alertActive = false }
@@ -445,8 +464,8 @@ BarWidget {
     height: root.pillHeight
     radius: height / 2
     color: Util.alpha(root.barForeground, pillMouse.containsMouse ? 0.16 : 0.08)
-    opacity: root.overlayShown ? 0 : 1
-    Behavior on color { ColorAnimation { duration: 120 } }
+    opacity: root.pillHidden ? 0 : 1
+    Behavior on color { Nasaq.NColour { duration: Nasaq.Motion.micro } }
 
     Item {
       id: leftSlot
@@ -563,6 +582,16 @@ BarWidget {
       anchors.fill: parent
       hoverEnabled: true
       acceptedButtons: Qt.LeftButton | Qt.RightButton
+      // Wheel over the island changes the volume; the volume OSD shows in the
+      // island itself. One notch (120) = one volume step, as the volume keys.
+      property real wheelAcc: 0
+      onWheel: function(wheel) {
+        wheelAcc += wheel.angleDelta.y
+        if (Math.abs(wheelAcc) < 120) return
+        var up = wheelAcc > 0
+        wheelAcc = 0
+        Quickshell.execDetached(["omarchy-audio-output-volume", up ? "raise" : "lower"])
+      }
       cursorShape: Qt.PointingHandCursor
       onClicked: function(mouse) {
         if (mouse.button === Qt.RightButton) {
@@ -610,10 +639,11 @@ BarWidget {
 
     Rectangle {
       id: shape
-      color: overlay.mode === "compact" ? Util.alpha(root.barForeground, 0.16) : root.cardColor
+      // In compact mode it is pixel-identical to the bar pill (same tint).
+      color: overlay.mode === "compact" ? Util.alpha(root.barForeground, pillMouse.containsMouse ? 0.16 : 0.08) : root.cardColor
       border.color: Qt.rgba(1, 1, 1, overlay.mode === "compact" ? 0 : 0.14)
       border.width: 1
-      Behavior on color { ColorAnimation { duration: 200 } }
+      Behavior on color { Nasaq.NColour {} }
       y: overlay.topY
       x: overlay.centerX - width / 2
       width: overlay.mode === "expanded" ? 440
@@ -628,9 +658,13 @@ BarWidget {
         : root.pillHeight
       radius: overlay.mode === "expanded" ? 32 : overlay.mode === "alert" || overlay.mode === "notif" ? 30 : height / 2
       clip: true
-      Behavior on width { SpringAnimation { spring: 3.2; damping: 0.30; epsilon: 0.5 } }
-      Behavior on height { SpringAnimation { spring: 3.2; damping: 0.32; epsilon: 0.5 } }
-      Behavior on radius { NumberAnimation { duration: 220 } }
+      // One curve and one length for width, height and corners, so the shape
+      // arrives as one piece. Opening grows a hair past and settles; closing
+      // is shorter and leaves quickly.
+      readonly property string motionKind: root.overlayWanted ? "open" : "close"
+      Behavior on width { Nasaq.NAnim { kind: shape.motionKind } }
+      Behavior on height { Nasaq.NAnim { kind: shape.motionKind } }
+      Behavior on radius { Nasaq.NAnim { kind: shape.motionKind } }
 
       // Hover over the WHOLE card, children included. A MouseArea's
       // containsMouse drops the moment the pointer enters a child MouseArea
@@ -661,10 +695,14 @@ BarWidget {
         }
       }
 
-      // Compact clock, shown while morphing back.
+      // Compact clock, shown while morphing back. It sits exactly where the
+      // pill's own clock sits (same offset for the moon and the countdown),
+      // and goes the moment the pill shows again, so the two never overlap
+      // as a doubled text at the end of the close.
       Text {
         anchors.centerIn: parent
-        visible: overlay.mode === "compact"
+        anchors.horizontalCenterOffset: clockLabel.anchors.horizontalCenterOffset
+        visible: overlay.mode === "compact" && root.pillHidden
         text: root.clockText
         color: root.barForeground
         font.family: root.textFont
@@ -679,7 +717,9 @@ BarWidget {
         spacing: 14
         opacity: overlay.mode === "osd" ? 1 : 0
         visible: opacity > 0
-        Behavior on opacity { NumberAnimation { duration: 140 } }
+        scale: overlay.mode === "osd" ? 1 : 0.97
+        Behavior on scale { Nasaq.NAnim { kind: "fast" } }
+        Behavior on opacity { SequentialAnimation { PauseAnimation { duration: overlay.mode === "osd" ? Math.round(Nasaq.Motion.open * 0.3) : 0 } Nasaq.NFade {} } }
 
         Text {
           anchors.verticalCenter: parent.verticalCenter
@@ -700,7 +740,7 @@ BarWidget {
             radius: 3
             width: parent.width * root.osd.fraction
             color: "white"
-            Behavior on width { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+            Behavior on width { Nasaq.NAnim { kind: "fast" } }
           }
         }
         Text {
@@ -725,7 +765,9 @@ BarWidget {
         spacing: 12
         opacity: overlay.mode === "notif" ? 1 : 0
         visible: opacity > 0
-        Behavior on opacity { NumberAnimation { duration: 160 } }
+        scale: overlay.mode === "notif" ? 1 : 0.97
+        Behavior on scale { Nasaq.NAnim { kind: "fast" } }
+        Behavior on opacity { SequentialAnimation { PauseAnimation { duration: overlay.mode === "notif" ? Math.round(Nasaq.Motion.open * 0.3) : 0 } Nasaq.NFade {} } }
         // An Arabic toast reads right to left as a whole: icon on the right,
         // every line starting from the right edge.
         LayoutMirroring.enabled: root.isRtlText(root.notifShown.summary)
@@ -858,7 +900,9 @@ BarWidget {
         spacing: 14
         opacity: overlay.mode === "alert" ? 1 : 0
         visible: opacity > 0
-        Behavior on opacity { NumberAnimation { duration: 160 } }
+        scale: overlay.mode === "alert" ? 1 : 0.97
+        Behavior on scale { Nasaq.NAnim { kind: "fast" } }
+        Behavior on opacity { SequentialAnimation { PauseAnimation { duration: overlay.mode === "alert" ? Math.round(Nasaq.Motion.open * 0.3) : 0 } Nasaq.NFade {} } }
         Rectangle {
           anchors.verticalCenter: parent.verticalCenter
           width: 42
@@ -903,7 +947,9 @@ BarWidget {
         spacing: 14
         opacity: overlay.mode === "expanded" ? 1 : 0
         visible: opacity > 0
-        Behavior on opacity { NumberAnimation { duration: 180 } }
+        scale: overlay.mode === "expanded" ? 1 : 0.97
+        Behavior on scale { Nasaq.NAnim { kind: "fast" } }
+        Behavior on opacity { SequentialAnimation { PauseAnimation { duration: overlay.mode === "expanded" ? Math.round(Nasaq.Motion.open * 0.3) : 0 } Nasaq.NFade {} } }
 
         // Stopwatch row (only while one is running or paused)
         Item {
@@ -1347,7 +1393,7 @@ BarWidget {
             height: 20
             radius: 10
             color: on ? root.accent : Qt.rgba(1, 1, 1, 0.22)
-            Behavior on color { ColorAnimation { duration: 140 } }
+            Behavior on color { Nasaq.NColour { duration: Nasaq.Motion.micro } }
             Rectangle {
               width: 16
               height: 16
@@ -1355,7 +1401,7 @@ BarWidget {
               y: 2
               x: quietSwitch.on ? quietSwitch.width - width - 2 : 2
               color: "white"
-              Behavior on x { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+              Behavior on x { Nasaq.NAnim { kind: "fast" } }
             }
             MouseArea {
               anchors.fill: parent

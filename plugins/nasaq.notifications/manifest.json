@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "nasaq.notifications",
   "name": "Notifications",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "author": "NASAQ (GHS)",
   "description": "Notification daemon, popups, DND, and history",
   "kinds": [

@@ -19,6 +19,11 @@ Item {
 
   property bool open: false
   property bool shown: false
+  // The card opens at its final size; size changes animate only once it is up
+  // (the first open used to grow from the bare search row into the list).
+  property bool sizeSettled: false
+  onShownChanged: { sizeSettled = false; if (shown) settleTimer.restart() }
+  Timer { id: settleTimer; interval: Nasaq.Motion.fast + 40; onTriggered: root.sizeSettled = true }
   property string query: ""
   property int selected: 0
   property var fileHits: []
@@ -52,7 +57,35 @@ Item {
     shown = false
     hideTimer.restart()
   }
-  Timer { id: hideTimer; interval: 160; onTriggered: root.open = false }
+  Timer { id: hideTimer; interval: Nasaq.Motion.fast + 20; onTriggered: root.open = false }
+
+  // ── qalc: when NASAQ's own calculator cannot read a sum (sqrt(2), 5!,
+  // today + 40 days), ask qalc if it is installed. Debounced, never blocks typing.
+  property bool hasQalc: false
+  property var qalcResult: null      // { q, v }
+  Process { running: true; command: ["sh", "-c", "command -v qalc"]; stdout: StdioCollector { onStreamFinished: root.hasQalc = this.text.trim().length > 0 } }
+  Timer {
+    id: qalcDebounce
+    interval: 150
+    onTriggered: {
+      var q = root.query.trim()
+      if (!root.hasQalc || !q || !/[0-9]/.test(q) || /^[?؟~\/]/.test(q) || q.length > 120) return
+      if (Spot.calculate(q) !== null || Spot.parseCurrency(q) || Spot.parseUnits(q)) return
+      qalcProc.forQ = q
+      qalcProc.command = ["qalc", "-t", q]
+      qalcProc.running = true
+    }
+  }
+  Process {
+    id: qalcProc
+    property string forQ: ""
+    stdout: StdioCollector {
+      onStreamFinished: {
+        var v = this.text.trim().split("\n").pop() || ""
+        if (v && v !== qalcProc.forQ && !/error|warning|undefined/i.test(v) && v.length < 80) root.qalcResult = { q: qalcProc.forQ, v: v }
+      }
+    }
+  }
 
   // ── Results ──────────────────────────────────────────────────────
   readonly property var apps: {
@@ -190,6 +223,7 @@ Item {
     }
     var u = Spot.parseUnits(q)
     if (u) return { title: Spot.formatNumber(u.value), subtitle: u.label, copy: String(Number(u.value.toFixed(6))), glyph: "󰑭" }
+    if (qalcResult && qalcResult.q === q) return { title: qalcResult.v, subtitle: q + " =", copy: qalcResult.v, glyph: "󰃬" }
     return null
   }
 
@@ -237,6 +271,7 @@ Item {
   }
 
   onQueryChanged: {
+    qalcDebounce.restart()
     selected = 0
     fileHits = []
     pathDir = ""
@@ -413,17 +448,17 @@ Item {
       readonly property int listWidth: Math.min(700, parent.width - 40)
       width: listWidth + (root.showPreview ? 340 : 0)
       height: searchRow.height + (list.count > 0 ? Math.max(list.height, root.showPreview ? 380 : 0) + 9 : 0)
-      Behavior on width { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+      Behavior on width { enabled: root.sizeSettled; Nasaq.NAnim { kind: "move" } }
       radius: 22
-      color: Util.alpha(Color.background, 0.96)
+      color: Util.alpha(Color.background, Math.max(0.55, Nasaq.Theme.glassAlpha))
       border.color: Qt.rgba(1, 1, 1, 0.14)
       border.width: 1
       clip: true
       opacity: root.shown ? 1 : 0
       scale: root.shown ? 1 : 0.96
-      Behavior on opacity { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
-      Behavior on scale { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-      Behavior on height { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+      Behavior on opacity { Nasaq.NFade {} }
+      Behavior on scale { Nasaq.NAnim { kind: "fast" } }
+      Behavior on height { enabled: root.sizeSettled; Nasaq.NAnim { kind: "move" } }
 
       MouseArea { anchors.fill: parent }
 
@@ -461,6 +496,8 @@ Item {
             var n = root.results.length
             if (e.key === Qt.Key_Escape) { root.close(); e.accepted = true }
             else if (e.key === Qt.Key_Tab && root.pathMode && root.stepInto(root.results[root.selected])) { e.accepted = true }
+            else if ((e.modifiers & Qt.ControlModifier) && (e.key === Qt.Key_J || e.key === Qt.Key_N)) { root.selected = n ? (root.selected + 1) % n : 0; e.accepted = true }
+            else if ((e.modifiers & Qt.ControlModifier) && (e.key === Qt.Key_K || e.key === Qt.Key_P)) { root.selected = n ? (root.selected - 1 + n) % n : 0; e.accepted = true }
             else if (e.key === Qt.Key_Down || (e.key === Qt.Key_Tab)) { root.selected = n ? (root.selected + 1) % n : 0; e.accepted = true }
             else if (e.key === Qt.Key_Up || e.key === Qt.Key_Backtab) { root.selected = n ? (root.selected - 1 + n) % n : 0; e.accepted = true }
             else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
@@ -546,6 +583,19 @@ Item {
         clip: true
         boundsBehavior: Flickable.StopAtBounds
         onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
+        // One highlight that glides between results instead of each row lighting
+        // up. It follows the current row with its own animation: the view's
+        // built-in follow snapped here (positionViewAtIndex on every move).
+        highlightFollowsCurrentItem: false
+        highlight: Rectangle {
+          radius: 10
+          color: Color.accent
+          width: list.width
+          y: list.currentItem ? list.currentItem.y : 0
+          height: list.currentItem ? list.currentItem.height : 0
+          Behavior on y { enabled: root.sizeSettled; Nasaq.NAnim { kind: "fast" } }
+          Behavior on height { enabled: root.sizeSettled; Nasaq.NAnim { kind: "fast" } }
+        }
 
         section.property: "kind"
         section.delegate: Item {
@@ -574,7 +624,7 @@ Item {
           width: list.width
           height: modelData.kind === "instant" ? 64 : modelData.kind === "ai" ? Math.max(46, aiTitleProbe.lineCount * 20 + 28) : 46
           radius: 10
-          color: current ? Color.accent : "transparent"
+          color: "transparent"
 
           Item {
             id: iconBox

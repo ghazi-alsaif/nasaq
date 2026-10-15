@@ -22,6 +22,8 @@ Item {
     "menu": ["omarchy-menu", "toggle"]
   })
   readonly property int delay: Nasaq.Settings.get("hotCorners.delay", 150)
+  // No hot corners while a film or game is fullscreen.
+  Nasaq.Fullscreen { id: fullscreen }
   function actionFor(corner) { return Nasaq.Settings.get("hotCorners." + corner, "none") }
   function fire(corner) {
     var a = actions[actionFor(corner)]
@@ -46,7 +48,7 @@ Item {
       id: cornerWin
       required property var modelData
       readonly property string corner: modelData.c
-      visible: root.actionFor(corner) !== "none"
+      visible: root.actionFor(corner) !== "none" && !fullscreen.active
       screen: modelData.screen
       anchors { top: modelData.top; bottom: !modelData.top; left: modelData.left; right: !modelData.left }
       implicitWidth: 2

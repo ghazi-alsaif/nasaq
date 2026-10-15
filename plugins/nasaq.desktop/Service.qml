@@ -381,6 +381,8 @@ Item {
   // ── UI ───────────────────────────────────────────────────────────
   component Card: Rectangle {
     property string key: ""
+    // Cards glide to their new place when one is turned on, off or moved.
+    Behavior on y { enabled: widgets.ready; Nasaq.NAnim { kind: "move" } }
     width: 320
     radius: 26
     color: root.glass
@@ -434,19 +436,25 @@ Item {
         transformOrigin: Item.TopLeft
         // Cards are placed by hand in root.cardOrder; hidden cards leave no gap.
         property string lastKey: ""
+        // Height of every visible card except notes, each with its gap, so
+        // notes can take exactly what is left down to the bottom edge.
+        property real othersBlock: 0
+        property bool ready: false
         implicitHeight: 0
         function cardFor(key) { for (var i = 0; i < children.length; i++) if (children[i].key === key) return children[i]; return null }
         function relayout() {
-          var y = 0, last = ""
+          var y = 0, last = "", others = 0
           for (var i = 0; i < root.cardOrder.length; i++) {
             var cards = root.cardOrder[i] === "prayer" ? [cardFor("prayer"), cardFor("prayer-missing")] : [cardFor(root.cardOrder[i])]
             for (var k = 0; k < cards.length; k++) {
               var c = cards[k]
               if (!c || !c.visible) continue
               c.y = y; y += c.height + spacing; last = root.cardOrder[i]
+              if (c.key !== "notes") others += c.height + spacing
             }
           }
           lastKey = last
+          othersBlock = others
           implicitHeight = Math.max(0, y - spacing)
         }
         Component.onCompleted: {
@@ -455,6 +463,7 @@ Item {
             children[i].heightChanged.connect(relayout)
           }
           relayout()
+          Qt.callLater(function() { widgets.ready = true })
         }
         Connections { target: root; function onCardOrderChanged() { widgets.relayout() } }
         onSpacingChanged: relayout()
@@ -850,8 +859,10 @@ Item {
           visible: root.notesEnabled
           // As the last card it stretches to the bottom of the screen, ending
           // at the same 10 px gap as the windows (widgets are scaled by
-          // win.ui). Anywhere else it keeps a fixed height and scrolls inside.
-          height: widgets.lastKey === "notes" ? Math.max(220, (win.height - 10 - widgets.y) / win.ui - y) : 300
+          // win.ui). Wherever it sits, it takes what the other cards leave, so the
+          // column always ends at that gap (a fixed 300 used to push the cards
+          // below it past the bottom of the screen).
+          height: Math.max(220, (win.height - 10 - widgets.y) / win.ui - widgets.othersBlock)
           Row {
             id: tabs
             x: 14

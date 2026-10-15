@@ -105,6 +105,8 @@ Item {
   // NASAQ: 50 so the notification center has a real backlog to show.
   readonly property int historyLimit: 50
 
+  Nasaq.Fullscreen { id: fullscreen }
+
   // NASAQ Settings > Notifications > "Show for" (seconds). Low-urgency toasts
   // get 60 % of it; critical ones stay until dismissed.
   readonly property int normalPopupDuration: Math.max(2, Number(Nasaq.Settings.get("notifications.duration", 8))) * 1000
@@ -222,7 +224,10 @@ Item {
     // DND bypass rules: chat apps abuse urgency=critical to force
     // visibility, so critical alone isn't enough — we also require the
     // sender to be CLI-style. See shouldBypassDnd().
-    if (service.doNotDisturb && !shouldBypassDnd(notification)) {
+    // While a film or game is fullscreen only critical notifications show,
+    // without the chime; the rest go straight to history like Do Not Disturb.
+    var fullscreenQuiet = fullscreen.active && notification.urgency !== NotificationUrgency.Critical
+    if ((service.doNotDisturb && !shouldBypassDnd(notification)) || fullscreenQuiet) {
       // The toast never shows, so the only record a silenced notification
       // can leave is a history entry. Write it straight into history —
       // "what did I miss while silenced" is exactly what history is for.
@@ -239,7 +244,7 @@ Item {
     watchForUpdates(notification, snapshot)
     // NASAQ: soft chime for real notifications (not low-urgency or our own
     // action toasts). DND already returned above.
-    if (!silentRule && notification.urgency !== NotificationUrgency.Low && snapshot.app !== "omarchy-action")
+    if (!silentRule && !fullscreen.active && notification.urgency !== NotificationUrgency.Low && snapshot.app !== "omarchy-action")
       Quickshell.execDetached(["nasaq-sound", "notify"])
     // Qt.callLater avoids "QV4::Object::insertMember" crashes when a
     // Repeater is mid-incubation while we mutate its model.
@@ -271,6 +276,9 @@ Item {
         return
       }
       service.releaseSilenced(notification, written.originalId)
+      // Tell the island a notification went straight to history (fullscreen
+      // or Do Not Disturb), so it reloads and shows its unseen dot at once.
+      service.silencedAt = Date.now()
     })
   }
 
@@ -644,6 +652,8 @@ Item {
   // When history was last wiped (Clear All here, or Clear in the island). The
   // island reads it from the state file and drops its own copy at once.
   property double historyClearedAt: 0
+  // When a notification last went to history without a toast (see writeSilenced).
+  property double silencedAt: 0
   function clearHistory() {
     historyClearedAt = Date.now()
     enqueuePopupFileJob(["bash", "-c",
@@ -1055,10 +1065,10 @@ Item {
   }
   readonly property string islandState: {
     var unused = islandRev
-    if (!islandToasts || popupModel.count === 0) return JSON.stringify({ count: 0, dnd: doNotDisturb, clearedAt: historyClearedAt })
+    if (!islandToasts || popupModel.count === 0) return JSON.stringify({ count: 0, dnd: doNotDisturb, clearedAt: historyClearedAt, silencedAt: silencedAt })
     var n = popupModel.get(0)
     return JSON.stringify({
-      count: popupModel.count, dnd: doNotDisturb, clearedAt: historyClearedAt,
+      count: popupModel.count, dnd: doNotDisturb, clearedAt: historyClearedAt, silencedAt: silencedAt,
       timestamp: n.timestamp, app: n.app || "", summary: n.summary || "",
       body: n.body || "", image: n.image || "", appIcon: n.appIcon || "", glyph: n.glyph || ""
     })

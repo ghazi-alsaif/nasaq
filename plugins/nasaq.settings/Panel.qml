@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import "../nasaq.commons"
+import "../nasaq.commons" as Nasaq
 
 // NASAQ Settings window. Summon: omarchy-shell shell toggle nasaq.settings '{"page":"plugins"}'
 Item {
@@ -124,6 +125,7 @@ Item {
               height: visible ? 34 : 0
               radius: 8
               color: root.page === modelData.id ? Qt.rgba(1, 1, 1, 0.12) : (navMouse.containsMouse ? Theme.hover : "transparent")
+              Behavior on color { Nasaq.NColour { duration: Nasaq.Motion.micro } }
               Row {
                 anchors.left: parent.left; anchors.leftMargin: 8
                 anchors.verticalCenter: parent.verticalCenter
@@ -158,6 +160,14 @@ Item {
         anchors.bottom: parent.bottom
         active: window.visible
         source: "pages/" + root.fileFor(root.page)
+        // A new page fades in and slides a few pixels into place.
+        transform: Translate { id: pageShift }
+        onLoaded: { pageLoader.opacity = 0; pageShift.x = 12; pageIn.restart() }
+        ParallelAnimation {
+          id: pageIn
+          Nasaq.NFade { target: pageLoader; property: "opacity"; to: 1 }
+          Nasaq.NAnim { target: pageShift; property: "x"; to: 0; kind: "fast" }
+        }
       }
     }
   }

@@ -5,6 +5,7 @@ import Quickshell.Io
 import qs.Ui
 import qs.Commons
 import "../nasaq.lock" as Lock
+import "../nasaq.commons" as Nasaq
 
 // NASAQ: the lock screen's control center, summoned from the bar. The card
 // lives in its own overlay so it keeps its exact look; clicking outside
@@ -57,11 +58,11 @@ BarWidget {
     id: pill
     anchors.verticalCenter: parent.verticalCenter
     width: pillRow.implicitWidth + 18
-    opacity: root.overlayShown ? 0 : 1
+    opacity: root.pillHidden ? 0 : 1
     height: Math.round(Style.bar.iconSlot * 0.82)
     radius: height / 2
     color: Util.alpha(root.barForeground, root.opened ? 0.24 : (pillMouse.containsMouse ? 0.16 : 0.08))
-    Behavior on color { ColorAnimation { duration: 120 } }
+    Behavior on color { Nasaq.NColour { duration: Nasaq.Motion.micro } }
 
     Row {
       id: pillRow
@@ -124,11 +125,17 @@ BarWidget {
 
   // Kept mapped while the island shrinks back into the pill.
   property bool overlayShown: false
+  // The bar pill hides once the card has painted its identical lookalike and
+  // shows again before the card unmaps, so the handoff never flashes.
+  property bool pillHidden: false
   onOpenedChanged: {
-    if (opened) { collapseHide.stop(); overlayShown = true }
-    else collapseHide.restart()
+    if (opened) { collapseHide.stop(); handoffOut.stop(); overlayShown = true; handoffIn.restart() }
+    else { handoffIn.stop(); collapseHide.restart() }
   }
-  Timer { id: collapseHide; interval: 420; onTriggered: root.overlayShown = false }
+  Timer { id: handoffIn; interval: 32; onTriggered: root.pillHidden = true }
+  // Unmap right after the fixed-length close (Nasaq.Motion.close).
+  Timer { id: collapseHide; interval: Nasaq.Motion.close + 40; onTriggered: { root.pillHidden = false; handoffOut.restart() } }
+  Timer { id: handoffOut; interval: 32; onTriggered: { root.overlayShown = false } }
   Timer { id: leaveTimer; interval: 650; onTriggered: root.close() }
 
   // ── The card grows out of the pill, like the island ──────
@@ -177,21 +184,23 @@ BarWidget {
     Rectangle {
       id: shape
       readonly property real openW: controls.width
-      readonly property real openH: controls.height
+      readonly property real openH: controls.targetHeight
       y: overlay.pillPos.y
       width: root.opened ? openW : pill.width
       height: root.opened ? openH : pill.height
       // Grow leftward from the pill's right edge, staying on screen.
       x: Math.min(root.opened ? overlay.barRight : overlay.pillRight, overlay.width - Style.gapsOut - 4) - width
       radius: root.opened ? 24 : pill.height / 2
-      color: root.opened ? Util.alpha(Color.background, root.glassAlpha) : Util.alpha(root.barForeground, 0.16)
+      color: root.opened ? Util.alpha(Color.background, root.glassAlpha) : Util.alpha(root.barForeground, pillMouse.containsMouse ? 0.16 : 0.08)
       border.color: Qt.rgba(1, 1, 1, root.opened ? 0.14 : 0)
       border.width: 1
       clip: true
-      Behavior on width { SpringAnimation { spring: 3.2; damping: 0.30; epsilon: 0.5 } }
-      Behavior on height { SpringAnimation { spring: 3.2; damping: 0.32; epsilon: 0.5 } }
-      Behavior on radius { NumberAnimation { duration: 220 } }
-      Behavior on color { ColorAnimation { duration: 200 } }
+      // One curve and length for size and corners, so the card arrives as one piece.
+      readonly property string motionKind: root.opened ? "open" : "close"
+      Behavior on width { Nasaq.NAnim { kind: shape.motionKind } }
+      Behavior on height { Nasaq.NAnim { kind: shape.motionKind } }
+      Behavior on radius { Nasaq.NAnim { kind: shape.motionKind } }
+      Behavior on color { Nasaq.NColour {} }
 
       // Swallow clicks inside the island so they don't close it.
       MouseArea { anchors.fill: parent }
@@ -213,6 +222,7 @@ BarWidget {
         active: true
         interactive: true
         opened: root.opened
+        motionScale: Nasaq.Motion.scale
         showLock: true
         chromeless: true
         onCloseRequested: root.close()

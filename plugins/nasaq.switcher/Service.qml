@@ -176,8 +176,36 @@ Item {
       width: row.implicitWidth + 32
       height: row.implicitHeight + 32
       radius: 26
-      color: Qt.rgba(0.11, 0.11, 0.12, Math.max(0.7, Nasaq.Theme.glassAlpha))
+      color: Util.alpha(Color.background, Math.max(0.55, Nasaq.Theme.glassAlpha))
       border.color: Qt.rgba(1, 1, 1, 0.12)
+      // Fades and grows in a touch on open; closing stays instant so the
+      // switch itself is never delayed.
+      property bool appeared: false
+      opacity: appeared ? 1 : 0
+      scale: appeared ? 1 : 0.96
+      Behavior on opacity { enabled: root.open; Nasaq.NFade {} }
+      Behavior on scale { enabled: root.open; Nasaq.NAnim { kind: "fast" } }
+      Connections {
+        target: root
+        function onOpenChanged() {
+          card.appeared = false
+          if (root.open) Qt.callLater(function() { card.appeared = true })
+        }
+      }
+      // One frame that glides from window to window on TAB, like the highlight
+      // in Search, instead of each thumbnail lighting up on its own. It jumps
+      // into place when the switcher opens and glides only after that.
+      Rectangle {
+        id: glide
+        visible: root.open && root.items.length > 0
+        x: row.x + root.index * (220 + row.spacing)
+        y: row.y
+        width: 220; height: 140; radius: 14
+        color: Qt.rgba(1, 1, 1, 0.11)
+        border.color: Color.accent
+        border.width: 2
+        Behavior on x { enabled: card.appeared; Nasaq.NAnim { kind: "fast" } }
+      }
       Row {
         id: row
         anchors.centerIn: parent
@@ -192,9 +220,9 @@ Item {
             spacing: 8
             Rectangle {
               width: 220; height: 140; radius: 14
-              color: Qt.rgba(1, 1, 1, cell.current ? 0.16 : 0.05)
-              border.color: cell.current ? Color.accent : "transparent"
-              border.width: 2
+              // The accent frame and the lighter fill come from the gliding
+              // frame behind the row.
+              color: Qt.rgba(1, 1, 1, 0.05)
               clip: true
               ScreencopyView {
                 anchors.fill: parent; anchors.margins: 6

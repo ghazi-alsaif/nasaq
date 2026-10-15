@@ -156,6 +156,10 @@ NPage {
       }
     }
   }
+  // Calendar status and refresh (lost in 1.0.2, which left the iCal row blank
+  // and Refresh doing nothing).
+  Cmd { id: calStatus; script: "python3 -c 'import json,os;p=os.path.expanduser(\"~/.cache/nasaq/calendar.json\");d=json.load(open(p)) if os.path.exists(p) else {};print((\"Error: \"+d[\"error\"]) if d.get(\"error\") else (str(len(d.get(\"events\",[])))+\" events in the next 7 days\" if d.get(\"configured\") else \"No calendar connected\"))'" }
+  Cmd { id: calRefresh; autoRun: false; script: "nasaq-calendar"; onDone: calStatus.refresh() }
   Timer { id: refreshLater; interval: 4000; onTriggered: calStatus.refresh() }
 
   NSection {
