@@ -39,7 +39,7 @@ Left: the Omarchy menu, pinned app launchers, and the **workspace numbers**. The
 
 <p align="center"><img src="docs/screenshots/island.png" alt="The island" width="420"></p>
 
-The island in the top centre is a living element: one pill that changes shape for whatever needs your attention. Collapsed, it shows the time, and optionally a countdown to the next prayer. Click it and it expands into a card with the date (Gregorian, and Hijri if you want it), the weather, what is playing, and a stopwatch and Pomodoro timer. Volume and brightness OSDs, and notifications, appear by morphing the island itself rather than as separate pop-ups.
+The island in the top centre is a living element: one pill that changes shape for whatever needs your attention. Collapsed, it shows the time, and optionally a countdown to the next prayer. Click it and it expands into a card with the date (Gregorian, and Hijri if you want it), the weather, what is playing, and a stopwatch and Pomodoro timer. Volume and brightness OSDs, and notifications, appear by morphing the island itself rather than as separate pop-ups. So do short status notes: Caps Lock on or off, the keyboard language you switched to, and the charger plugged in or out.
 
 ### Notifications and Notification Center
 
@@ -63,9 +63,10 @@ A column of glass widgets sits on the desktop behind your windows (see the scree
 
 Make the column yours, in Settings > Widgets:
 
+- Put the column on the left, on the right, or on both sides (two columns, with each card on the side you pick). Windows tile around it.
 - Every card has an on/off switch. The column closes the gap where a card is off.
 - Drag the handle next to a card to put the cards in any order.
-- The Tasks / Notes card stretches to the bottom of the screen when it is last. Anywhere else it keeps a fixed height.
+- The Tasks / Notes card takes the height the other cards leave, wherever it sits.
 - Prayer times, in the column and in the island, are off with one switch if you do not need them.
 
 ### Search
@@ -112,7 +113,7 @@ The Plugins page lists every plugin the shell knows about, grouped as NASAQ, Oma
 
 ![Shortcuts page](docs/screenshots/settings-shortcuts.png)
 
-The Shortcuts page lists all shortcuts, Omarchy's and NASAQ's. Each can be changed to a different key or turned off, without editing Lua by hand and without losing Omarchy's updates: NASAQ writes a small remap layer that is loaded before Omarchy's defaults. The keyboard-layout switch regenerates every letter shortcut on key codes, so `SUPER + W`, `SUPER + Q` and friends keep working while a non-Latin layout (Arabic, for example) is active.
+The Shortcuts page lists all shortcuts, Omarchy's and NASAQ's. Each can be changed to a different key or turned off, without editing Lua by hand and without losing Omarchy's updates: NASAQ writes a small remap layer that is loaded before Omarchy's defaults. The keyboard-layout switch regenerates every letter shortcut on key codes, so `SUPER + W`, `SUPER + Q` and friends keep working while a non-Latin layout (Arabic, for example) is active. NASAQ also gives Caps Lock back its usual job (Omarchy makes it a Compose key and puts Caps Lock on both Shifts); a switch on the same page restores Omarchy's way.
 
 ### Session screens
 
@@ -129,6 +130,9 @@ From the moment the machine starts until it shuts down, every screen has the sam
 
 - **Terminal greeting**: system info from fastfetch each time a terminal opens.
 - **Fullscreen**: while a film or game is fullscreen, notifications wait quietly in the Notification Center (critical ones still show, without the sound) and hot corners are off.
+- **Stay awake while media plays**: a video, music, or anything fullscreen keeps the screensaver and auto-lock away. It doesn't touch the Stay awake switch.
+- **Game mode** (`SUPER + ALT + G`, or Quick Settings): animations, blur and shadows off, notifications quiet, hot corners off. Off puts everything back.
+- **Locked screen**: notifications that arrive while the screen is locked don't pop up or chime behind it. They wait in the Notification Center, with the island's dot showing after you unlock.
 - **Power**: a power-saving mode and per-profile behaviour (Saver, Balanced, Performance).
 - **Display**: resolution, scale and position with a 15-second automatic revert, and auto-brightness from the ambient sensor or the clock.
 - **Translation**: `SUPER + CTRL + ALT + L` translates the selected text; add SHIFT to OCR and translate a region of the screen. Both use your default Omarchy agent.
@@ -151,6 +155,7 @@ From the moment the machine starts until it shuts down, every screen has the sam
 | `SUPER + N` | Notification Center |
 | `SUPER + ALT + C` | Quick Settings |
 | `SUPER + ALT + D` | Show / hide desktop widgets |
+| `SUPER + ALT + G` | Game mode |
 | `` SUPER + ` `` | Terminal scratchpad |
 | `SUPER + Q` | Quit app |
 | `SUPER + C / V / X` | Universal copy / paste / cut |

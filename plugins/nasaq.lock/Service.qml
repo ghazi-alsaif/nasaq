@@ -58,6 +58,12 @@ Item {
 
   readonly property bool locked: capturing || lockRequested || sessionLock.locked || sessionLock.secure
   readonly property bool authenticating: authenticatingPassword || fingerprintAuthenticating
+  // Published for the notification service, which keeps toasts off a locked
+  // screen: ~/.local/state/nasaq/locked holds "1" or "0".
+  function publishLocked() {
+    Quickshell.execDetached(["bash", "-c", "mkdir -p \"$HOME/.local/state/nasaq\" && printf %s \"$1\" > \"$HOME/.local/state/nasaq/locked\"", "nasaq-lock", locked ? "1" : "0"])
+  }
+  onLockedChanged: publishLocked()
 
   function realScreenCount() {
     var screens = Quickshell.screens || []
@@ -638,6 +644,7 @@ Item {
   }
 
   Component.onCompleted: {
+    publishLocked()
     refreshBackground()
     refreshFingerprintStatus()
     checkStrandedLock()

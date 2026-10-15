@@ -26,6 +26,11 @@ NPage {
       NSwitch { checked: dnd.out === "on"; onToggled: function(c) { Sys.ipc("notifications", "setDnd", c ? "on" : "off"); dnd.out = c ? "on" : "off" } }
     }
     NRow {
+      title: "Quiet while locked"
+      subtitle: "Nothing pops up or chimes behind the lock screen; you find them in the history after unlocking. Critical alerts still sound."
+      NSwitch { checked: Settings.get("notifications.quietWhenLocked", true); onToggled: function(c) { Settings.set("notifications.quietWhenLocked", c) } }
+    }
+    NRow {
       title: "Show each notification for"
       subtitle: "Low-priority ones go a little sooner; critical alerts stay until dismissed. Hovering the island pauses it."
       NSlider { width: 220; from: 2; to: 30; stepSize: 1; value: Settings.get("notifications.duration", 8); valueText: Math.round(value) + " s"

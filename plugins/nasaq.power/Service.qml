@@ -2,6 +2,10 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.UPower
+import Quickshell.Services.Mpris
+import Quickshell.Wayland
+import Quickshell.Hyprland
+import "../nasaq.commons" as Nasaq
 
 // NASAQ: power behaviour on top of power-profiles-daemon.
 //
@@ -14,6 +18,15 @@ import Quickshell.Services.UPower
 //                   within 10 min (nasaq.lock reads `displayCapMs`)
 //     Performance – everything on, no caps
 // • The island announces each change.
+// • Awake for media: while something plays (any MPRIS player: browser, Spotify,
+//   mpv) or a window is fullscreen (a film, a game), a Wayland idle inhibitor
+//   keeps the screensaver and the auto-lock away. It never touches Omarchy's
+//   own Stay awake switch. Settings › System › "Stay awake while media plays".
+// • Game mode (SUPER + ALT + G, Quick Settings): animations off; windows opaque,
+//   unblurred and shadowless (the desktop widgets and panels keep their glass);
+//   notifications quiet, hot corners off. Off puts the config back.
+//   State in ~/.local/state/nasaq/gamemode ("1"/"0") so it survives a shell
+//   restart and the notification service and hot corners can read it.
 // Settings: ~/.config/omarchy/nasaq/power.json (all keys optional).
 Item {
   id: root
@@ -214,11 +227,102 @@ Item {
     }
   }
 
+  // ── Awake for media ──────────────────────────────────────────────
+  readonly property bool mediaPlaying: {
+    var ps = Mpris.players.values
+    for (var i = 0; i < ps.length; i++) if (ps[i] && ps[i].isPlaying) return true
+    return false
+  }
+  Nasaq.Fullscreen { id: fullscreen }
+  // Omarchy's screensaver is a fullscreen window too; it must not keep itself awake.
+  readonly property bool awakeForMedia: Nasaq.Settings.get("power.awakeForMedia", true)
+    && (mediaPlaying || (fullscreen.active && fullscreen.windowClass !== "org.omarchy.screensaver"))
+
+  // The inhibitor needs a surface: a 1 px layer with no input and no space.
+  // It stays mapped all the time and only the inhibitor comes and goes:
+  // Hyprland checks inhibitors when one is created or destroyed, not when a
+  // layer maps, so an inhibitor made together with its surface didn't count
+  // (fullscreen didn't keep the screen awake), and destroying the surface
+  // with it left idle blocked until the next window focus change.
+  PanelWindow {
+    id: inhibitSurface
+    implicitWidth: 1
+    implicitHeight: 1
+    color: "transparent"
+    anchors { top: true; left: true }
+    exclusionMode: ExclusionMode.Ignore
+    WlrLayershell.layer: WlrLayer.Background
+    WlrLayershell.namespace: "nasaq-awake"
+    mask: Region {}
+    IdleInhibitor { window: inhibitSurface; enabled: root.awakeForMedia }
+  }
+
+  // ── Game mode ────────────────────────────────────────────────────
+  property bool gameMode: false
+  property bool gameModeLoaded: false
+  readonly property string gameModePath: Quickshell.env("HOME") + "/.local/state/nasaq/gamemode"
+  FileView {
+    id: gameModeFile
+    path: root.gameModePath
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoaded: root.applyGameMode(text().trim() === "1", false)
+    onLoadFailed: root.gameModeLoaded = true
+  }
+  function applyGameMode(on, announceIt) {
+    var changed = gameMode !== on || !gameModeLoaded
+    var wasLoaded = gameModeLoaded
+    gameMode = on
+    gameModeLoaded = true
+    if (!changed) return
+    if (on) applyGameLook()
+    else if (wasLoaded) {
+      // Put back what the config says, then Saver's own look if it is on.
+      Quickshell.execDetached(["hyprctl", "reload"])
+      if (isSaver()) { appliedPersonality = ""; applyPersonality() }
+    }
+    if (announceIt)
+      Quickshell.execDetached(["omarchy", "osd", "-i", "󰊴", "-m", Nasaq.Tr.s(on ? "Game mode on" : "Game mode off")])
+  }
+  function setGameMode(on) {
+    if (on === gameMode) return
+    Quickshell.execDetached(["bash", "-c", "mkdir -p \"$HOME/.local/state/nasaq\" && printf %s \"$1\" > \"$HOME/.local/state/nasaq/gamemode\"", "nasaq-gamemode", on ? "1" : "0"])
+    applyGameMode(on, true)
+  }
+  function applyGameLook() {
+    // Windows only: one runtime rule makes every window opaque, unblurred and
+    // shadowless (their transparency comes from window rules, which decoration
+    // options do not override). Blur itself stays on, so the desktop widgets and
+    // the shell's panels keep their glass. Leaving game mode reloads the
+    // config, which drops the rule.
+    Quickshell.execDetached(["hyprctl", "eval",
+      "hl.config({ animations = { enabled = false }, decoration = { shadow = { enabled = false } } }); " +
+      "hl.window_rule({ match = { class = \".*\" }, opaque = true, no_blur = true, no_shadow = true }); " +
+      // NASAQ's own windows (Settings) are shell glass like the island: excluded.
+      "hl.window_rule({ match = { class = \"^org\\\\.quickshell$\" }, opaque = false, no_blur = false, no_shadow = false })"])
+  }
+  // A config reload (an edit, the Windows card) brings the effects back; re-apply.
+  Connections {
+    target: Hyprland
+    function onRawEvent(event) { if (root.gameMode && event && event.name === "configreloaded") root.applyGameLook() }
+  }
+
   IpcHandler {
     target: "nasaq.power"
     function status(): string {
       return JSON.stringify({ profile: root.profile, onBattery: root.onBattery, percent: root.percent,
-        autoLowPower: root.autoLowPower, personality: root.appliedPersonality })
+        autoLowPower: root.autoLowPower, personality: root.appliedPersonality,
+        awakeForMedia: root.awakeForMedia, mediaPlaying: root.mediaPlaying, fullscreen: fullscreen.active,
+        gameMode: root.gameMode })
     }
+  }
+
+  IpcHandler {
+    target: "nasaq.gamemode"
+    function toggle(): string { root.setGameMode(!root.gameMode); return root.gameMode ? "on" : "off" }
+    function on(): string { root.setGameMode(true); return "on" }
+    function off(): string { root.setGameMode(false); return "off" }
+    function status(): string { return root.gameMode ? "on" : "off" }
   }
 }

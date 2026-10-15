@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+"""NASAQ: report Caps Lock straight from the kernel (the keyboard LED), so the
+island can say when it goes on or off. Hyprland has no event for it.
+
+Prints "caps on" / "caps off" once at start and then on every change. Needs read
+access to /dev/input/event* (udev rule 69-nasaq-input.rules), like nasaq-altwatch.
+"""
+import glob, os, select, struct, sys, time
+from fcntl import ioctl
+
+EV_LED, LED_CAPSL, LED_MAX = 0x11, 0x01, 0x0f
+EVENT = struct.Struct("llHHi")
+EVIOCGLED = 0x80000000 | ((LED_MAX // 8 + 1) << 16) | (ord("E") << 8) | 0x19
+EVIOCGBIT_LED = 0x80000000 | ((LED_MAX // 8 + 1) << 16) | (ord("E") << 8) | (0x20 + EV_LED)
+
+def keyboards():
+    fds = {}
+    for dev in glob.glob("/dev/input/event*"):
+        try:
+            fd = os.open(dev, os.O_RDONLY | os.O_NONBLOCK)
+        except OSError:
+            continue
+        try:
+            bits = bytearray(LED_MAX // 8 + 1)
+            ioctl(fd, EVIOCGBIT_LED, bits)
+            if bits[0] >> LED_CAPSL & 1:
+                fds[fd] = dev
+                continue
+        except OSError:
+            pass
+        os.close(fd)
+    return fds
+
+def caps_on(fds):
+    for fd in fds:
+        try:
+            st = bytearray(LED_MAX // 8 + 1); ioctl(fd, EVIOCGLED, st)
+            if st[0] >> LED_CAPSL & 1:
+                return True
+        except OSError:
+            pass
+    return False
+
+def main():
+    fds = keyboards()
+    if not fds:
+        print("unavailable", flush=True); return 1
+    state = caps_on(fds)
+    print("caps on" if state else "caps off", flush=True)
+    last_scan = time.time()
+    while True:
+        r, _, _ = select.select(list(fds), [], [], 5.0)
+        changed = False
+        for fd in r:
+            try:
+                data = os.read(fd, EVENT.size * 64)
+            except OSError:
+                os.close(fd); fds.pop(fd, None); continue
+            for off in range(0, len(data) - EVENT.size + 1, EVENT.size):
+                _, _, etype, code, _ = EVENT.unpack_from(data, off)
+                if etype == EV_LED and code == LED_CAPSL:
+                    changed = True
+        # Every keyboard echoes the LED, so read the state once after the burst.
+        if changed:
+            new = caps_on(fds)
+            if new != state:
+                state = new
+                print("caps on" if state else "caps off", flush=True)
+        # Keyboards come and go (a USB or Bluetooth one): rescan now and then.
+        if time.time() - last_scan > 10:
+            last_scan = time.time()
+            known = set(fds.values())
+            for fd, dev in keyboards().items():
+                if dev in known: os.close(fd)
+                else: fds[fd] = dev
+            if not fds:
+                print("unavailable", flush=True); return 1
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except (KeyboardInterrupt, BrokenPipeError):
+        pass
