@@ -276,6 +276,9 @@ Item {
         return
       }
       service.releaseSilenced(notification, written.originalId)
+      // Tell the island a notification went straight to history (fullscreen
+      // or Do Not Disturb), so it reloads and shows its unseen dot at once.
+      service.silencedAt = Date.now()
     })
   }
 
@@ -649,6 +652,8 @@ Item {
   // When history was last wiped (Clear All here, or Clear in the island). The
   // island reads it from the state file and drops its own copy at once.
   property double historyClearedAt: 0
+  // When a notification last went to history without a toast (see writeSilenced).
+  property double silencedAt: 0
   function clearHistory() {
     historyClearedAt = Date.now()
     enqueuePopupFileJob(["bash", "-c",
@@ -1060,10 +1065,10 @@ Item {
   }
   readonly property string islandState: {
     var unused = islandRev
-    if (!islandToasts || popupModel.count === 0) return JSON.stringify({ count: 0, dnd: doNotDisturb, clearedAt: historyClearedAt })
+    if (!islandToasts || popupModel.count === 0) return JSON.stringify({ count: 0, dnd: doNotDisturb, clearedAt: historyClearedAt, silencedAt: silencedAt })
     var n = popupModel.get(0)
     return JSON.stringify({
-      count: popupModel.count, dnd: doNotDisturb, clearedAt: historyClearedAt,
+      count: popupModel.count, dnd: doNotDisturb, clearedAt: historyClearedAt, silencedAt: silencedAt,
       timestamp: n.timestamp, app: n.app || "", summary: n.summary || "",
       body: n.body || "", image: n.image || "", appIcon: n.appIcon || "", glyph: n.glyph || ""
     })

@@ -97,8 +97,13 @@ BarWidget {
   readonly property bool notifActive: (notif.count || 0) > 0
   // The last toast, kept while the island shrinks back.
   property var notifShown: ({})
+  property double silencedAt: 0
   onNotifChanged: {
     if ((notif.count || 0) > 0) notifShown = notif
+    // A notification filed without a toast (fullscreen, Do Not Disturb): look
+    // at the history now so the unseen dot appears right away.
+    var s = Number(notif.silencedAt) || 0
+    if (s > silencedAt) { silencedAt = s; historyRefresh.restart() }
     // Cleared from the notification center (or by us): drop the list now
     // instead of waiting for the next reload, so the pill's dot goes too.
     var c = Number(notif.clearedAt) || 0
