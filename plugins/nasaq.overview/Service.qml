@@ -120,6 +120,11 @@ Item {
   }
   readonly property int edgeRounding: Math.round(look.rounding !== undefined ? look.rounding : 14)
   readonly property int edgeBorder: Math.round(look.border !== undefined ? look.border : 2)
+  // Window transparency from the same settings. Captures come out opaque
+  // (Hyprland applies opacity when compositing), so the thumbnails get it here
+  // and the Overview looks like the desktop it shows.
+  readonly property real activeOpacity: Math.max(0.2, Math.min(1, look.activeOpacity !== undefined ? Number(look.activeOpacity) : 1))
+  readonly property real inactiveOpacity: Math.max(0.2, Math.min(1, look.inactiveOpacity !== undefined ? Number(look.inactiveOpacity) : 1))
   property var activeBorder: ({ colors: ["#ee5e7d92", "#eef6cc78"], angle: 45 })
   property var inactiveBorder: ({ colors: ["#aa2a3140"], angle: 0 })
   // "ee5e7d92 eef6cc78 45deg" → { colors: ["#ee5e7d92", …], angle: 45 }
@@ -375,6 +380,7 @@ Item {
                 height: ipc.size[1] / root.monScale * k
                 captureSource: root.open && modelData.wayland ? modelData.wayland : null
                 live: false
+                opacity: Hyprland.activeToplevel === modelData ? root.activeOpacity : root.inactiveOpacity
               }
             }
 
@@ -504,6 +510,7 @@ Item {
             MultiEffect {
               anchors.fill: parent
               source: shot
+              opacity: Hyprland.activeToplevel === win.modelData ? root.activeOpacity : root.inactiveOpacity
               maskEnabled: true
               maskSource: roundMask
               maskThresholdMin: 0.5
