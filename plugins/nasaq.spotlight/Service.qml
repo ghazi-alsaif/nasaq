@@ -19,6 +19,11 @@ Item {
 
   property bool open: false
   property bool shown: false
+  // The card opens at its final size; size changes animate only once it is up
+  // (the first open used to grow from the bare search row into the list).
+  property bool sizeSettled: false
+  onShownChanged: { sizeSettled = false; if (shown) settleTimer.restart() }
+  Timer { id: settleTimer; interval: Nasaq.Motion.fast + 40; onTriggered: root.sizeSettled = true }
   property string query: ""
   property int selected: 0
   property var fileHits: []
@@ -443,7 +448,7 @@ Item {
       readonly property int listWidth: Math.min(700, parent.width - 40)
       width: listWidth + (root.showPreview ? 340 : 0)
       height: searchRow.height + (list.count > 0 ? Math.max(list.height, root.showPreview ? 380 : 0) + 9 : 0)
-      Behavior on width { Nasaq.NAnim { kind: "move" } }
+      Behavior on width { enabled: root.sizeSettled; Nasaq.NAnim { kind: "move" } }
       radius: 22
       color: Util.alpha(Color.background, Math.max(0.55, Nasaq.Theme.glassAlpha))
       border.color: Qt.rgba(1, 1, 1, 0.14)
@@ -453,7 +458,7 @@ Item {
       scale: root.shown ? 1 : 0.96
       Behavior on opacity { Nasaq.NFade {} }
       Behavior on scale { Nasaq.NAnim { kind: "fast" } }
-      Behavior on height { Nasaq.NAnim { kind: "move" } }
+      Behavior on height { enabled: root.sizeSettled; Nasaq.NAnim { kind: "move" } }
 
       MouseArea { anchors.fill: parent }
 
@@ -578,13 +583,19 @@ Item {
         clip: true
         boundsBehavior: Flickable.StopAtBounds
         onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
-        // One highlight that glides between results instead of each row lighting up.
-        highlightFollowsCurrentItem: true
-        highlightMoveDuration: Nasaq.Motion.fast
-        highlightMoveVelocity: -1
-        highlightResizeDuration: Nasaq.Motion.fast
-        highlightResizeVelocity: -1
-        highlight: Rectangle { radius: 10; color: Color.accent }
+        // One highlight that glides between results instead of each row lighting
+        // up. It follows the current row with its own animation: the view's
+        // built-in follow snapped here (positionViewAtIndex on every move).
+        highlightFollowsCurrentItem: false
+        highlight: Rectangle {
+          radius: 10
+          color: Color.accent
+          width: list.width
+          y: list.currentItem ? list.currentItem.y : 0
+          height: list.currentItem ? list.currentItem.height : 0
+          Behavior on y { enabled: root.sizeSettled; Nasaq.NAnim { kind: "fast" } }
+          Behavior on height { enabled: root.sizeSettled; Nasaq.NAnim { kind: "fast" } }
+        }
 
         section.property: "kind"
         section.delegate: Item {
