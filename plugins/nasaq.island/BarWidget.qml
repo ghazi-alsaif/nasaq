@@ -690,10 +690,14 @@ BarWidget {
         }
       }
 
-      // Compact clock, shown while morphing back.
+      // Compact clock, shown while morphing back. It sits exactly where the
+      // pill's own clock sits (same offset for the moon and the countdown),
+      // and goes the moment the pill shows again, so the two never overlap
+      // as a doubled text at the end of the close.
       Text {
         anchors.centerIn: parent
-        visible: overlay.mode === "compact"
+        anchors.horizontalCenterOffset: clockLabel.anchors.horizontalCenterOffset
+        visible: overlay.mode === "compact" && root.pillHidden
         text: root.clockText
         color: root.barForeground
         font.family: root.textFont
