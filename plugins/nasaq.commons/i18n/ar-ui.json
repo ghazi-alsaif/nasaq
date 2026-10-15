@@ -363,5 +363,7 @@
 "Motion": "الحركة",
 "How panels, the island and lists move. Power saver turns motion off by itself.": "كيف تتحرك اللوحات والجزيرة والقوائم. وضع توفير الطاقة يطفئ الحركة تلقائيًا.",
 "Off while power saver is on": "مطفأة أثناء توفير الطاقة",
-"Reduced": "مخفّفة"
+"Reduced": "مخفّفة",
+"Stay awake while media plays": "ابقَ مستيقظًا أثناء التشغيل",
+"While a video or music plays, or a window is fullscreen.": "أثناء تشغيل فيديو أو موسيقى، أو وجود نافذة بملء الشاشة."
 }

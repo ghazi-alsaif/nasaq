@@ -2,6 +2,9 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.UPower
+import Quickshell.Services.Mpris
+import Quickshell.Wayland
+import "../nasaq.commons" as Nasaq
 
 // NASAQ: power behaviour on top of power-profiles-daemon.
 //
@@ -14,6 +17,10 @@ import Quickshell.Services.UPower
 //                   within 10 min (nasaq.lock reads `displayCapMs`)
 //     Performance – everything on, no caps
 // • The island announces each change.
+// • Awake for media: while something plays (any MPRIS player: browser, Spotify,
+//   mpv) or a window is fullscreen (a film, a game), a Wayland idle inhibitor
+//   keeps the screensaver and the auto-lock away. It never touches Omarchy's
+//   own Stay awake switch. Settings › System › "Stay awake while media plays".
 // Settings: ~/.config/omarchy/nasaq/power.json (all keys optional).
 Item {
   id: root
@@ -214,11 +221,38 @@ Item {
     }
   }
 
+  // ── Awake for media ──────────────────────────────────────────────
+  readonly property bool mediaPlaying: {
+    var ps = Mpris.players.values
+    for (var i = 0; i < ps.length; i++) if (ps[i] && ps[i].isPlaying) return true
+    return false
+  }
+  Nasaq.Fullscreen { id: fullscreen }
+  readonly property bool awakeForMedia: Nasaq.Settings.get("power.awakeForMedia", true)
+    && (mediaPlaying || fullscreen.active)
+
+  // The inhibitor needs a surface: a 1 px layer with no input and no space,
+  // mapped only while it is needed.
+  PanelWindow {
+    id: inhibitSurface
+    visible: root.awakeForMedia
+    implicitWidth: 1
+    implicitHeight: 1
+    color: "transparent"
+    anchors { top: true; left: true }
+    exclusionMode: ExclusionMode.Ignore
+    WlrLayershell.layer: WlrLayer.Background
+    WlrLayershell.namespace: "nasaq-awake"
+    mask: Region {}
+    IdleInhibitor { window: inhibitSurface; enabled: root.awakeForMedia }
+  }
+
   IpcHandler {
     target: "nasaq.power"
     function status(): string {
       return JSON.stringify({ profile: root.profile, onBattery: root.onBattery, percent: root.percent,
-        autoLowPower: root.autoLowPower, personality: root.appliedPersonality })
+        autoLowPower: root.autoLowPower, personality: root.appliedPersonality,
+        awakeForMedia: root.awakeForMedia, mediaPlaying: root.mediaPlaying, fullscreen: fullscreen.active })
     }
   }
 }

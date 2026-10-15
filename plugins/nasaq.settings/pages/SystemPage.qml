@@ -50,6 +50,12 @@ NPage {
       NSwitch { checked: page.awake; onToggled: function(c) { Sys.run("omarchy-toggle-idle " + (c ? "stay-awake" : "allow-idle")); page.awake = c } }
     }
     NRow {
+      title: "Stay awake while media plays"
+      subtitle: "While a video or music plays, or a window is fullscreen."
+      NSwitch { checked: { void Settings.revision; return Settings.get("power.awakeForMedia", true) }
+        onToggled: function(c) { Settings.set("power.awakeForMedia", c) } }
+    }
+    NRow {
       title: "Screensaver after"
       NSlider {
         width: 220; from: 30; to: 1800; stepSize: 30
