@@ -192,6 +192,20 @@ Item {
           if (root.open) Qt.callLater(function() { card.appeared = true })
         }
       }
+      // One frame that glides from window to window on TAB, like the highlight
+      // in Search, instead of each thumbnail lighting up on its own. It jumps
+      // into place when the switcher opens and glides only after that.
+      Rectangle {
+        id: glide
+        visible: root.open && root.items.length > 0
+        x: row.x + root.index * (220 + row.spacing)
+        y: row.y
+        width: 220; height: 140; radius: 14
+        color: Qt.rgba(1, 1, 1, 0.11)
+        border.color: Color.accent
+        border.width: 2
+        Behavior on x { enabled: card.appeared; Nasaq.NAnim { kind: "fast" } }
+      }
       Row {
         id: row
         anchors.centerIn: parent
@@ -206,11 +220,9 @@ Item {
             spacing: 8
             Rectangle {
               width: 220; height: 140; radius: 14
-              color: Qt.rgba(1, 1, 1, cell.current ? 0.16 : 0.05)
-              border.color: cell.current ? Color.accent : "transparent"
-              Behavior on color { Nasaq.NColour { duration: Nasaq.Motion.micro } }
-              Behavior on border.color { Nasaq.NColour { duration: Nasaq.Motion.micro } }
-              border.width: 2
+              // The accent frame and the lighter fill come from the gliding
+              // frame behind the row.
+              color: Qt.rgba(1, 1, 1, 0.05)
               clip: true
               ScreencopyView {
                 anchors.fill: parent; anchors.margins: 6
