@@ -19,3 +19,27 @@ if not path_parts[2] or path_parts[2] ~= (os.getenv("OMARCHY_PATH") or "/usr/sha
   table.insert(path_parts, 2, (os.getenv("OMARCHY_PATH") or "/usr/share/omarchy") .. "/bin")
 end
 hl.env("PATH", table.concat(path_parts, ":"))
+
+-- Caps Lock is Caps Lock. Omarchy's default kb_options make the Caps Lock key a
+-- Compose key (compose:caps) and put Caps Lock on both Shifts together
+-- (shift:both_capslock_cancel). NASAQ takes just those two out of whatever the
+-- options are by now (Omarchy's defaults and the user's input.lua), so layout
+-- switching (grp:…) and anything else stays. Settings › Shortcuts › Keyboard
+-- turns this off by creating ~/.config/omarchy/nasaq/compose-caps.
+do
+  local home = os.getenv("HOME") or ""
+  local keep_compose = io.open(home .. "/.config/omarchy/nasaq/compose-caps", "r")
+  if keep_compose then
+    keep_compose:close()
+  else
+    local ok, current = pcall(hl.get_config, "input:kb_options")
+    if ok and type(current) == "string" then
+      local kept = {}
+      for opt in current:gmatch("[^,]+") do
+        if opt ~= "compose:caps" and opt ~= "shift:both_capslock_cancel" then table.insert(kept, opt) end
+      end
+      local wanted = table.concat(kept, ",")
+      if wanted ~= current then hl.config({ input = { kb_options = wanted } }) end
+    end
+  end
+end

@@ -383,5 +383,9 @@
 "Both sides": "الجهتان",
 "󰁍  Left": "󰁍  يسار",
 "Right  󰁔": "يمين  󰁔",
-"Turn each card on or off, and drag the handle to change the order, top to bottom. The column closes the gap where a card is off. Tasks & notes takes the height the other cards leave.": "شغّل كل بطاقة أو أطفئها، واسحب المقبض لتغيير الترتيب من الأعلى للأسفل. العمود يسدّ فراغ البطاقة المطفأة، وبطاقة المهام والملاحظات تأخذ الارتفاع الذي تتركه البطاقات الأخرى."
+"Turn each card on or off, and drag the handle to change the order, top to bottom. The column closes the gap where a card is off. Tasks & notes takes the height the other cards leave.": "شغّل كل بطاقة أو أطفئها، واسحب المقبض لتغيير الترتيب من الأعلى للأسفل. العمود يسدّ فراغ البطاقة المطفأة، وبطاقة المهام والملاحظات تأخذ الارتفاع الذي تتركه البطاقات الأخرى.",
+"KEYBOARD": "لوحة المفاتيح",
+"Omarchy makes the Caps Lock key a Compose key (for characters like é) and puts Caps Lock on both Shift keys together. NASAQ gives the key back its usual job.": "يجعل Omarchy زر Caps Lock زر Compose (لأحرف مثل é) ويضع Caps Lock على زرّي Shift معًا. نَسَق يعيد للزر وظيفته المعتادة.",
+"Caps Lock key types capitals": "زر Caps Lock يكتب حروفًا كبيرة",
+"Off: Omarchy's Compose key, with Caps Lock on both Shifts.": "مطفأ: زر Compose كما في Omarchy، وCaps Lock على زرّي Shift معًا."
 }

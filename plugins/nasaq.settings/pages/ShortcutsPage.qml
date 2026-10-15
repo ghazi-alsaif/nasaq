@@ -12,6 +12,29 @@ NPage {
   Cmd { id: arabic; script: "nasaq-arabic-binds status" }
 
   NSection {
+    title: "KEYBOARD"
+    note: "Omarchy makes the Caps Lock key a Compose key (for characters like é) and puts Caps Lock on both Shift keys together. NASAQ gives the key back its usual job."
+    NRow {
+      title: "Caps Lock key types capitals"
+      subtitle: "Off: Omarchy's Compose key, with Caps Lock on both Shifts."
+      NSwitch {
+        checked: !page.composeCaps
+        onToggled: function(c) {
+          page.composeCaps = !c
+          Sys.run((c ? "rm -f" : "mkdir -p ~/.config/omarchy/nasaq && touch") + " ~/.config/omarchy/nasaq/compose-caps && hyprctl reload")
+        }
+      }
+    }
+  }
+  property bool composeCaps: false
+  FileView {
+    path: Sys.home + "/.config/omarchy/nasaq/compose-caps"; printErrors: false; watchChanges: true
+    onFileChanged: reload()
+    onLoaded: page.composeCaps = true
+    onLoadFailed: page.composeCaps = false
+  }
+
+  NSection {
     title: "ARABIC LAYOUT"
     note: "Hyprland matches letter shortcuts by the typed character, so under the Arabic layout SUPER + W and friends stop working. This re-creates every letter shortcut on its physical key."
     NRow {

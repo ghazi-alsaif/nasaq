@@ -113,7 +113,7 @@ The Plugins page lists every plugin the shell knows about, grouped as NASAQ, Oma
 
 ![Shortcuts page](docs/screenshots/settings-shortcuts.png)
 
-The Shortcuts page lists all shortcuts, Omarchy's and NASAQ's. Each can be changed to a different key or turned off, without editing Lua by hand and without losing Omarchy's updates: NASAQ writes a small remap layer that is loaded before Omarchy's defaults. The keyboard-layout switch regenerates every letter shortcut on key codes, so `SUPER + W`, `SUPER + Q` and friends keep working while a non-Latin layout (Arabic, for example) is active.
+The Shortcuts page lists all shortcuts, Omarchy's and NASAQ's. Each can be changed to a different key or turned off, without editing Lua by hand and without losing Omarchy's updates: NASAQ writes a small remap layer that is loaded before Omarchy's defaults. The keyboard-layout switch regenerates every letter shortcut on key codes, so `SUPER + W`, `SUPER + Q` and friends keep working while a non-Latin layout (Arabic, for example) is active. NASAQ also gives Caps Lock back its usual job (Omarchy makes it a Compose key and puts Caps Lock on both Shifts); a switch on the same page restores Omarchy's way.
 
 ### Session screens
 

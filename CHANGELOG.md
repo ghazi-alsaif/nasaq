@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased (1.3.0)
+- Caps Lock is Caps Lock: NASAQ removes Omarchy's `compose:caps` and `shift:both_capslock_cancel` from whatever the keyboard options are (layout switching and the rest stay), in `nasaq-post.lua`. Settings › Shortcuts › Keyboard brings Omarchy's Compose key back (`~/.config/omarchy/nasaq/compose-caps`).
+- Settings › Widgets: the island section is called "Island" (the 1.1.2 rename missed it).
 - Stay awake while media plays: while a video or music plays (any MPRIS player: browsers, Spotify, mpv) or a window is fullscreen, a Wayland idle inhibitor keeps the screensaver and the auto-lock away. Omarchy's own Stay awake switch is left alone. Settings › System, on by default.
 - Status toasts in the island: Caps Lock on/off (read from the keyboard LED by the new `nasaq-keywatch`, which uses the same udev rule as the App Switcher), the keyboard language after a switch, and the charger plugged in or out. Small and silent, in the volume pill. Settings › Widgets › Island.
 - Quiet while locked: notifications that arrive while the screen is locked go to history without a popup or chime (critical ones still sound), so the island's unseen dot is waiting after unlock. `nasaq.lock` publishes the state in `~/.local/state/nasaq/locked`. Settings › Notifications.
