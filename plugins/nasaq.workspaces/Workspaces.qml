@@ -51,11 +51,17 @@ BarWidget {
 
   // Wheel over the numbers moves to the next or previous workspace. Deltas are
   // collected to one notch (120) so a touchpad does not skip several at once.
+  // A MouseArea on top that takes only the wheel (clicks pass to the numbers),
+  // like the island's volume wheel: the WheelHandler never received the events
+  // under the bar's own mouse areas.
   property real wheelAcc: 0
-  WheelHandler {
-    acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-    onWheel: function(event) {
-      root.wheelAcc += event.angleDelta.y || -event.angleDelta.x
+  MouseArea {
+    anchors.fill: parent
+    z: 10
+    acceptedButtons: Qt.NoButton
+    onWheel: function(wheel) {
+      root.wheelAcc += wheel.angleDelta.y || -wheel.angleDelta.x
+      wheel.accepted = true
       if (Math.abs(root.wheelAcc) < 120 || !root.bar) return
       var step = root.wheelAcc > 0 ? "-1" : "+1"
       root.wheelAcc = 0
