@@ -365,5 +365,11 @@
 "Off while power saver is on": "مطفأة أثناء توفير الطاقة",
 "Reduced": "مخفّفة",
 "Stay awake while media plays": "ابقَ مستيقظًا أثناء التشغيل",
-"While a video or music plays, or a window is fullscreen.": "أثناء تشغيل فيديو أو موسيقى، أو وجود نافذة بملء الشاشة."
+"While a video or music plays, or a window is fullscreen.": "أثناء تشغيل فيديو أو موسيقى، أو وجود نافذة بملء الشاشة.",
+"Status toasts": "تنبيهات الحالة",
+"Caps Lock, keyboard language and charger changes, shown briefly in the island.": "تغيّر Caps Lock ولغة لوحة المفاتيح والشاحن، تظهر لحظة في الجزيرة.",
+"Caps Lock on": "Caps Lock يعمل",
+"Caps Lock off": "Caps Lock متوقف",
+"On battery": "على البطارية",
+"Charging": "يشحن"
 }

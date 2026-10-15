@@ -3,6 +3,8 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Services.Mpris
+import Quickshell.Services.UPower
+import Quickshell.Hyprland
 import qs.Commons
 import qs.Ui
 import "Island.js" as Island
@@ -366,6 +368,65 @@ BarWidget {
     osdActive = true
     if (osd.duration > 0) { osdTimer.interval = osd.duration; osdTimer.restart() }
     else osdTimer.stop()
+  }
+
+  // ── Status toasts (NASAQ) ────────────────────────────────────────
+  // Caps Lock, the keyboard language and the charger say what changed in the
+  // small OSD pill, silently. Settings › Island › "Status toasts".
+  readonly property bool statusToasts: Nasaq.Settings.get("island.statusToasts", true)
+  function statusToast(icon, message) {
+    if (!statusToasts) return
+    showOsd(JSON.stringify({ icon: icon, message: message, duration: 1400 }))
+  }
+
+  // Caps Lock: the keyboard LED, read from the kernel (no Hyprland event exists).
+  property bool capsKnown: false
+  Process {
+    id: capsWatch
+    command: ["nasaq-keywatch"]
+    running: root.statusToasts
+    stdout: SplitParser {
+      onRead: function(line) {
+        var on = line === "caps on"
+        if (line !== "caps on" && line !== "caps off") return
+        // The first line is the state at start, not a change.
+        if (root.capsKnown) root.statusToast(on ? "󰪛" : "󰬶", Nasaq.Tr.s(on ? "Caps Lock on" : "Caps Lock off"))
+        root.capsKnown = true
+      }
+    }
+    // Without the udev rule it prints "unavailable" and exits; don't respawn.
+  }
+
+  // Keyboard language: Hyprland's activelayout names the keyboard, then the layout.
+  // Buttons and fcitx5's virtual keyboard announce switches too; only keyboards count.
+  property string lastLayout: ""
+  Connections {
+    target: Hyprland
+    function onRawEvent(event) {
+      if (!event || event.name !== "activelayout") return
+      var parts = event.parse ? event.parse(2) : String(event.data || "").split(",")
+      var kb = String(parts[0] || ""), layout = String(parts[1] || "")
+      if (!layout || /^(hl-virtual-keyboard|power-button|sleep-button|lid-switch|video-bus)/.test(kb)) return
+      if (layout === root.lastLayout) return
+      var first = root.lastLayout === ""
+      root.lastLayout = layout
+      if (!first) root.statusToast("󰌌", Nasaq.Tr.s(layout.replace(/\s*\(.*\)$/, "")))
+    }
+  }
+  Process {
+    id: layoutProbe
+    running: true
+    command: ["bash", "-c", "hyprctl -j devices | jq -r '[.keyboards[] | select(.main)][0].active_keymap // empty'"]
+    stdout: StdioCollector { onStreamFinished: if (!root.lastLayout) root.lastLayout = String(text || "").trim() }
+  }
+
+  // Charger: only on machines with a battery.
+  readonly property bool hasBattery: !!UPower.displayDevice && UPower.displayDevice.isPresent
+  readonly property bool onBattery: UPower.onBattery
+  onOnBatteryChanged: {
+    if (!hasBattery) return
+    var pct = Math.round(Number(UPower.displayDevice.percentage || 0) * 100) + "%"
+    statusToast(onBattery ? "󰁹" : "󰂄", Nasaq.Tr.s(onBattery ? "On battery" : "Charging") + " · " + pct)
   }
 
   function showAlert(title, subtitle, ms) {

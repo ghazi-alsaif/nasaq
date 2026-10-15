@@ -190,6 +190,11 @@ NPage {
       }
     }
     NRow {
+      title: "Status toasts"
+      subtitle: "Caps Lock, keyboard language and charger changes, shown briefly in the island."
+      NSwitch { checked: Settings.get("island.statusToasts", true); onToggled: function(c) { Settings.set("island.statusToasts", c) } }
+    }
+    NRow {
       title: "Expand the island"
       NButton { text: "Toggle"; onClicked: Sys.ipc("nasaq.island", "toggle") }
     }
