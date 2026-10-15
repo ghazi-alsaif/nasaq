@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased (1.3.0)
+- Stay awake while media plays: while a video or music plays (any MPRIS player: browsers, Spotify, mpv) or a window is fullscreen, a Wayland idle inhibitor keeps the screensaver and the auto-lock away. Omarchy's own Stay awake switch is left alone. Settings › System, on by default.
+- Status toasts in the island: Caps Lock on/off (read from the keyboard LED by the new `nasaq-keywatch`, which uses the same udev rule as the App Switcher), the keyboard language after a switch, and the charger plugged in or out. Small and silent, in the volume pill. Settings › Widgets › Island.
+- Quiet while locked: notifications that arrive while the screen is locked go to history without a popup or chime (critical ones still sound), so the island's unseen dot is waiting after unlock. `nasaq.lock` publishes the state in `~/.local/state/nasaq/locked`. Settings › Notifications.
+- Game mode: `SUPER + ALT + G`, a Quick Settings row, Settings › System, or `omarchy-shell nasaq.gamemode toggle`. Hyprland animations, blur and shadows off (kept off across config reloads), notifications quiet, hot corners off; off reloads the config (and Saver's look if it is on). The island says when it changes.
+- Desktop widget column on the left, the right, or both sides (two columns; each card picks its side in Settings › Widgets, the lower half defaults to the right). The window gap follows on each side.
+
 ## 1.2.1 — 2026-10-15
 - Nothing optional any more: NASAQ is one experience, so the installer no longer asks. It installs whatever is missing (the packages `tesseract-data-ara`, `cava`, `nwg-displays`, `kitty`, `ptyxis`, `libqalculate` and `fastfetch`, the App Switcher's udev rule, the login screen, the boot and shutdown screens and the terminal greeting) and leaves alone what is already there. `--update` does the same, so an existing install gets the parts it skipped. sudo is used only when something is missing. `--yes` is still accepted and changes nothing.
 - README (English and Arabic): the Motion section, fullscreen behaviour, Search keys and calculator, the switcher's frame and the Overview's order and glass.
