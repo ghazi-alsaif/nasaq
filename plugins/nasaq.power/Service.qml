@@ -286,8 +286,13 @@ Item {
     applyGameMode(on, true)
   }
   function applyGameLook() {
+    // Window transparency comes from window rules (Omarchy's default-opacity tag
+    // and NASAQ's own opacity), which decoration options do not override; one
+    // runtime rule makes every window opaque. Leaving game mode reloads the
+    // config, which drops it.
     Quickshell.execDetached(["hyprctl", "eval",
-      "hl.config({ animations = { enabled = false }, decoration = { blur = { enabled = false }, shadow = { enabled = false } } })"])
+      "hl.config({ animations = { enabled = false }, decoration = { blur = { enabled = false }, shadow = { enabled = false } } }); " +
+      "hl.window_rule({ match = { class = \".*\" }, opaque = true })"])
   }
   // A config reload (an edit, the Windows card) brings the effects back; re-apply.
   Connections {
