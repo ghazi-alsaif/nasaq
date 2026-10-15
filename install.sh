@@ -134,7 +134,8 @@ missing=()
 for p in "${opt[@]}"; do pacman -Q "$p" >/dev/null 2>&1 || missing+=("$p"); done
 if ((${#missing[@]})); then
   if $YES || { command -v gum >/dev/null && gum confirm "Install optional packages: ${missing[*]}?"; }; then
-    omarchy pkg add "${missing[@]}"
+    # A failed package install (no sudo, offline) must not stop the rest of the update.
+    omarchy pkg add "${missing[@]}" || warn "optional packages not installed: ${missing[*]} (later: omarchy pkg add ${missing[*]})"
   else
     warn "optional, not installed: ${missing[*]}"
   fi
