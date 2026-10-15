@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "nasaq.island",
   "name": "Island",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "author": "NASAQ (GHS)",
   "description": "The bar's centre pill: clock, media, volume and brightness, notifications, optional prayer times",
   "kinds": [

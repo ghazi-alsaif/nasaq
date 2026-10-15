@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased (motion)
+## 1.2.0 — 2026-10-15
+Motion: every part of NASAQ now moves on one rhythm, the same as the windows. Tested item by item on the MSI laptop.
+
 - One motion rhythm for all of NASAQ (`nasaq.commons/Motion.qml` with `NAnim`, `NFade`, `NColour`): the same durations and curves as NASAQ's Hyprland window animations. Settings › Appearance › Motion: Normal, Reduced or Off; power saver turns it off.
 - Island, Quick Settings and the window-look card: size and corners move on one curve, so the shape arrives as one piece; the bar pill hands over to the card without a flash or a brightness step; the card unmaps right after it closes; content fades in once the shape has opened.
 - Notification centre slides and fades as one piece and unmaps when the slide ends. Search: a single highlight glides between results, the card resizes smoothly. Switcher fades in (closing stays instant). Settings pages fade and slide in; dropdowns open with a short fade. Desktop cards glide to their new place.
@@ -10,6 +12,12 @@
 - Window rules removed (Settings › Workspaces & Windows, `nasaq-rules`): more to maintain than they were worth. The installer removes the old command and its generated Hyprland layer.
 - Wheel over the island changes the volume; wheel over the workspace numbers changes workspace.
 - Search: Ctrl+J/K (and N/P) move through results; when qalc is installed it answers sums the built-in calculator cannot (sqrt(2), 5!, today + 40 days).
+- Switcher: one frame glides between the windows as TAB moves the selection.
+- Dropdowns in Settings are glass like the panels, and a second click on the field closes the list (Escape too).
+- Island: the unseen dot appears right after a notification silenced by fullscreen or Do Not Disturb (it used to wait until the card was opened). No doubled clock at the end of the close.
+- Desktop: Tasks & notes takes the height the other cards leave, wherever it sits, so it no longer pushes cards below off the screen.
+- Installer: a failed optional package install (for example with sudo closed) warns and carries on instead of stopping the whole update.
+- Fixed (since 1.0.2): Settings › Widgets › Calendar showed a blank status and Refresh did nothing.
 
 ## 1.1.2 — 2026-10-14
 - New tagline: one consistent line across the whole Omarchy desktop, from power-on to power-off; inspired by the best of every operating system, built for Hyprland.
