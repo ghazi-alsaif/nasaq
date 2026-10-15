@@ -377,5 +377,11 @@
 "Game mode": "وضع الألعاب",
 "Game mode on": "وضع الألعاب يعمل",
 "Game mode off": "وضع الألعاب متوقف",
-"Animations, blur and shadows off, notifications quiet, hot corners off. SUPER + ALT + G": "بلا حركات ولا تمويه ولا ظلال، والإشعارات هادئة، والزوايا الساخنة متوقفة. SUPER + ALT + G"
+"Animations, blur and shadows off, notifications quiet, hot corners off. SUPER + ALT + G": "بلا حركات ولا تمويه ولا ظلال، والإشعارات هادئة، والزوايا الساخنة متوقفة. SUPER + ALT + G",
+"Column position": "مكان العمود",
+"Windows tile around it. With both sides, pick each card's side below.": "النوافذ تترتّب حوله. ومع الجهتين اختر جهة كل بطاقة في الأسفل.",
+"Both sides": "الجهتان",
+"󰁍  Left": "󰁍  يسار",
+"Right  󰁔": "يمين  󰁔",
+"Turn each card on or off, and drag the handle to change the order, top to bottom. The column closes the gap where a card is off. Tasks & notes takes the height the other cards leave.": "شغّل كل بطاقة أو أطفئها، واسحب المقبض لتغيير الترتيب من الأعلى للأسفل. العمود يسدّ فراغ البطاقة المطفأة، وبطاقة المهام والملاحظات تأخذ الارتفاع الذي تتركه البطاقات الأخرى."
 }

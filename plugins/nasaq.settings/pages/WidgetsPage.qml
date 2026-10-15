@@ -31,11 +31,20 @@ NPage {
       subtitle: "Clock, prayer, weather, now playing, notes. SUPER + ALT + D"
       NSwitch { checked: !page.hidden; onToggled: function(c) { Sys.ipc("nasaq.desktop", c ? "show" : "hide"); page.hidden = !c } }
     }
+    NRow {
+      title: "Column position"
+      subtitle: "Windows tile around it. With both sides, pick each card's side below."
+      NDropdown {
+        model: [{ value: "left", label: "Left" }, { value: "right", label: "Right" }, { value: "both", label: "Both sides" }]
+        value: Settings.get("desktop.side", "left")
+        onActivated: function(v) { Settings.set("desktop.side", v) }
+      }
+    }
   }
 
   NSection {
     title: "WIDGETS"
-    note: "Turn each card on or off, and drag the handle to change the order, top to bottom. The column closes the gap where a card is off. Tasks & notes stretches to the bottom of the screen when it is last."
+    note: "Turn each card on or off, and drag the handle to change the order, top to bottom. The column closes the gap where a card is off. Tasks & notes takes the height the other cards leave."
     Item {
       id: orderList
       width: parent.width
@@ -108,12 +117,30 @@ NPage {
           Column {
             anchors.left: handle.right
             anchors.leftMargin: 14
-            anchors.right: sw.left
+            anchors.right: sideBtn.visible ? sideBtn.left : sw.left
             anchors.rightMargin: Theme.spacingLarge
             anchors.verticalCenter: parent.verticalCenter
             spacing: 2
             NLabel { width: parent.width; text: Tr.s(orderList.info[rowItem.key].title); font.weight: Font.Normal }
             NSub { width: parent.width; text: Tr.s(orderList.info[rowItem.key].subtitle) }
+          }
+          // With two columns: which side this card sits on (same default as nasaq.desktop).
+          readonly property string cardSide: {
+            var c = (Settings.get("desktop.columns", {}) || {})[rowItem.key]
+            return c === "left" || c === "right" ? c : (["system", "player", "notes"].indexOf(rowItem.key) >= 0 ? "right" : "left")
+          }
+          NButton {
+            id: sideBtn
+            visible: Settings.get("desktop.side", "left") === "both"
+            anchors.right: sw.left
+            anchors.rightMargin: Theme.spacingLarge
+            anchors.verticalCenter: parent.verticalCenter
+            text: rowItem.cardSide === "left" ? "󰁍  Left" : "Right  󰁔"
+            onClicked: {
+              var m = Object.assign({}, Settings.get("desktop.columns", {}) || {})
+              m[rowItem.key] = rowItem.cardSide === "left" ? "right" : "left"
+              Settings.set("desktop.columns", m)
+            }
           }
           NSwitch {
             id: sw
