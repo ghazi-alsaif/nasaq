@@ -14,6 +14,9 @@ Singleton {
     Quickshell.execDetached(c)
   }
   readonly property string home: Quickshell.env("HOME")
+  // An app class handed over by "Window rules…" in the Overview; the
+  // Workspaces & Windows page picks it up as the rule's app, then clears it.
+  property string ruleClassHint: ""
   // Read-modify-write a JSON file atomically (python is always present on Omarchy).
   function jsonSet(path, key, valueJson) {
     Quickshell.execDetached(["python3", "-c",

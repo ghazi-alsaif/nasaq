@@ -52,6 +52,8 @@ Item {
   IpcHandler {
     target: "nasaq.settings"
     function page(id: string): void { root.page = id; root.open("{}") }
+    // From the Overview's window menu: the rules editor with that app filled in.
+    function rule(appClass: string): void { Sys.ruleClassHint = appClass; root.page = "windows"; root.open("{}") }
   }
 
   FloatingWindow {

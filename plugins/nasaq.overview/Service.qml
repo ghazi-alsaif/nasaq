@@ -73,6 +73,15 @@ Item {
       if (!ipc || !ipc.workspace || ipc.workspace.id !== wsId || !ipc.mapped || ipc.hidden) continue
       out.push(t)
     }
+    // Same order as on screen: the top half before the bottom half, then left
+    // to right, so the grid keeps the windows where the eye expects them
+    // (Hyprland's list is in opening order, which swapped left and right).
+    var half = (monitorInfo && monitorInfo.height ? monitorInfo.height / monScale : 1080) / 2
+    function key(t) {
+      var ipc = t.lastIpcObject, at = ipc.at || [0, 0], sz = ipc.size || [0, 0]
+      return { row: Math.floor((at[1] - monY + sz[1] / 2) / half), x: at[0] + sz[0] / 2 }
+    }
+    out.sort(function(a, b) { var ka = key(a), kb = key(b); return ka.row - kb.row || ka.x - kb.x })
     return out
   }
   readonly property var currentWindows: windowsOn(activeWsId)
@@ -637,7 +646,12 @@ Item {
                 if (!t) return
                 if (modelData.close) root.closeWindow(t)
                 else if (modelData.ws) root.moveWindow(t, modelData.ws)
-                else if (modelData.rules) { root.close(); Quickshell.execDetached(["sh", "-c", "omarchy-shell shell toggle nasaq.settings '{}' && sleep 0.4 && omarchy-shell nasaq.settings page windows"]) }
+                else if (modelData.rules) {
+                  // Opens the rules editor with this window's app already filled in.
+                  var cls = t.lastIpcObject ? String(t.lastIpcObject.class || "") : ""
+                  root.close()
+                  Quickshell.execDetached(["sh", "-c", "omarchy-shell shell toggle nasaq.settings '{}' && sleep 0.4 && omarchy-shell nasaq.settings rule \"$1\"", "sh", cls])
+                }
                 else root.actOn(t, modelData.expr, false)
               }
             }
