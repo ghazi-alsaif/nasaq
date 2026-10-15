@@ -199,7 +199,14 @@ Item {
     moveTimer.restart()
     if (!keepOpen) close()
   }
-  function closeWindow(t) { actOn(t, 'hl.dsp.window.close()', true) }
+  // Closed by address, without focusing it first: a focus change makes Hyprland
+  // warp the pointer to the window's real position behind the Overview, so
+  // after one middle-click the next ones landed somewhere else.
+  function closeWindow(t) {
+    if (!t) return
+    dispatch('hl.dsp.window.close({ window = "address:0x' + String(t.address).replace(/^0x/, "") + '" })')
+    refreshTimer.restart()
+  }
 
   function goToWorkspace(id) {
     dispatch('hl.dsp.focus({ workspace = "' + id + '" })')
