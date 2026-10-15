@@ -72,19 +72,23 @@ Make the column yours, in Settings > Widgets:
 
 ![Search](docs/screenshots/spotlight.png)
 
-`ALT + SPACE` opens Search. Type to find apps (ranked by how often and how recently you open them), open windows, and files, with a preview pane on the right that previews images, text and documents and shows size and date. Search also does arithmetic, currency and unit conversion, and web search. Start a line with `?` and the rest is a question for your default Omarchy agent (Claude, Codex, OpenCode, Copilot or Gemini, whichever `omarchy default agent` points at). The answer appears inline.
+`ALT + SPACE` opens Search. Type to find apps (ranked by how often and how recently you open them), open windows, and files, with a preview pane on the right that previews images, text and documents and shows size and date. Search also does arithmetic, currency and unit conversion, and web search. Start a line with `?` and the rest is a question for your default Omarchy agent (Claude, Codex, OpenCode, Copilot or Gemini, whichever `omarchy default agent` points at). The answer appears inline. `CTRL + J / K` (or `N / P`) move through the results. With `libqalculate` installed, Search also answers what its own calculator can't, such as square roots, factorials and dates (`today + 40 days`).
 
 ### Overview
 
 ![Overview](docs/screenshots/mission-control.png)
 
-`SUPER + TAB`, a three-finger swipe up, or the top-left hot corner opens the Overview: live previews of every window on the current workspace, with the workspace strip at the top. Click a window to focus it, or drag it to another workspace. Middle-click closes a window; right-click shows its actions (float or tile, fullscreen, move to a workspace, close).
+`SUPER + TAB`, a three-finger swipe up, or the top-left hot corner opens the Overview: live previews of every window on the current workspace, with the workspace strip at the top. Click a window to focus it, or drag it to another workspace. Middle-click closes a window; right-click shows its actions (float or tile, fullscreen, move to a workspace, close). Windows sit in the same order as on screen, with the same glass as on the desktop.
 
 ### App Switcher
 
 <p align="center"><img src="docs/screenshots/app-switcher.png" alt="App Switcher" width="720"></p>
 
-`ALT + TAB` cycles windows in most-recently-used order with live previews: hold ALT, press TAB to move, release ALT to switch instantly. This needs one udev rule, which the installer offers; without it the switcher falls back to a short timer.
+`ALT + TAB` cycles windows in most-recently-used order with live previews: hold ALT, press TAB to move, release ALT to switch instantly. This needs one udev rule, which the installer offers; without it the switcher falls back to a short timer. A single frame glides from window to window as you press TAB.
+
+### Motion
+
+Everything in NASAQ moves to one rhythm, on the same curves Hyprland uses for your windows. The island grows into its card and shrinks back into the bar in one piece. Panels slide in solid, Search's highlight glides between results, and settings pages fade in. Choose Normal, Reduced or Off in Settings > Appearance > Motion. Power-saving mode turns motion off by itself.
 
 ### Hot corners
 
@@ -124,6 +128,7 @@ From the moment the machine starts until it shuts down, every screen has the sam
 ### More
 
 - **Terminal greeting** (optional installer step): system info from fastfetch each time a terminal opens.
+- **Fullscreen**: while a film or game is fullscreen, notifications wait quietly in the Notification Center (critical ones still show, without the sound) and hot corners are off.
 - **Power**: a power-saving mode and per-profile behaviour (Saver, Balanced, Performance).
 - **Display**: resolution, scale and position with a 15-second automatic revert, and auto-brightness from the ambient sensor or the clock.
 - **Translation**: `SUPER + CTRL + ALT + L` translates the selected text; add SHIFT to OCR and translate a region of the screen. Both use your default Omarchy agent.
