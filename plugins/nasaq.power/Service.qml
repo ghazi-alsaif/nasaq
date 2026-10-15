@@ -234,8 +234,9 @@ Item {
     return false
   }
   Nasaq.Fullscreen { id: fullscreen }
+  // Omarchy's screensaver is a fullscreen window too; it must not keep itself awake.
   readonly property bool awakeForMedia: Nasaq.Settings.get("power.awakeForMedia", true)
-    && (mediaPlaying || fullscreen.active)
+    && (mediaPlaying || (fullscreen.active && fullscreen.windowClass !== "org.omarchy.screensaver"))
 
   // The inhibitor needs a surface: a 1 px layer with no input and no space,
   // mapped only while it is needed.

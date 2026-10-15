@@ -11,6 +11,7 @@ Item {
   id: root
   visible: false
   property bool active: false
+  property string windowClass: ""
 
   function refresh() { if (!probe.running) probe.running = true }
 
@@ -19,7 +20,11 @@ Item {
     command: ["hyprctl", "activewindow", "-j"]
     stdout: StdioCollector {
       onStreamFinished: {
-        try { root.active = Number(JSON.parse(this.text || "{}").fullscreen || 0) > 1 } catch (e) { root.active = false }
+        try {
+          var w = JSON.parse(this.text || "{}")
+          root.windowClass = String(w["class"] || "")
+          root.active = Number(w.fullscreen || 0) > 1
+        } catch (e) { root.active = false; root.windowClass = "" }
       }
     }
   }
