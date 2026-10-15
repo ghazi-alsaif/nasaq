@@ -115,7 +115,11 @@ BarWidget {
       height: root.opened ? openH : pill.height
       x: Math.max(Style.gapsOut + 4, Math.min(overlay.pillRight, overlay.width - Style.gapsOut - 4) - width)
       radius: root.opened ? 24 : pill.height / 2
-      color: root.opened ? Util.alpha(Color.background, Math.max(0.55, Nasaq.Theme.glassAlpha)) : Util.alpha(root.barForeground, pillMouse.containsMouse ? 0.16 : 0.08)
+      // Closed, the card fades out as transparent glass rather than turning into
+      // the pill's light tint: interpolating dark glass towards a light tint
+      // passed through light greys, a visible flash while closing. The bar
+      // pill shows its own tint again at the end of the close.
+      color: root.opened ? Util.alpha(Color.background, Math.max(0.55, Nasaq.Theme.glassAlpha)) : Util.alpha(Color.background, 0)
       border.color: Qt.rgba(1, 1, 1, root.opened ? 0.14 : 0)
       border.width: 1
       clip: true
