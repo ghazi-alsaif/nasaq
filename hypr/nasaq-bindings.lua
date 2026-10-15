@@ -80,6 +80,7 @@ o.bind("SUPER + code:24", "Quit app", os.getenv("HOME") .. "/.local/bin/hypr-qui
 -- code:54 = C, code:40 = D, code:38 = A.
 o.bind("SUPER + ALT + code:54", "Quick Settings", "omarchy-shell nasaq.control-center toggle")
 o.bind("SUPER + ALT + code:40", "Show / hide desktop widgets", "omarchy-shell nasaq.desktop toggle")
+o.bind("SUPER + ALT + code:42", "Game mode", "omarchy-shell nasaq.gamemode toggle")
 -- Only on a machine that has the fix (the iMac).
 do
   local fix = (os.getenv("HOME") or "") .. "/.local/bin/fix-sound"

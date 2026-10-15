@@ -373,5 +373,9 @@
 "On battery": "على البطارية",
 "Charging": "يشحن",
 "Quiet while locked": "هدوء أثناء القفل",
-"Nothing pops up or chimes behind the lock screen; you find them in the history after unlocking. Critical alerts still sound.": "لا شيء يظهر أو يرنّ خلف شاشة القفل، وتجدها في السجل بعد فتح القفل. التنبيهات الحرجة تبقى بصوت."
+"Nothing pops up or chimes behind the lock screen; you find them in the history after unlocking. Critical alerts still sound.": "لا شيء يظهر أو يرنّ خلف شاشة القفل، وتجدها في السجل بعد فتح القفل. التنبيهات الحرجة تبقى بصوت.",
+"Game mode": "وضع الألعاب",
+"Game mode on": "وضع الألعاب يعمل",
+"Game mode off": "وضع الألعاب متوقف",
+"Animations, blur and shadows off, notifications quiet, hot corners off. SUPER + ALT + G": "بلا حركات ولا تمويه ولا ظلال، والإشعارات هادئة، والزوايا الساخنة متوقفة. SUPER + ALT + G"
 }

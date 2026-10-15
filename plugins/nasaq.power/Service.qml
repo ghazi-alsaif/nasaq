@@ -4,6 +4,7 @@ import Quickshell.Io
 import Quickshell.Services.UPower
 import Quickshell.Services.Mpris
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import "../nasaq.commons" as Nasaq
 
 // NASAQ: power behaviour on top of power-profiles-daemon.
@@ -21,6 +22,10 @@ import "../nasaq.commons" as Nasaq
 //   mpv) or a window is fullscreen (a film, a game), a Wayland idle inhibitor
 //   keeps the screensaver and the auto-lock away. It never touches Omarchy's
 //   own Stay awake switch. Settings › System › "Stay awake while media plays".
+// • Game mode (SUPER + ALT + G, Quick Settings): Hyprland animations, blur and
+//   shadows off, notifications quiet, hot corners off. Off puts the config back.
+//   State in ~/.local/state/nasaq/gamemode ("1"/"0") so it survives a shell
+//   restart and the notification service and hot corners can read it.
 // Settings: ~/.config/omarchy/nasaq/power.json (all keys optional).
 Item {
   id: root
@@ -247,12 +252,64 @@ Item {
     IdleInhibitor { window: inhibitSurface; enabled: root.awakeForMedia }
   }
 
+  // ── Game mode ────────────────────────────────────────────────────
+  property bool gameMode: false
+  property bool gameModeLoaded: false
+  readonly property string gameModePath: Quickshell.env("HOME") + "/.local/state/nasaq/gamemode"
+  FileView {
+    id: gameModeFile
+    path: root.gameModePath
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoaded: root.applyGameMode(text().trim() === "1", false)
+    onLoadFailed: root.gameModeLoaded = true
+  }
+  function applyGameMode(on, announceIt) {
+    var changed = gameMode !== on || !gameModeLoaded
+    var wasLoaded = gameModeLoaded
+    gameMode = on
+    gameModeLoaded = true
+    if (!changed) return
+    if (on) applyGameLook()
+    else if (wasLoaded) {
+      // Put back what the config says, then Saver's own look if it is on.
+      Quickshell.execDetached(["hyprctl", "reload"])
+      if (isSaver()) { appliedPersonality = ""; applyPersonality() }
+    }
+    if (announceIt)
+      Quickshell.execDetached(["omarchy", "osd", "-i", "󰊴", "-m", Nasaq.Tr.s(on ? "Game mode on" : "Game mode off")])
+  }
+  function setGameMode(on) {
+    if (on === gameMode) return
+    Quickshell.execDetached(["bash", "-c", "mkdir -p \"$HOME/.local/state/nasaq\" && printf %s \"$1\" > \"$HOME/.local/state/nasaq/gamemode\"", "nasaq-gamemode", on ? "1" : "0"])
+    applyGameMode(on, true)
+  }
+  function applyGameLook() {
+    Quickshell.execDetached(["hyprctl", "eval",
+      "hl.config({ animations = { enabled = false }, decoration = { blur = { enabled = false }, shadow = { enabled = false } } })"])
+  }
+  // A config reload (an edit, the Windows card) brings the effects back; re-apply.
+  Connections {
+    target: Hyprland
+    function onRawEvent(event) { if (root.gameMode && event && event.name === "configreloaded") root.applyGameLook() }
+  }
+
   IpcHandler {
     target: "nasaq.power"
     function status(): string {
       return JSON.stringify({ profile: root.profile, onBattery: root.onBattery, percent: root.percent,
         autoLowPower: root.autoLowPower, personality: root.appliedPersonality,
-        awakeForMedia: root.awakeForMedia, mediaPlaying: root.mediaPlaying, fullscreen: fullscreen.active })
+        awakeForMedia: root.awakeForMedia, mediaPlaying: root.mediaPlaying, fullscreen: fullscreen.active,
+        gameMode: root.gameMode })
     }
+  }
+
+  IpcHandler {
+    target: "nasaq.gamemode"
+    function toggle(): string { root.setGameMode(!root.gameMode); return root.gameMode ? "on" : "off" }
+    function on(): string { root.setGameMode(true); return "on" }
+    function off(): string { root.setGameMode(false); return "off" }
+    function status(): string { return root.gameMode ? "on" : "off" }
   }
 }

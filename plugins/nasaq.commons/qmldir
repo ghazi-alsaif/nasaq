@@ -20,3 +20,4 @@ NAnim 1.0 NAnim.qml
 NFade 1.0 NFade.qml
 NColour 1.0 NColour.qml
 Fullscreen 1.0 Fullscreen.qml
+GameMode 1.0 GameMode.qml

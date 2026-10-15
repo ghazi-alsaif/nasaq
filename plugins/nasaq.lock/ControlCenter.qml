@@ -441,6 +441,20 @@ Item {
 
   // Do Not Disturb, as published by nasaq.notifications in its island state file.
   property bool dnd: false
+  // Game mode, owned by nasaq.power (SUPER + ALT + G). Bar copy only. Read
+  // here rather than through nasaq.commons, for the same reason as AudioModel.
+  QtObject {
+    id: game
+    property bool active: false
+    property FileView file: FileView {
+      path: Quickshell.env("HOME") + "/.local/state/nasaq/gamemode"
+      watchChanges: true
+      printErrors: false
+      onFileChanged: reload()
+      onLoaded: game.active = text().trim() === "1"
+      onLoadFailed: game.active = false
+    }
+  }
   FileView {
     path: Quickshell.env("HOME") + "/.local/state/nasaq/island-toast.json"
     blockLoading: true
@@ -1125,6 +1139,36 @@ Item {
           anchors.verticalCenter: parent.verticalCenter
           checked: root.dnd
           onToggled: { root.dnd = !root.dnd; Quickshell.execDetached(["omarchy-shell", "notifications", "setDnd", root.dnd ? "on" : "off"]); root.interacted() }
+        }
+      }
+
+      Tile {
+        width: parent.width
+        height: 46
+        visible: root.showLock
+        color: game.active ? root.accent : Util.alpha(Color.foreground, gameRowMouse.containsMouse ? 0.13 : 0.08)
+        Behavior on color { ColorAnimation { duration: root.mMicro; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cDecel } }
+        MouseArea {
+          id: gameRowMouse
+          anchors.fill: parent
+          hoverEnabled: true
+          cursorShape: Qt.PointingHandCursor
+          onClicked: { Quickshell.execDetached(["omarchy-shell", "nasaq.gamemode", "toggle"]); root.interacted() }
+        }
+        Row {
+          anchors.left: parent.left
+          anchors.leftMargin: 12
+          anchors.verticalCenter: parent.verticalCenter
+          spacing: 9
+          Glyph { anchors.verticalCenter: parent.verticalCenter; text: "󰊴"; font.pixelSize: 15; color: game.active ? root.onAccent : Color.foreground }
+          Label { anchors.verticalCenter: parent.verticalCenter; text: "Game mode"; color: game.active ? root.onAccent : Color.foreground }
+        }
+        Sub {
+          anchors.right: parent.right
+          anchors.rightMargin: 12
+          anchors.verticalCenter: parent.verticalCenter
+          color: game.active ? root.onAccent : Util.alpha(Color.foreground, 0.6)
+          text: game.active ? "On" : "SUPER + ALT + G"
         }
       }
 

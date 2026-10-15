@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import "../../nasaq.commons"
+import "../../nasaq.commons" as Nasaq
 import ".."
 
 NPage {
@@ -15,6 +16,7 @@ NPage {
   Cmd { id: scale; script: "hyprctl monitors -j | python3 -c 'import json,sys; print(\", \".join(m[\"name\"]+\" \"+str(m[\"width\"])+\"×\"+str(m[\"height\"])+\" @\"+str(round(m[\"scale\"],2)) for m in json.load(sys.stdin)))'" }
   property var idle: ({})
   property bool awake: false
+  Nasaq.GameMode { id: game }
   FileView {
     path: Sys.home + "/.config/omarchy/shell.json"; watchChanges: true
     onFileChanged: reload()
@@ -39,6 +41,11 @@ NPage {
         value: profile.out
         onActivated: function(v) { Sys.run("omarchy powerprofiles set autodetect " + v); profile.out = v }
       }
+    }
+    NRow {
+      title: "Game mode"
+      subtitle: "Animations, blur and shadows off, notifications quiet, hot corners off. SUPER + ALT + G"
+      NSwitch { checked: game.active; onToggled: function(c) { Sys.ipc("nasaq.gamemode", c ? "on" : "off") } }
     }
   }
 
