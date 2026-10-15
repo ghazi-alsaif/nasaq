@@ -179,7 +179,7 @@ hl.layer_rule({ match = { namespace = "nasaq-overview" }, blur = true, xray = tr
 -- ── NASAQ generated layers (written by NASAQ Settings; never edit by hand) ──
 -- Each file is optional and loaded in a pcall, so a missing or broken file
 -- never stops Hyprland from loading the rest.
-for _, name in ipairs({ "nasaq-env", "nasaq-monitors", "nasaq-rules", "nasaq-corners" }) do
+for _, name in ipairs({ "nasaq-env", "nasaq-monitors", "nasaq-corners" }) do
   local path = (os.getenv("HOME") or "") .. "/.config/hypr/" .. name .. ".lua"
   local f = io.open(path, "r")
   if f then

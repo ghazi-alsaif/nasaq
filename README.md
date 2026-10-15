@@ -78,7 +78,7 @@ Make the column yours, in Settings > Widgets:
 
 ![Overview](docs/screenshots/mission-control.png)
 
-`SUPER + TAB`, a three-finger swipe up, or the top-left hot corner opens the Overview: live previews of every window on the current workspace, with the workspace strip at the top. Click a window to focus it, or drag it to another workspace. Middle-click closes a window; right-click shows its actions (float or tile, fullscreen, move to a workspace, window rules, close).
+`SUPER + TAB`, a three-finger swipe up, or the top-left hot corner opens the Overview: live previews of every window on the current workspace, with the workspace strip at the top. Click a window to focus it, or drag it to another workspace. Middle-click closes a window; right-click shows its actions (float or tile, fullscreen, move to a workspace, close).
 
 ### App Switcher
 
@@ -130,7 +130,7 @@ From the moment the machine starts until it shuts down, every screen has the sam
 - **Universal clipboard**: `SUPER + C / V / X` copy, paste and cut in every app, including terminals.
 - **Quit app**: `SUPER + Q` closes the whole application, not just one window.
 - **Fix speakers**: `SUPER + ALT + A` rebinds the audio card when the speakers go silent (iMac and some laptops).
-- **Window rules** and **automations** (time- or event-triggered commands), editable from Settings.
+- **Automations** (time- or event-triggered commands), editable from Settings.
 - **Screensaver modes**: Matrix, image, or Omarchy's stock ASCII.
 - **Themes**: every NASAQ surface follows the active Omarchy theme and updates when you change it.
 - **Screen frame** (off by default): a soft rounded frame in the theme colour drawn inside the window gaps.

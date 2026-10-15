@@ -6,7 +6,8 @@
 - Notification centre slides and fades as one piece and unmaps when the slide ends. Search: a single highlight glides between results, the card resizes smoothly. Switcher fades in (closing stays instant). Settings pages fade and slide in; dropdowns open with a short fade. Desktop cards glide to their new place.
 - Fullscreen awareness: while a film or game is fullscreen, only critical notifications show and without the chime (the rest go to history), and hot corners are off.
 - One glass: search, switcher, notification centre, window look and desktop widgets get the same blur and alpha as the island.
-- Overview: right-click a window for float or tile, fullscreen, move to workspace 1–5, window rules and close; middle-click closes it.
+- Overview: right-click a window for float or tile, fullscreen, move to workspace 1–5 and close; middle-click closes it. Windows appear in their on-screen order and with the desktop's glass (blurred wallpaper behind, the window opacity on top).
+- Window rules removed (Settings › Workspaces & Windows, `nasaq-rules`): more to maintain than they were worth. The installer removes the old command and its generated Hyprland layer.
 - Wheel over the island changes the volume; wheel over the workspace numbers changes workspace.
 - Search: Ctrl+J/K (and N/P) move through results; when qalc is installed it answers sums the built-in calculator cannot (sqrt(2), 5!, today + 40 days).
 

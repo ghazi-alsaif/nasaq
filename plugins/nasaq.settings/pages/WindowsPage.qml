@@ -23,54 +23,6 @@ NPage {
   property string spName: ""
   property string spCommand: ""
   property string spKey: ""
-  Cmd { id: openClasses; script: "hyprctl clients -j | python3 -c 'import json,sys;print(json.dumps(sorted({c[\"class\"] for c in json.load(sys.stdin) if c[\"class\"]})))'" }
-  property string ruleClass: ""
-  // Take over an app handed in by the Overview ("Window rules…"), whether the
-  // page is opening now or was already open; copied, then the hint is cleared.
-  function takeHint() { if (Sys.ruleClassHint) { ruleClass = Sys.ruleClassHint; Sys.ruleClassHint = "" } }
-  Component.onCompleted: { takeHint(); openClasses.refresh() }
-  Connections { target: Sys; function onRuleClassHintChanged() { page.takeHint() } }
-  property bool ruleFloat: true
-  property int ruleW: 1000
-  property int ruleH: 700
-  property real ruleOpacity: 1
-  function applyRules(list) { Settings.set("windowRules", list); rulesLater.restart() }
-  Timer { id: rulesLater; interval: 600; onTriggered: Sys.run("nasaq-rules") }
-
-  NSection {
-    title: "WINDOW RULES (TEST)"
-    note: "Make an app always open floating, at a size, centred, or with its own transparency."
-    Repeater {
-      model: Settings.get("windowRules", [])
-      delegate: NRow {
-        required property var modelData
-        required property int index
-        title: modelData.class
-        subtitle: (modelData.float ? "Floating · " + modelData.width + "×" + modelData.height + " · centred" : "Tiled") + (modelData.opacity && modelData.opacity < 1 ? " · " + Math.round(modelData.opacity * 100) + "% opaque" : "")
-        NButton { text: "Remove"; danger: true; onClicked: { var l = Settings.get("windowRules", []).slice(); l.splice(index, 1); page.applyRules(l) } }
-      }
-    }
-    NRow {
-      title: "App"
-      subtitle: "From the windows open right now"
-      Row { spacing: 8
-        NDropdown { width: 240; model: (function() { try { return JSON.parse(openClasses.out || "[]") } catch (e) { return [] } })(); value: page.ruleClass; onActivated: function(v) { page.ruleClass = v } }
-        NButton { text: "↻"; onClicked: openClasses.refresh() } }
-    }
-    NRow { title: "Open floating"; NSwitch { checked: page.ruleFloat; onToggled: function(c) { page.ruleFloat = c } } }
-    NRow { title: "Width"; visible: page.ruleFloat; NSlider { width: 220; from: 300; to: 2200; stepSize: 20; value: page.ruleW; valueText: Math.round(value) + " px"; onMoved: function(v) { page.ruleW = Math.round(v) } } }
-    NRow { title: "Height"; visible: page.ruleFloat; NSlider { width: 220; from: 200; to: 1300; stepSize: 20; value: page.ruleH; valueText: Math.round(value) + " px"; onMoved: function(v) { page.ruleH = Math.round(v) } } }
-    NRow { title: "Opacity"; NSlider { width: 220; from: 0.3; to: 1; stepSize: 0.05; value: page.ruleOpacity; valueText: Math.round(value * 100) + "%"; onMoved: function(v) { page.ruleOpacity = v } } }
-    NRow {
-      title: ""
-      subtitle: page.ruleClass ? "Applies to " + page.ruleClass + " windows opened from now on." : "Pick an app above first."
-      NButton { text: "Add rule"; primary: true; opacity: page.ruleClass ? 1 : 0.45; onClicked: {
-      if (!page.ruleClass) return
-      var l = Settings.get("windowRules", []).filter(function(r) { return r.class !== page.ruleClass })
-      l.push({ class: page.ruleClass, float: page.ruleFloat, center: page.ruleFloat, width: page.ruleW, height: page.ruleH, opacity: page.ruleOpacity < 1 ? page.ruleOpacity : 0 })
-      page.applyRules(l)
-    } } }
-  }
 
   NSection {
     title: "SCRATCHPADS"

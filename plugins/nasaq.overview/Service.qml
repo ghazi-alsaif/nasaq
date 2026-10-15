@@ -672,7 +672,6 @@ Item {
             { label: "Move to workspace 1", ws: 1 }, { label: "Move to workspace 2", ws: 2 },
             { label: "Move to workspace 3", ws: 3 }, { label: "Move to workspace 4", ws: 4 },
             { label: "Move to workspace 5", ws: 5 },
-            { label: "Window rules…", rules: true },
             { label: "Close", close: true }
           ]
           delegate: Rectangle {
@@ -700,12 +699,6 @@ Item {
                 if (!t) return
                 if (modelData.close) root.closeWindow(t)
                 else if (modelData.ws) root.moveWindow(t, modelData.ws)
-                else if (modelData.rules) {
-                  // Opens the rules editor with this window's app already filled in.
-                  var cls = t.lastIpcObject ? String(t.lastIpcObject.class || "") : ""
-                  root.close()
-                  Quickshell.execDetached(["sh", "-c", "omarchy-shell shell toggle nasaq.settings '{}' && sleep 0.4 && omarchy-shell nasaq.settings rule \"$1\"", "sh", cls])
-                }
                 else root.actOn(t, modelData.expr, false)
               }
             }
