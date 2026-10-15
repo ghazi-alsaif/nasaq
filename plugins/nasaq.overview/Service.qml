@@ -507,10 +507,57 @@ Item {
               visible: false
               layer.enabled: true
             }
+            // The same glass as on the desktop: Hyprland blurs what is behind a
+            // window (the wallpaper) and lays the window over it at its opacity.
+            // Captures are opaque, so the Overview rebuilds that here: the piece
+            // of wallpaper behind the window, blurred with the window blur
+            // settings, then the capture at the active / inactive opacity.
+            // (Over the Overview's own darker backdrop the windows looked grey
+            // and washed out instead.)
+            readonly property real k: win.realW > 0 ? win.width / win.realW : 1
+            Item {
+              id: wallPiece
+              anchors.fill: parent
+              clip: true
+              visible: false
+              Image {
+                source: backdrop.source
+                sourceSize: backdrop.sourceSize
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                width: overlay.width * content.k
+                height: overlay.height * content.k
+                x: -win.realX * content.k - frame.bw
+                y: -win.realY * content.k - frame.bw
+              }
+            }
+            Item {
+              id: glassStack
+              anchors.fill: parent
+              visible: false
+              layer.enabled: true
+              MultiEffect {
+                anchors.fill: parent
+                source: wallPiece
+                autoPaddingEnabled: false
+                blurEnabled: root.look.blur !== false
+                blurMax: 64
+                blurMultiplier: 1.5
+                // Hyprland's dual-kawase blur spreads far wider than its numbers
+                // suggest (about size × 2^(passes+1), and MultiEffect's blur is
+                // softer than Gaussian), scaled down with the thumbnail. Matched by
+                // eye against the desktop at blurSize 4, 2 passes.
+                blur: Math.min(1, (root.look.blurSize || 4) * Math.pow(2, (root.look.blurPasses || 2) + 1) * content.k / 40)
+              }
+              MultiEffect {
+                anchors.fill: parent
+                source: shot
+                opacity: Hyprland.activeToplevel === win.modelData ? root.activeOpacity : root.inactiveOpacity
+              }
+            }
             MultiEffect {
               anchors.fill: parent
-              source: shot
-              opacity: Hyprland.activeToplevel === win.modelData ? root.activeOpacity : root.inactiveOpacity
+              source: glassStack
               maskEnabled: true
               maskSource: roundMask
               maskThresholdMin: 0.5
