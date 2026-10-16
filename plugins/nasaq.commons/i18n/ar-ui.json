@@ -387,5 +387,7 @@
 "KEYBOARD": "لوحة المفاتيح",
 "Omarchy makes the Caps Lock key a Compose key (for characters like é) and puts Caps Lock on both Shift keys together. NASAQ gives the key back its usual job.": "يجعل Omarchy زر Caps Lock زر Compose (لأحرف مثل é) ويضع Caps Lock على زرّي Shift معًا. نَسَق يعيد للزر وظيفته المعتادة.",
 "Caps Lock key types capitals": "زر Caps Lock يكتب حروفًا كبيرة",
-"Off: Omarchy's Compose key, with Caps Lock on both Shifts.": "مطفأ: زر Compose كما في Omarchy، وCaps Lock على زرّي Shift معًا."
+"Off: Omarchy's Compose key, with Caps Lock on both Shifts.": "مطفأ: زر Compose كما في Omarchy، وCaps Lock على زرّي Shift معًا.",
+"Now playing on the lock screen": "ما يُشغَّل الآن على شاشة القفل",
+"The song and its controls under the password, to pause or skip without unlocking.": "الأغنية وأزرارها تحت كلمة المرور، لإيقافها أو تخطّيها دون فتح القفل."
 }

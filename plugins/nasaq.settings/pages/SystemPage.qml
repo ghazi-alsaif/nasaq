@@ -82,6 +82,12 @@ NPage {
         onCommitted: function(v) { page.setIdle("lock", v) }
       }
     }
+    NRow {
+      title: "Now playing on the lock screen"
+      subtitle: "The song and its controls under the password, to pause or skip without unlocking."
+      NSwitch { checked: { void Settings.revision; return Settings.get("lock.nowPlaying", true) }
+        onToggled: function(c) { Settings.set("lock.nowPlaying", c) } }
+    }
     NRow { title: "Lock now"; subtitle: "SUPER + CTRL + L"; NButton { text: "Lock"; onClicked: Sys.run("omarchy-system-lock") } }
   }
 

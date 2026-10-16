@@ -34,12 +34,31 @@ Item {
   property string lastEventAt: ""
   property bool strandedLock: false
   property bool strandedLockResolved: false
-  // NASAQ: blurred snapshot of the open windows, taken just before locking,
-  // so the lock screen sits on the desktop itself instead of the wallpaper.
-  readonly property string captureDir: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/nasaq-lock"
+  // NASAQ: the lock screen sits on the desktop itself, blurred. LockView
+  // captures its screen in the shell; this step only closes the screensaver
+  // first so the capture shows the real windows.
   property bool capturing: false
   property bool captureForPreview: false
   property int captureVersion: 0
+  // Nasaq.Motion's scale, read here because the lock imports no other plugin
+  // folder: settings.json motion.scale, and 0 in power saver.
+  property real motionSetting: 1
+  property bool nowPlayingSetting: true
+  readonly property real motionScale: powerProfile === "power-saver" ? 0 : Math.max(0, Math.min(1.5, motionSetting))
+  FileView {
+    path: (Quickshell.env("HOME") || "") + "/.config/omarchy/nasaq/settings.json"
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoaded: {
+      try {
+        var all = JSON.parse(text())
+        var m = all.motion
+        root.motionSetting = m && m.scale !== undefined ? Number(m.scale) : 1
+        root.nowPlayingSetting = !(all.lock && all.lock.nowPlaying === false)
+      } catch (e) {}
+    }
+  }
   // NASAQ: how long the locked screen stays lit after the last input, picked
   // from the slider on the lock screen and kept across locks. -1 = never.
   readonly property int defaultBlankTimeoutMs: 12 * 60 * 60 * 1000
@@ -223,7 +242,6 @@ Item {
     sessionLock.locked = false
     logEvent("unlocked")
     runWake()
-    clearCaptureProc.running = true
   }
 
   function armBlankTimer() {
@@ -360,7 +378,9 @@ Item {
         anchors.fill: parent
         backgroundPath: root.backgroundPath
         backgroundVersion: root.backgroundVersion
-        capturePath: root.captureDir + "/" + (lockSurface.screen ? lockSurface.screen.name : "") + ".jpg"
+        captureScreen: lockSurface.screen
+        motionScale: root.motionScale
+        showNowPlaying: root.nowPlayingSetting
         captureVersion: root.captureVersion
         fingerprintConfigured: root.fingerprintConfigured
         authenticatingPassword: root.authenticatingPassword
@@ -395,7 +415,9 @@ Item {
       anchors.fill: parent
       backgroundPath: root.backgroundPath
       backgroundVersion: root.backgroundVersion
-      capturePath: root.captureDir + "/" + (previewWindow.screen ? previewWindow.screen.name : "") + ".jpg"
+      captureScreen: previewWindow.screen
+      motionScale: root.motionScale
+      showNowPlaying: root.nowPlayingSetting
       blankTimeoutMs: root.blankTimeoutMs
       captureVersion: root.captureVersion
       fingerprintConfigured: root.fingerprintConfigured
@@ -505,17 +527,22 @@ Item {
     }
   }
 
-  // Half-scale JPEGs are plenty under a heavy blur and keep the grab fast.
-  // The screensaver is closed first so the snapshot shows the real windows.
+  // One throwaway capture at start-up: the first screencopy in a shell loads
+  // its backend asynchronously, and on a locked screen the compositor refuses
+  // the late request, so the very first lock would fall back to the wallpaper.
+  Loader {
+    asynchronous: true
+    active: true
+    onLoaded: active = false
+    sourceComponent: ScreencopyView { captureSource: Quickshell.screens[0] }
+  }
+
+  // The screensaver is closed first so the capture shows the real windows.
   Process {
     id: captureProc
     command: ["bash", "-c",
-      "dir=\"$1\"; mkdir -p -m 700 \"$dir\"; rm -f \"$dir\"/*.jpg; " +
       "if pgrep -x ttfx >/dev/null || pgrep -f '[o]rg.omarchy.screensaver' >/dev/null; then " +
-      "pkill -x ttfx; pkill -f '[o]rg.omarchy.screensaver'; sleep 0.35; fi; " +
-      "for m in $(hyprctl monitors -j | jq -r '.[].name'); do " +
-      "grim -o \"$m\" -s 0.5 -t jpeg -q 85 \"$dir/$m.jpg\" & done; wait",
-      "nasaq-lock-capture", root.captureDir]
+      "pkill -x ttfx; pkill -f '[o]rg.omarchy.screensaver'; sleep 0.35; fi"]
     onExited: root.finishCapture()
   }
 
@@ -524,11 +551,6 @@ Item {
     interval: 2000
     repeat: false
     onTriggered: { root.logEvent("capture-timeout"); root.finishCapture() }
-  }
-
-  Process {
-    id: clearCaptureProc
-    command: ["bash", "-c", "rm -f \"$1\"/*.jpg", "nasaq-lock-clear", root.captureDir]
   }
 
   Process {

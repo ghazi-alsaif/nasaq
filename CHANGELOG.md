@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased (1.4.0)
+- Lock screen: the shell captures the screen itself as the lock comes up (Quickshell screencopy) instead of running `grim` first, so the lock appears at once; the desktop shows sharp for a moment and blurs in over Motion's slow duration (instant with Motion off or in power saver). No capture within a second falls back to the wallpaper. The screensaver is still closed first.
+- Now playing on the lock screen: cover, title and artist with previous, play/pause and next above the power row, for whichever player is playing (or paused). Settings › System › Now playing on the lock screen.
+
 ## 1.3.0 — 2026-10-15
 - Stay awake while media plays: while a video or music plays (any MPRIS player: browsers, Spotify, mpv) or a window is fullscreen, a Wayland idle inhibitor keeps the screensaver and the auto-lock away. Omarchy's own Stay awake switch is left alone, and Omarchy's screensaver window doesn't count as fullscreen. Settings › System, on by default.
 - Status toasts in the island: Caps Lock on/off (read from the keyboard LED by the new `nasaq-keywatch`, which uses the same udev rule as the App Switcher), the keyboard language after a switch, and the charger plugged in or out. Small and silent, in the volume pill. Settings › Widgets › Island.
