@@ -413,6 +413,7 @@ Item {
         surfaceShown: sessionLock.secure
         captureVersion: root.captureVersion
         fingerprintConfigured: root.fingerprintConfigured
+        screenName: lockSurface.screen ? lockSurface.screen.name : ""
         authenticatingPassword: root.authenticatingPassword
         failureMessage: root.failureMessage
         failedAttempts: root.failedAttempts
@@ -451,6 +452,7 @@ Item {
       blankTimeoutMs: root.blankTimeoutMs
       captureVersion: root.captureVersion
       fingerprintConfigured: root.fingerprintConfigured
+      screenName: previewWindow.screen ? previewWindow.screen.name : ""
       authenticatingPassword: false
       failureMessage: ""
       failedAttempts: 0

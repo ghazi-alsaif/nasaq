@@ -60,6 +60,8 @@ Item {
     return paused
   }
   property bool fingerprintConfigured: false
+  // This surface's monitor, for the brightness slider in Quick Settings.
+  property string screenName: ""
   property bool authenticatingPassword: false
   property string failureMessage: ""
   property int failedAttempts: 0
@@ -386,6 +388,7 @@ Item {
       anchors.topMargin: 8
       textFont: root.textFont
       iconFont: root.iconFont
+      monitor: root.screenName
       active: root.loadBackground
       interactive: root.inputEnabled
       opened: root.controlsOpen

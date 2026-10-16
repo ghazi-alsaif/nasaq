@@ -67,6 +67,11 @@ Item {
   readonly property bool netConnected: !!netInfo.iface
   property string layoutFull: ""
   property int brightness: -1
+  // The monitor whose brightness the slider drives: the lock passes its own
+  // screen, the bar leaves it empty for the focused one. Brightness goes
+  // through omarchy-brightness-display, so a laptop panel, an Apple display
+  // and an external monitor over DDC/CI all work the same.
+  property string monitor: ""
   // Power profile (power-profiles-daemon). Omarchy remembers one per power
   // source and switches on plug/unplug; picking one here saves it for the
   // current source.
@@ -538,12 +543,13 @@ Item {
     id: poll
     command: ["bash", "-c",
       "echo \"kb=$(hyprctl devices -j 2>/dev/null | jq -r '([.keyboards[] | select(.main)] | .[0].active_keymap) // .keyboards[0].active_keymap // \"\"')\"; " +
-      "echo \"bright=$(brightnessctl -m -c backlight 2>/dev/null | head -1 | cut -d, -f4 | tr -d %)\"; " +
+      "m=\"$1\"; echo \"bright=$(omarchy-brightness-display ${m:+--monitor \"$m\"} 2>/dev/null | head -1 | tr -dc 0-9)\"; " +
       // Over D-Bus, not powerprofilesctl/omarchy-powerprofiles-list: those run
       // Python, which intermittently segfaults on exit (crash analysis 2026-10-07).
       "pp='net.hadess.PowerProfiles /net/hadess/PowerProfiles net.hadess.PowerProfiles'; " +
       "echo \"prof=$(busctl get-property $pp ActiveProfile 2>/dev/null | sed -E 's/^s \\\"(.*)\\\"$/\\1/')\"; " +
-      "echo \"profs=$(busctl -j get-property $pp Profiles 2>/dev/null | jq -r '.data[].Profile.data' 2>/dev/null | tr '\\n' ' ')\""]
+      "echo \"profs=$(busctl -j get-property $pp Profiles 2>/dev/null | jq -r '.data[].Profile.data' 2>/dev/null | tr '\\n' ' ')\"",
+      "nasaq-cc", root.monitor]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
@@ -580,11 +586,29 @@ Item {
     onTriggered: if (!poll.running) poll.running = true
   }
 
+  // One set at a time: omarchy-brightness-display drops a call that overlaps
+  // another (DDC/CI takes a few hundred ms), so the latest value is sent
+  // again once the running one finishes.
   Timer {
     id: brightnessWriter
     interval: 60
     property int pending: -1
-    onTriggered: if (pending >= 0) Quickshell.execDetached(["brightnessctl", "-q", "-c", "backlight", "set", pending + "%"])
+    onTriggered: brightnessSet.send()
+  }
+  Process {
+    id: brightnessSet
+    property int sent: -1
+    function send() {
+      if (brightnessWriter.pending < 0) return
+      if (running) return
+      sent = brightnessWriter.pending
+      var args = ["omarchy-brightness-display", "--no-osd"]
+      if (root.monitor) args.push("--monitor", root.monitor)
+      args.push(sent + "%")
+      command = args
+      running = true
+    }
+    onRunningChanged: if (!running && brightnessWriter.pending !== sent) send()
   }
 
   // ── Building blocks ────────────────────────────────────────────────
