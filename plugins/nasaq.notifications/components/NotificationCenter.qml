@@ -58,9 +58,14 @@ Item {
   }
 
   function toggle() { open ? close() : show() }
+  // Entries newer than this slide in when the list is rebuilt: a notification
+  // that arrives while the panel is open. Set on show, so the opening list
+  // doesn't animate every tile.
+  property double listedAt: 0
   function show() {
     now = new Date()
     viewMonth = new Date()
+    listedAt = Date.now()
     open = true
     reload()
     Qt.callLater(function() { root.shown = true })
@@ -183,6 +188,7 @@ Item {
         // before it would bring the cleared entries back for a moment.
         var clearedAt = root.service ? Number(root.service.historyClearedAt) || 0 : 0
         root.entries = rows.filter(function(e) { return (e.timestamp || 0) > clearedAt })
+        root.listedAt = Date.now()
       }
     }
   }
@@ -597,10 +603,23 @@ Item {
               opacity: (1 - fade) * (1 - Math.min(0.5, Math.abs(dragX) / Math.max(1, width)))
               height: out ? 0 : groupCol.implicitHeight + 20
               clip: true
-              // Only the leaving tile animates its height: the tiles are rebuilt
-              // after a clear, and a new one must not grow in from 0.
-              Behavior on height { enabled: groupTile.out !== ""; Nasaq.NAnim { kind: "move" } }
+              // The height animates only once the tile is settled: the tiles
+              // are rebuilt after a clear, and a new one must not grow in from
+              // 0. (Gating on `out` itself raced the height binding.)
+              property bool settled: false
+              Behavior on height { enabled: groupTile.settled; Nasaq.NAnim { kind: "move" } }
               onOutChanged: if (out === "r" || out === "l") leave(out === "r")
+              // Arrived while the panel was open: slide in from the right.
+              Component.onCompleted: {
+                Qt.callLater(function() { groupTile.settled = true })
+                var ts = modelData.items.length ? Number(modelData.items[0].timestamp) || 0 : 0
+                if (Nasaq.Motion.enabled && !out && ts > root.listedAt) { dragX = 28; fade = 1; enterAnim.start() }
+              }
+              ParallelAnimation {
+                id: enterAnim
+                NumberAnimation { target: groupTile; property: "dragX"; to: 0; duration: Nasaq.Motion.open; easing.type: Easing.BezierSpline; easing.bezierCurve: Nasaq.Motion.enter }
+                NumberAnimation { target: groupTile; property: "fade"; to: 0; duration: Nasaq.Motion.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: Nasaq.Motion.decel }
+              }
               function leave(right) {
                 backAnim.stop(); exitAnim.stop()
                 exitX.to = right ? width + 24 : -(width + 24)
