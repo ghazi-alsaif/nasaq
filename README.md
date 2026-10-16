@@ -49,13 +49,13 @@ A notification grows out of the island, with the app icon, title and body, then 
 
 <p align="center"><img src="docs/screenshots/notification-center.png" alt="Notification Center" width="360"></p>
 
-`SUPER + N` slides the Notification Center in from the right: history grouped by app, clear-all, and a Do Not Disturb switch.
+`SUPER + N` slides the Notification Center in from the right: history grouped by app, clear-all (the groups leave one after another), and a Do Not Disturb switch. Swipe a group sideways to clear it.
 
 ### Quick Settings
 
 <p align="center"><img src="docs/screenshots/control-center.png" alt="Quick Settings" width="420"></p>
 
-`SUPER + ALT + C`, or a hot corner, opens Quick Settings: Wi-Fi, Bluetooth, keyboard layout, Do Not Disturb, display brightness with auto-brightness, sound with an output picker, a Windows page (transparency, blur, shadows, shape), power profile, and lock / sleep / restart / shut down.
+`SUPER + ALT + C`, or a hot corner, opens Quick Settings: Wi-Fi, Bluetooth, keyboard layout, Do Not Disturb, Game mode, screen recording (pick an area, a live timer while it records, one click to stop), a VPN switch when NetworkManager has one, display brightness (laptop panel, Apple display or an external monitor over DDC/CI) with auto-brightness, sound with an output picker, a Windows page (transparency, blur, shadows, shape), power profile, and lock / sleep / restart / shut down.
 
 ### Desktop widgets
 
@@ -122,7 +122,7 @@ The Shortcuts page lists all shortcuts, Omarchy's and NASAQ's. Each can be chang
 
 From the moment the machine starts until it shuts down, every screen has the same design: your wallpaper blurred, a large clock or greeting, the Matrix rain in the theme's accent, and glass pills for the name and password. All of them take their colours from the active Omarchy theme and change with it.
 
-- **Lock screen** (`SUPER + CTRL + SPACE`): part of NASAQ's shell, with separate password and fingerprint flows. Theme changes repaint it live, even while it is up.
+- **Lock screen** (`SUPER + CTRL + SPACE`): part of NASAQ's shell, with separate password and fingerprint flows. It sits on your own desktop, blurred: the sharp desktop fades into the lock, and on unlock it fades back before the windows return. Whatever is playing shows above the power row with previous, play/pause and next, so music can be paused without unlocking (Settings › System). Theme changes repaint it live, even while it is up.
 - **Login screen**: an SDDM theme. A small root-owned helper rewrites its colours and wallpaper on every theme change; it is the only thing NASAQ installs outside your home directory, together with one sudoers rule that allows that helper alone. With autologin it only shows after logging out.
 - **Boot and shutdown screens**: a Plymouth theme with the disk-unlock pill and a greeting per mode: Hello on boot, See you soon on restart, Goodbye on shutdown. The same helper renders the images in the theme's colours and rebuilds the boot image once, only when they changed (up to a minute, in the background).
 
@@ -133,7 +133,7 @@ From the moment the machine starts until it shuts down, every screen has the sam
 - **Stay awake while media plays**: a video, music, or anything fullscreen keeps the screensaver and auto-lock away. It doesn't touch the Stay awake switch.
 - **Game mode** (`SUPER + ALT + G`, or Quick Settings): animations, blur and shadows off, notifications quiet, hot corners off. Off puts everything back.
 - **Locked screen**: notifications that arrive while the screen is locked don't pop up or chime behind it. They wait in the Notification Center, with the island's dot showing after you unlock.
-- **Power**: a power-saving mode and per-profile behaviour (Saver, Balanced, Performance).
+- **Power**: a power-saving mode and per-profile behaviour (Saver, Balanced, Performance). Before the battery dies (3 % by default), a critical alert and a 30-second countdown in the island, then hibernate; the charger cancels it.
 - **Display**: resolution, scale and position with a 15-second automatic revert, and auto-brightness from the ambient sensor or the clock.
 - **Translation**: `SUPER + CTRL + ALT + L` translates the selected text; add SHIFT to OCR and translate a region of the screen. Both use your default Omarchy agent.
 - **Universal clipboard**: `SUPER + C / V / X` copy, paste and cut in every app, including terminals.
