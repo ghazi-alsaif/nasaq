@@ -164,6 +164,8 @@ Item {
     onTriggered: { root.clearAll(); root.leaving = ({}) }
   }
   Timer { id: reloadTimer; interval: 400; onTriggered: root.reload() }
+  // A notification filed while the panel is open: show it without a reopen.
+  function refreshIfOpen() { if (open) reloadTimer.restart() }
 
   Process {
     id: historyProc

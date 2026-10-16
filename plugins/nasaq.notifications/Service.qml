@@ -258,6 +258,8 @@ Item {
 
     persistPopupFile(snapshot)
     watchForUpdates(notification, snapshot)
+    // The centre lists live toasts too (liveRowsForReplay): show it now if open.
+    notificationCenter.refreshIfOpen()
     // NASAQ: soft chime for real notifications (not low-urgency or our own
     // action toasts). DND already returned above.
     if (!silentRule && !fullscreen.active && !game.active && notification.urgency !== NotificationUrgency.Low && snapshot.app !== "omarchy-action")
@@ -662,7 +664,10 @@ Item {
       imagesDir]
     for (var i = 0; i < persistable.copies.length; i++)
       command.push(persistable.copies[i].from, persistable.copies[i].to)
-    enqueuePopupFileJob(command, done)
+    enqueuePopupFileJob(command, function() {
+      notificationCenter.refreshIfOpen()
+      if (done) done()
+    })
   }
 
   // When history was last wiped (Clear All here, or Clear in the island). The
