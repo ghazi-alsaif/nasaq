@@ -34,11 +34,9 @@ Item {
   property string lastEventAt: ""
   property bool strandedLock: false
   property bool strandedLockResolved: false
-  // NASAQ: the lock screen sits on the desktop itself, blurred: a full-size
-  // snapshot of each screen, taken just before locking (about 80 ms; scaling
-  // it down in grim costs more than it saves), so the lock's first frame
-  // already shows it. Kept in the runtime dir and removed on unlock.
-  readonly property string captureDir: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/nasaq-lock"
+  // NASAQ: the lock screen sits on the desktop itself, blurred. LockView
+  // captures its screen in the shell; this step only closes the screensaver
+  // first so the capture shows the real windows.
   property bool capturing: false
   property bool captureForPreview: false
   property int captureVersion: 0
@@ -258,7 +256,6 @@ Item {
     sessionLock.locked = false
     logEvent("unlocked")
     runWake()
-    clearCaptureProc.running = true
   }
 
   function armBlankTimer() {
@@ -395,7 +392,7 @@ Item {
         anchors.fill: parent
         backgroundPath: root.backgroundPath
         backgroundVersion: root.backgroundVersion
-        capturePath: root.captureDir + "/" + (lockSurface.screen ? lockSurface.screen.name : "") + ".ppm"
+        captureScreen: lockSurface.screen
         motionScale: root.motionScale
         showNowPlaying: root.nowPlayingSetting
         leaving: root.leaving
@@ -434,7 +431,7 @@ Item {
       anchors.fill: parent
       backgroundPath: root.backgroundPath
       backgroundVersion: root.backgroundVersion
-      capturePath: root.captureDir + "/" + (previewWindow.screen ? previewWindow.screen.name : "") + ".ppm"
+      captureScreen: previewWindow.screen
       motionScale: root.motionScale
       showNowPlaying: root.nowPlayingSetting
       blankTimeoutMs: root.blankTimeoutMs
@@ -546,23 +543,23 @@ Item {
     }
   }
 
-  // The screensaver is closed first so the snapshot shows the real windows.
-  // PPM: no compression, the fastest to write and to load.
+  // One throwaway capture at start-up: the first screencopy in a shell loads
+  // its backend asynchronously, and on a locked screen the compositor refuses
+  // the late request, so the very first lock would fall back to the wallpaper.
+  Loader {
+    asynchronous: true
+    active: true
+    onLoaded: active = false
+    sourceComponent: ScreencopyView { captureSource: Quickshell.screens[0] }
+  }
+
+  // The screensaver is closed first so the capture shows the real windows.
   Process {
     id: captureProc
     command: ["bash", "-c",
-      "dir=\"$1\"; mkdir -p -m 700 \"$dir\"; rm -f \"$dir\"/*.ppm \"$dir\"/*.jpg; " +
       "if pgrep -x ttfx >/dev/null || pgrep -f '[o]rg.omarchy.screensaver' >/dev/null; then " +
-      "pkill -x ttfx; pkill -f '[o]rg.omarchy.screensaver'; sleep 0.35; fi; " +
-      "for m in $(hyprctl monitors -j | jq -r '.[].name'); do " +
-      "grim -o \"$m\" -t ppm \"$dir/$m.ppm\" & done; wait",
-      "nasaq-lock-capture", root.captureDir]
+      "pkill -x ttfx; pkill -f '[o]rg.omarchy.screensaver'; sleep 0.35; fi"]
     onExited: root.finishCapture()
-  }
-
-  Process {
-    id: clearCaptureProc
-    command: ["bash", "-c", "rm -f \"$1\"/*.ppm", "nasaq-lock-clear", root.captureDir]
   }
 
   Timer {
