@@ -414,7 +414,9 @@ Item {
     // instead. Rows that never had a file (a history replay, the empty-history
     // placeholder) archive to nothing, which the move tolerates.
     if (entry) {
-      archivePopupFileFor(entry)
+      // "discard": cleared from the centre, so the file is deleted, not archived.
+      if (reason === "discard") discardPopupFileFor(entry)
+      else archivePopupFileFor(entry)
       if (restored) delete restoredPopups[NotificationLogic.popupFileName(entry)]
     }
     popupModel.remove(index)
@@ -431,7 +433,7 @@ Item {
   }
 
   function clearPopups() {
-    while (popupModel.count > 0) dismissPopup(0)
+    while (popupModel.count > 0) removePopup(0, "discard")
   }
 
   // Run the popup's click action, then dismiss. Omarchy's own toasts carry the
@@ -617,6 +619,15 @@ Item {
   readonly property string trimHistoryScript:
     "ls -1 \"$hist\" 2>/dev/null | sort -n | head -n \"-$limit\" | while IFS= read -r stale; do rm -f \"$hist/$stale\" \"$imgs/${stale%.json}\"-*; done"
 
+  // A popup cleared from the centre: its file (and the images only it uses)
+  // go away instead of becoming history.
+  function discardPopupFileFor(row) {
+    if (!row) return
+    var stem = NotificationLogic.popupFileName(row).replace(/\.json$/, "")
+    enqueuePopupFileJob(["bash", "-c", "rm -f \"$1/$2.json\" \"$3/$2\"-* 2>/dev/null; exit 0", "--",
+      popupStateDir, stem, imagesDir])
+  }
+
   function archivePopupFileFor(row) {
     if (!row) return
     // A history replay or the empty-history placeholder has no file to move;
@@ -743,6 +754,15 @@ Item {
   // left behind rather than replayed as one. The replay dismisses these
   // notifications, and senders delete their images on close — so the carried
   // rows point at the persisted copies, like the archived files they join.
+  // Live toasts of a group cleared in the centre: dismissed too, or the next
+  // history read (which lists live toasts) would bring the group back.
+  function dismissPopupsMatching(originalIds) {
+    for (var i = popupModel.count - 1; i >= 0; i--) {
+      var row = popupModel.get(i)
+      if (row && originalIds.indexOf(row.originalId) >= 0) removePopup(i, "discard")
+    }
+  }
+
   function liveRowsForReplay() {
     var rows = []
     for (var i = 0; i < popupModel.count; i++) {

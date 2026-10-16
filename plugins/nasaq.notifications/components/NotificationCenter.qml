@@ -105,6 +105,7 @@ Item {
     if (!service) return
     var files = group.items.map(function(e) { return service.historyDir + NotificationLogic.popupFileName(e) })
     Quickshell.execDetached(["rm", "-f"].concat(files))
+    service.dismissPopupsMatching(group.items.map(function(e) { return e.originalId }).filter(function(x) { return x !== undefined && x !== null && x >= 0 }))
     entries = entries.filter(function(e) { return group.items.indexOf(e) === -1 })
     reloadTimer.restart()
   }
@@ -118,34 +119,23 @@ Item {
   }
 
   // Exit motion. A group slides off to the side (the way it was swiped, or to
-  // the right) and fades, then folds up so the ones below rise smoothly, and
-  // only then is it cleared. Clear all sends the groups off one after
-  // another, top to bottom. With Motion off this is immediate.
-  // leaving: group key -> "r" | "l" (sliding out) | "c" (folding up)
+  // the right), fades and folds up at the same time so the groups below rise
+  // with it, and is cleared once that is over. Clear all sends the groups off
+  // one after another, top to bottom. With Motion off this is immediate.
+  // leaving: group key -> "r" | "l"
   property var leaving: ({})
-  function markLeaving(key, stage) {
-    var l = Object.assign({}, leaving); l[key] = stage; leaving = l
+  function markLeaving(key, dir) {
+    var l = Object.assign({}, leaving); l[key] = dir; leaving = l
   }
   function dismissGroup(group, dir) {
     if (!Nasaq.Motion.enabled || leaving[group.key]) { clearGroup(group); return }
     markLeaving(group.key, dir || "r")
-    foldTimer.pending.push(group)
-    foldTimer.restart()
-  }
-  Timer {
-    id: foldTimer
-    interval: Nasaq.Motion.close + 10
-    property var pending: []
-    onTriggered: {
-      var p = pending; pending = []
-      p.forEach(function(g) { root.markLeaving(g.key, "c") })
-      removeTimer.pending = removeTimer.pending.concat(p)
-      removeTimer.restart()
-    }
+    removeTimer.pending.push(group)
+    removeTimer.restart()
   }
   Timer {
     id: removeTimer
-    interval: Nasaq.Motion.base + 10
+    interval: Math.max(Nasaq.Motion.close, Nasaq.Motion.base) + 10
     property var pending: []
     onTriggered: {
       var p = pending; pending = []
@@ -167,24 +157,14 @@ Item {
     triggeredOnStart: true
     property var queue: []
     onTriggered: {
-      if (queue.length === 0) { stop(); cascadeFold.restart(); return }
+      if (queue.length === 0) { stop(); cascadeEnd.restart(); return }
       var g = queue.shift()
       root.markLeaving(g.key, "r")
     }
   }
   Timer {
-    id: cascadeFold
-    interval: Nasaq.Motion.close + 10
-    onTriggered: {
-      var l = {}
-      root.groups.forEach(function(g) { l[g.key] = "c" })
-      root.leaving = l
-      cascadeEnd.restart()
-    }
-  }
-  Timer {
     id: cascadeEnd
-    interval: Nasaq.Motion.base + 10
+    interval: Math.max(Nasaq.Motion.close, Nasaq.Motion.base) + 10
     onTriggered: { root.clearAll(); root.leaving = ({}) }
   }
 
@@ -608,15 +588,14 @@ Item {
               // Swipe sideways to clear the group: it follows the pointer and
               // springs back if let go early; past a third of its width it
               // carries on out from where it was let go. Clear all and the X
-              // send it the same way. Then it folds up (height to 0) so the
-              // groups below rise instead of jumping.
+              // send it the same way. It folds up (height to 0) as it goes, so
+              // the groups below rise instead of jumping.
               readonly property string out: root.leaving[modelData.key] || ""
-              readonly property bool folded: out === "c"
               property real dragX: 0
               property real fade: 0
               x: dragX
               opacity: (1 - fade) * (1 - Math.min(0.5, Math.abs(dragX) / Math.max(1, width)))
-              height: folded ? 0 : groupCol.implicitHeight + 20
+              height: out ? 0 : groupCol.implicitHeight + 20
               clip: true
               Behavior on height { Nasaq.NAnim { kind: "move" } }
               onOutChanged: if (out === "r" || out === "l") leave(out === "r")
