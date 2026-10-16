@@ -460,6 +460,44 @@ Item {
       onLoadFailed: game.active = false
     }
   }
+  // Screen recording (Omarchy's recorder, gpu-screen-recorder), from the poll.
+  // Bar copy only.
+  QtObject {
+    id: rec
+    property bool active: false
+    property double startedAt: 0
+    property int elapsed: 0
+    function update(file) {
+      var m = String(file || "").match(/(\d{4})-(\d{2})-(\d{2})_(\d{2})-(\d{2})-(\d{2})/)
+      var was = active
+      active = String(file || "").length > 0
+      if (active && (!was || startedAt === 0))
+        startedAt = m ? new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]).getTime() : Date.now()
+      if (!active) startedAt = 0
+      tick()
+    }
+    function tick() { elapsed = active ? Math.max(0, Math.round((Date.now() - startedAt) / 1000)) : 0 }
+    function clock() {
+      var m = Math.floor(elapsed / 60), s = elapsed % 60
+      return (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s
+    }
+    property Timer timer: Timer { interval: 1000; repeat: true; running: rec.active && root.opened; onTriggered: rec.tick() }
+  }
+  // The VPN connection NetworkManager has (vpn or WireGuard), from the poll.
+  // Empty name = no VPN set up, and the row is hidden. Bar copy only.
+  property string vpnName: ""
+  property bool vpnActive: false
+  property bool vpnPending: false
+  Timer { id: vpnSettle; interval: 4000; onTriggered: root.vpnPending = false }
+  function toggleVpn() {
+    if (!vpnName) return
+    vpnActive = !vpnActive
+    vpnPending = true
+    vpnSettle.restart()
+    Quickshell.execDetached(["nmcli", "connection", vpnActive ? "up" : "down", vpnName])
+    refreshSoon.restart()
+  }
+
   FileView {
     path: Quickshell.env("HOME") + "/.local/state/nasaq/island-toast.json"
     blockLoading: true
@@ -544,6 +582,10 @@ Item {
     command: ["bash", "-c",
       "echo \"kb=$(hyprctl devices -j 2>/dev/null | jq -r '([.keyboards[] | select(.main)] | .[0].active_keymap) // .keyboards[0].active_keymap // \"\"')\"; " +
       "m=\"$1\"; echo \"bright=$(omarchy-brightness-display ${m:+--monitor \"$m\"} 2>/dev/null | head -1 | tr -dc 0-9)\"; " +
+      // Omarchy's recorder keeps the file name (with the start time) here while it records.
+      "echo \"rec=$(cat /tmp/omarchy-screenrecord-filename 2>/dev/null)\"; " +
+      // The VPN connection NetworkManager knows (vpn or wireguard): the active one first.
+      "echo \"vpn=$(nmcli -t -f NAME,TYPE,ACTIVE connection show 2>/dev/null | awk -F: '$2 ~ /vpn|wireguard/ { print ($3 == \"yes\" ? 0 : 1) \"\\t\" $1 \"|\" $3 }' | sort | head -1 | cut -f2-)\"; " +
       // Over D-Bus, not powerprofilesctl/omarchy-powerprofiles-list: those run
       // Python, which intermittently segfaults on exit (crash analysis 2026-10-07).
       "pp='net.hadess.PowerProfiles /net/hadess/PowerProfiles net.hadess.PowerProfiles'; " +
@@ -553,7 +595,7 @@ Item {
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
-        var next = { kb: "", bright: "", prof: "", profs: "" }
+        var next = { kb: "", bright: "", prof: "", profs: "", rec: "", vpn: "" }
         String(text || "").split("\n").forEach(function(line) {
           var i = line.indexOf("=")
           if (i > 0) next[line.slice(0, i)] = line.slice(i + 1)
@@ -562,6 +604,10 @@ Item {
         if (!root.pendingProfile) root.powerProfile = next.prof
         root.powerProfiles = next.profs.trim().length > 0 ? next.profs.trim().split(/\s+/) : []
         if (!brightnessSlider.dragging) root.brightness = next.bright === "" ? -1 : (parseInt(next.bright) || 0)
+        rec.update(next.rec)
+        var bar = next.vpn.lastIndexOf("|")
+        root.vpnName = bar > 0 ? next.vpn.slice(0, bar) : ""
+        if (!root.vpnPending) root.vpnActive = bar > 0 && next.vpn.slice(bar + 1) === "yes"
       }
     }
   }
@@ -1193,6 +1239,79 @@ Item {
           anchors.verticalCenter: parent.verticalCenter
           color: game.active ? root.onAccent : Util.alpha(Color.foreground, 0.6)
           text: game.active ? "On" : "SUPER + ALT + G"
+        }
+      }
+
+      // Screen recording: Omarchy's recorder. Off: the panel closes and the
+      // area picker comes up (a drag, or a click for a whole screen). On: the
+      // time so far, and a click stops and saves (Omarchy then shows the file).
+      Tile {
+        width: parent.width
+        height: 46
+        visible: root.showLock
+        color: Util.alpha(Color.foreground, recRowMouse.containsMouse ? 0.13 : 0.08)
+        Behavior on color { ColorAnimation { duration: root.mMicro; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cDecel } }
+        MouseArea {
+          id: recRowMouse
+          anchors.fill: parent
+          hoverEnabled: true
+          cursorShape: Qt.PointingHandCursor
+          onClicked: {
+            if (rec.active) {
+              Quickshell.execDetached(["omarchy-capture-screenrecording", "--stop-recording"])
+              refreshSoon.restart()
+            } else {
+              root.closeRequested()
+              Quickshell.execDetached(["bash", "-c", "sleep 0.25; omarchy-capture-screenrecording"])
+            }
+            root.interacted()
+          }
+        }
+        Row {
+          anchors.left: parent.left
+          anchors.leftMargin: 12
+          anchors.verticalCenter: parent.verticalCenter
+          spacing: 9
+          Glyph { anchors.verticalCenter: parent.verticalCenter; text: rec.active ? "󰻃" : "󰑊"; font.pixelSize: 15; color: rec.active ? Color.urgent : Color.foreground }
+          Label { anchors.verticalCenter: parent.verticalCenter; text: rec.active ? "Recording" : "Screen recording" }
+        }
+        Sub {
+          anchors.right: parent.right
+          anchors.rightMargin: 12
+          anchors.verticalCenter: parent.verticalCenter
+          color: rec.active ? Color.urgent : Util.alpha(Color.foreground, 0.6)
+          text: rec.active ? rec.clock() + "  ·  Stop" : "Pick an area"
+        }
+      }
+
+      // VPN: the connection NetworkManager has (shown only when one is set up).
+      Tile {
+        width: parent.width
+        height: 46
+        visible: root.showLock && root.vpnName.length > 0
+        color: root.vpnActive ? root.accent : Util.alpha(Color.foreground, vpnRowMouse.containsMouse ? 0.13 : 0.08)
+        Behavior on color { ColorAnimation { duration: root.mMicro; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cDecel } }
+        MouseArea {
+          id: vpnRowMouse
+          anchors.fill: parent
+          hoverEnabled: true
+          cursorShape: Qt.PointingHandCursor
+          onClicked: { root.toggleVpn(); root.interacted() }
+        }
+        Row {
+          anchors.left: parent.left
+          anchors.leftMargin: 12
+          anchors.verticalCenter: parent.verticalCenter
+          spacing: 9
+          Glyph { anchors.verticalCenter: parent.verticalCenter; text: root.vpnActive ? "󰦝" : "󰦞"; font.pixelSize: 15; color: root.vpnActive ? root.onAccent : Color.foreground }
+          Label { anchors.verticalCenter: parent.verticalCenter; text: "VPN"; color: root.vpnActive ? root.onAccent : Color.foreground }
+        }
+        Sub {
+          anchors.right: parent.right
+          anchors.rightMargin: 12
+          anchors.verticalCenter: parent.verticalCenter
+          color: root.vpnActive ? root.onAccent : Util.alpha(Color.foreground, 0.6)
+          text: root.vpnName + (root.vpnActive ? "  ·  On" : "  ·  Off")
         }
       }
 

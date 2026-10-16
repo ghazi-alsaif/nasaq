@@ -389,5 +389,10 @@
 "Caps Lock key types capitals": "زر Caps Lock يكتب حروفًا كبيرة",
 "Off: Omarchy's Compose key, with Caps Lock on both Shifts.": "مطفأ: زر Compose كما في Omarchy، وCaps Lock على زرّي Shift معًا.",
 "Now playing on the lock screen": "ما يُشغَّل الآن على شاشة القفل",
-"The song and its controls under the password, to pause or skip without unlocking.": "الأغنية وأزرارها تحت كلمة المرور، لإيقافها أو تخطّيها دون فتح القفل."
+"The song and its controls under the password, to pause or skip without unlocking.": "الأغنية وأزرارها تحت كلمة المرور، لإيقافها أو تخطّيها دون فتح القفل.",
+"Screen recording": "تسجيل الشاشة",
+"Recording": "يسجّل الآن",
+"Pick an area": "اختر منطقة",
+"Stop": "إيقاف",
+"VPN": "VPN"
 }
