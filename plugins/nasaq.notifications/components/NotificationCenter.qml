@@ -597,7 +597,9 @@ Item {
               opacity: (1 - fade) * (1 - Math.min(0.5, Math.abs(dragX) / Math.max(1, width)))
               height: out ? 0 : groupCol.implicitHeight + 20
               clip: true
-              Behavior on height { Nasaq.NAnim { kind: "move" } }
+              // Only the leaving tile animates its height: the tiles are rebuilt
+              // after a clear, and a new one must not grow in from 0.
+              Behavior on height { enabled: groupTile.out !== ""; Nasaq.NAnim { kind: "move" } }
               onOutChanged: if (out === "r" || out === "l") leave(out === "r")
               function leave(right) {
                 backAnim.stop(); exitAnim.stop()
