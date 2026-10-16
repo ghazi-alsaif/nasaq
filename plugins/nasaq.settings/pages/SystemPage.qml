@@ -43,6 +43,21 @@ NPage {
       }
     }
     NRow {
+      title: "Hibernate before the battery dies"
+      subtitle: "On battery, at the level below: a 30-second countdown in the island, then hibernate. The charger cancels it."
+      NSwitch { checked: { void Settings.revision; return Settings.get("power.hibernateOnCritical", true) !== false }
+        onToggled: function(c) { Settings.set("power.hibernateOnCritical", c) } }
+    }
+    NRow {
+      title: "Hibernate at"
+      NSlider {
+        width: 220; from: 1; to: 10; stepSize: 1
+        value: { void Settings.revision; return Number(Settings.get("power.hibernateAt", 3)) || 3 }
+        valueText: Math.round(value) + "%"
+        onCommitted: function(v) { Settings.set("power.hibernateAt", Math.round(v)) }
+      }
+    }
+    NRow {
       title: "Game mode"
       subtitle: "Animations, blur and shadows off, notifications quiet, hot corners off. SUPER + ALT + G"
       NSwitch { checked: game.active; onToggled: function(c) { Sys.ipc("nasaq.gamemode", c ? "on" : "off") } }

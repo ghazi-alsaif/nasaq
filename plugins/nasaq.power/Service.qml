@@ -148,9 +148,62 @@ Item {
   }
 
   onProfileChanged: evaluate()
-  onOnBatteryChanged: evaluate()
-  onPercentChanged: { evaluate(); if (isSaver()) applyBrightnessCap() }
-  onLoadedChanged: evaluate()
+  onOnBatteryChanged: { evaluate(); checkHibernate() }
+  onPercentChanged: { evaluate(); if (isSaver()) applyBrightnessCap(); checkHibernate() }
+  onLoadedChanged: { evaluate(); checkHibernate() }
+
+  // ── Hibernate before the battery dies ─────────────────────────────
+  // On battery at power.hibernateAt % (default 3): a critical alert and a
+  // 30 s countdown in the island, then systemctl hibernate, so nothing is
+  // lost to a sudden power-off. Plugging in the charger cancels it. Once per
+  // discharge: it re-arms when the charger connects or the battery climbs
+  // three points above the threshold. Settings › System.
+  readonly property int hibernateAt: Math.max(1, Math.min(15, Number(Nasaq.Settings.get("power.hibernateAt", 3)) || 3))
+  readonly property bool hibernateEnabled: Nasaq.Settings.get("power.hibernateOnCritical", true) !== false
+  property bool hibernateArmed: true
+  property int hibernateLeft: 0
+  property bool hibernateDrill: false
+  function checkHibernate() {
+    if (!loaded || !hasBattery) return
+    if (!onBattery) {
+      if (hibernateTick.running) cancelHibernate("Charger connected")
+      hibernateArmed = true
+      return
+    }
+    if (percent > hibernateAt + 3) hibernateArmed = true
+    if (!hibernateEnabled || !hibernateArmed || hibernateTick.running) return
+    if (percent > 0 && percent <= hibernateAt) startHibernateCountdown(false)
+  }
+  function startHibernateCountdown(drill) {
+    hibernateArmed = false
+    hibernateDrill = drill
+    hibernateLeft = 30
+    hibernateTick.restart()
+    // notify-send with urgency critical gets through Do Not Disturb, quiet
+    // while locked and fullscreen; it stays until dismissed.
+    Quickshell.execDetached(["notify-send", "-u", "critical", "-t", "30000", "-i", "battery-caution",
+      "Battery almost empty", "Hibernating in 30 seconds. Plug in the charger to stay on."])
+    announce("Battery " + percent + "%", "Hibernating in 30 s — plug in to stay on")
+  }
+  function cancelHibernate(why) {
+    if (!hibernateTick.running) return
+    hibernateTick.stop()
+    announce("Hibernate cancelled", why)
+  }
+  Timer {
+    id: hibernateTick
+    interval: 1000
+    repeat: true
+    onTriggered: {
+      root.hibernateLeft -= 1
+      if (root.hibernateLeft === 10 || root.hibernateLeft === 5)
+        root.announce("Battery " + root.percent + "%", "Hibernating in " + root.hibernateLeft + " s")
+      if (root.hibernateLeft > 0) return
+      stop()
+      if (root.hibernateDrill) { root.announce("Hibernate drill", "This is where the laptop would hibernate"); return }
+      Quickshell.execDetached(["systemctl", "hibernate"])
+    }
+  }
 
   // ── What each mode means ─────────────────────────────────────────
   function applyPersonality() {
@@ -314,8 +367,13 @@ Item {
       return JSON.stringify({ profile: root.profile, onBattery: root.onBattery, percent: root.percent,
         autoLowPower: root.autoLowPower, personality: root.appliedPersonality,
         awakeForMedia: root.awakeForMedia, mediaPlaying: root.mediaPlaying, fullscreen: fullscreen.active,
+        hibernateAt: root.hibernateAt, hibernateEnabled: root.hibernateEnabled, hibernateCountdown: hibernateTick.running ? root.hibernateLeft : -1,
         gameMode: root.gameMode })
     }
+    // The countdown as it would run at the threshold, without the hibernate
+    // at the end (for trying it on a machine that is not at 3 %).
+    function hibernateDrill(): string { root.startHibernateCountdown(true); return "ok" }
+    function hibernateCancel(): string { root.cancelHibernate("Cancelled"); return "ok" }
   }
 
   IpcHandler {

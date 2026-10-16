@@ -116,6 +116,53 @@ Item {
     entries = []
     reloadTimer.restart()
   }
+
+  // Exit motion. A group slides off to the side (the way it was swiped, or to
+  // the right) and fades, then it is cleared; Clear all sends the groups off
+  // one after another, top to bottom. With Motion off this is immediate.
+  // leaving: group key -> "r" | "l"
+  property var leaving: ({})
+  function markLeaving(key, dir) {
+    var l = Object.assign({}, leaving); l[key] = dir; leaving = l
+  }
+  function dismissGroup(group, dir) {
+    if (!Nasaq.Motion.enabled || leaving[group.key]) { clearGroup(group); return }
+    markLeaving(group.key, dir || "r")
+    dismissTimer.pending.push(group)
+    dismissTimer.restart()
+  }
+  Timer {
+    id: dismissTimer
+    interval: Nasaq.Motion.close + 20
+    property var pending: []
+    onTriggered: {
+      var done = pending; pending = []
+      done.forEach(function(g) { root.clearGroup(g) })
+      root.leaving = ({})
+    }
+  }
+  function clearAllCascade() {
+    if (!Nasaq.Motion.enabled || groups.length === 0) { clearAll(); return }
+    cascade.queue = groups.slice()
+    cascade.restart()
+  }
+  Timer {
+    id: cascade
+    interval: 45
+    repeat: true
+    triggeredOnStart: true
+    property var queue: []
+    onTriggered: {
+      if (queue.length === 0) { stop(); cascadeEnd.restart(); return }
+      var g = queue.shift()
+      root.markLeaving(g.key, "r")
+    }
+  }
+  Timer {
+    id: cascadeEnd
+    interval: Nasaq.Motion.close + 20
+    onTriggered: { root.clearAll(); root.leaving = ({}) }
+  }
   Timer { id: reloadTimer; interval: 400; onTriggered: root.reload() }
 
   Process {
@@ -124,7 +171,11 @@ Item {
       waitForEnd: true
       onStreamFinished: {
         var live = root.service ? root.service.liveRowsForReplay() : []
-        root.entries = NotificationLogic.historyRows(text, live, NotificationUrgency.Normal, 50)
+        var rows = NotificationLogic.historyRows(text, live, NotificationUrgency.Normal, 50)
+        // Clear all deletes the files in a queued job; a reload that lands
+        // before it would bring the cleared entries back for a moment.
+        var clearedAt = root.service ? Number(root.service.historyClearedAt) || 0 : 0
+        root.entries = rows.filter(function(e) { return (e.timestamp || 0) > clearedAt })
       }
     }
   }
@@ -503,7 +554,7 @@ Item {
                 anchors.margins: -6
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onClicked: root.clearAll()
+                onClicked: root.clearAllCascade()
               }
             }
           }
@@ -527,6 +578,29 @@ Item {
               required property var modelData
               width: content.width
               height: groupCol.implicitHeight + 20
+
+              // Swipe sideways to clear the group; it follows the finger and
+              // comes back if let go early. Clear all and the X send it off
+              // the same way.
+              readonly property string out: root.leaving[modelData.key] || ""
+              property real dragX: 0
+              x: out === "r" ? width + 24 : out === "l" ? -(width + 24) : dragX
+              opacity: out ? 0 : 1 - Math.min(0.5, Math.abs(dragX) / Math.max(1, width))
+              Behavior on x { enabled: !swipe.active; Nasaq.NAnim { kind: groupTile.out ? "close" : "fast" } }
+              Behavior on opacity { enabled: !swipe.active; Nasaq.NFade {} }
+              DragHandler {
+                id: swipe
+                target: null
+                xAxis.enabled: true
+                yAxis.enabled: false
+                onTranslationChanged: if (active) groupTile.dragX = translation.x
+                onActiveChanged: {
+                  if (active) return
+                  var far = Math.abs(groupTile.dragX) > groupTile.width / 3
+                  if (far) root.dismissGroup(groupTile.modelData, groupTile.dragX > 0 ? "r" : "l")
+                  groupTile.dragX = 0
+                }
+              }
 
               Column {
                 id: groupCol
@@ -579,7 +653,7 @@ Item {
                       anchors.margins: -6
                       hoverEnabled: true
                       cursorShape: Qt.PointingHandCursor
-                      onClicked: root.clearGroup(groupTile.modelData)
+                      onClicked: root.dismissGroup(groupTile.modelData, "r")
                     }
                   }
                 }

@@ -394,5 +394,8 @@
 "Recording": "يسجّل الآن",
 "Pick an area": "اختر منطقة",
 "Stop": "إيقاف",
-"VPN": "VPN"
+"VPN": "VPN",
+"Hibernate before the battery dies": "الإسبات قبل أن تنفد البطارية",
+"On battery, at the level below: a 30-second countdown in the island, then hibernate. The charger cancels it.": "على البطارية، عند المستوى أدناه: عدّ تنازلي 30 ثانية في الجزيرة ثم إسبات. توصيل الشاحن يلغيه.",
+"Hibernate at": "الإسبات عند"
 }

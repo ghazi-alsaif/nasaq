@@ -1043,6 +1043,7 @@ Item {
     function toggle(): string { notificationCenter.toggle(); return "ok" }
     function open(): string { notificationCenter.show(); return "ok" }
     function close(): string { notificationCenter.close(); return "ok" }
+    function clearAll(): string { notificationCenter.clearAllCascade(); return "ok" }
   }
 
   NotificationServer {
