@@ -118,27 +118,41 @@ Item {
   }
 
   // Exit motion. A group slides off to the side (the way it was swiped, or to
-  // the right) and fades, then it is cleared; Clear all sends the groups off
-  // one after another, top to bottom. With Motion off this is immediate.
-  // leaving: group key -> "r" | "l"
+  // the right) and fades, then folds up so the ones below rise smoothly, and
+  // only then is it cleared. Clear all sends the groups off one after
+  // another, top to bottom. With Motion off this is immediate.
+  // leaving: group key -> "r" | "l" (sliding out) | "c" (folding up)
   property var leaving: ({})
-  function markLeaving(key, dir) {
-    var l = Object.assign({}, leaving); l[key] = dir; leaving = l
+  function markLeaving(key, stage) {
+    var l = Object.assign({}, leaving); l[key] = stage; leaving = l
   }
   function dismissGroup(group, dir) {
     if (!Nasaq.Motion.enabled || leaving[group.key]) { clearGroup(group); return }
     markLeaving(group.key, dir || "r")
-    dismissTimer.pending.push(group)
-    dismissTimer.restart()
+    foldTimer.pending.push(group)
+    foldTimer.restart()
   }
   Timer {
-    id: dismissTimer
-    interval: Nasaq.Motion.close + 20
+    id: foldTimer
+    interval: Nasaq.Motion.close + 10
     property var pending: []
     onTriggered: {
-      var done = pending; pending = []
-      done.forEach(function(g) { root.clearGroup(g) })
-      root.leaving = ({})
+      var p = pending; pending = []
+      p.forEach(function(g) { root.markLeaving(g.key, "c") })
+      removeTimer.pending = removeTimer.pending.concat(p)
+      removeTimer.restart()
+    }
+  }
+  Timer {
+    id: removeTimer
+    interval: Nasaq.Motion.base + 10
+    property var pending: []
+    onTriggered: {
+      var p = pending; pending = []
+      p.forEach(function(g) { root.clearGroup(g) })
+      var l = Object.assign({}, root.leaving)
+      p.forEach(function(g) { delete l[g.key] })
+      root.leaving = l
     }
   }
   function clearAllCascade() {
@@ -153,16 +167,27 @@ Item {
     triggeredOnStart: true
     property var queue: []
     onTriggered: {
-      if (queue.length === 0) { stop(); cascadeEnd.restart(); return }
+      if (queue.length === 0) { stop(); cascadeFold.restart(); return }
       var g = queue.shift()
       root.markLeaving(g.key, "r")
     }
   }
   Timer {
+    id: cascadeFold
+    interval: Nasaq.Motion.close + 10
+    onTriggered: {
+      var l = {}
+      root.groups.forEach(function(g) { l[g.key] = "c" })
+      root.leaving = l
+      cascadeEnd.restart()
+    }
+  }
+  Timer {
     id: cascadeEnd
-    interval: Nasaq.Motion.close + 20
+    interval: Nasaq.Motion.base + 10
     onTriggered: { root.clearAll(); root.leaving = ({}) }
   }
+
   Timer { id: reloadTimer; interval: 400; onTriggered: root.reload() }
   // A notification filed while the panel is open: show it without a reopen.
   function refreshIfOpen() { if (open) reloadTimer.restart() }
@@ -579,28 +604,44 @@ Item {
               id: groupTile
               required property var modelData
               width: content.width
-              height: groupCol.implicitHeight + 20
 
-              // Swipe sideways to clear the group; it follows the finger and
-              // comes back if let go early. Clear all and the X send it off
-              // the same way.
+              // Swipe sideways to clear the group: it follows the pointer and
+              // springs back if let go early; past a third of its width it
+              // carries on out from where it was let go. Clear all and the X
+              // send it the same way. Then it folds up (height to 0) so the
+              // groups below rise instead of jumping.
               readonly property string out: root.leaving[modelData.key] || ""
+              readonly property bool folded: out === "c"
               property real dragX: 0
-              x: out === "r" ? width + 24 : out === "l" ? -(width + 24) : dragX
-              opacity: out ? 0 : 1 - Math.min(0.5, Math.abs(dragX) / Math.max(1, width))
-              Behavior on x { enabled: !swipe.active; Nasaq.NAnim { kind: groupTile.out ? "close" : "fast" } }
-              Behavior on opacity { enabled: !swipe.active; Nasaq.NFade {} }
+              property real fade: 0
+              x: dragX
+              opacity: (1 - fade) * (1 - Math.min(0.5, Math.abs(dragX) / Math.max(1, width)))
+              height: folded ? 0 : groupCol.implicitHeight + 20
+              clip: true
+              Behavior on height { Nasaq.NAnim { kind: "move" } }
+              onOutChanged: if (out === "r" || out === "l") leave(out === "r")
+              function leave(right) {
+                backAnim.stop(); exitAnim.stop()
+                exitX.to = right ? width + 24 : -(width + 24)
+                exitAnim.start()
+              }
+              ParallelAnimation {
+                id: exitAnim
+                NumberAnimation { id: exitX; target: groupTile; property: "dragX"; duration: Nasaq.Motion.close; easing.type: Easing.BezierSpline; easing.bezierCurve: Nasaq.Motion.exit }
+                NumberAnimation { target: groupTile; property: "fade"; to: 1; duration: Nasaq.Motion.close; easing.type: Easing.BezierSpline; easing.bezierCurve: Nasaq.Motion.decel }
+              }
+              NumberAnimation { id: backAnim; target: groupTile; property: "dragX"; to: 0; duration: Nasaq.Motion.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: Nasaq.Motion.decel }
               DragHandler {
                 id: swipe
                 target: null
+                enabled: !groupTile.out
                 xAxis.enabled: true
                 yAxis.enabled: false
-                onTranslationChanged: if (active) groupTile.dragX = translation.x
+                onTranslationChanged: if (active) { backAnim.stop(); groupTile.dragX = translation.x }
                 onActiveChanged: {
                   if (active) return
-                  var far = Math.abs(groupTile.dragX) > groupTile.width / 3
-                  if (far) root.dismissGroup(groupTile.modelData, groupTile.dragX > 0 ? "r" : "l")
-                  groupTile.dragX = 0
+                  if (Math.abs(groupTile.dragX) > groupTile.width / 3) root.dismissGroup(groupTile.modelData, groupTile.dragX > 0 ? "r" : "l")
+                  else backAnim.restart()
                 }
               }
 
