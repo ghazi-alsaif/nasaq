@@ -396,6 +396,7 @@ Item {
         motionScale: root.motionScale
         showNowPlaying: root.nowPlayingSetting
         leaving: root.leaving
+        surfaceShown: sessionLock.secure
         captureVersion: root.captureVersion
         fingerprintConfigured: root.fingerprintConfigured
         authenticatingPassword: root.authenticatingPassword

@@ -25,12 +25,25 @@ Item {
   // Set by the service on a good password: the lock fades back to the sharp
   // desktop, then the service unlocks, so the real windows appear in place.
   property bool leaving: false
+  // True once the compositor shows the lock (session lock "secure"). The fade
+  // waits for it, plus a short settle, so it doesn't run while the surface is
+  // still being built and mapped, which is what made it stutter.
+  property bool surfaceShown: true
+  onSurfaceShownChanged: tryReveal()
+  Timer { id: revealSettle; interval: 90; onTriggered: root.startReveal() }
+  function tryReveal() {
+    if (!loadBackground || reveal > 0 || revealAnim.running) return
+    if (!surfaceShown) return
+    if (useCapture && !shot.hasContent) return
+    revealSettle.restart()
+  }
   onLeavingChanged: {
     if (!leaving) return
     if (root.motionScale <= 0 || !root.coverReady) { revealAnim.stop(); reveal = 0; return }
     revealAnim.stop()
     revealAnim.to = 0
     revealAnim.duration = Math.round(350 * root.motionScale)
+    revealAnim.easing.bezierCurve = [0.23, 1.00, 0.32, 1.00, 1, 1]
     revealAnim.start()
   }
   // The player to show: the one playing, else the first that has a track.
@@ -71,6 +84,9 @@ Item {
     revealAnim.stop()
     revealAnim.to = 1
     revealAnim.duration = Math.round(500 * root.motionScale)
+    // Even in and out: a front-loaded curve does most of a full-screen fade
+    // in the first frames, which is where a fresh lock surface drops some.
+    revealAnim.easing.bezierCurve = [0.40, 0.00, 0.20, 1.00, 1, 1]
     revealAnim.start()
   }
   readonly property bool coverReady: useCapture && shot.hasContent
@@ -185,14 +201,14 @@ Item {
       captureSource: root.loadBackground ? root.captureScreen : null
       live: false
       visible: false
-      onHasContentChanged: if (hasContent && root.useCapture) { captureFallback.stop(); root.startReveal() }
+      onHasContentChanged: if (hasContent && root.useCapture) { captureFallback.stop(); root.tryReveal() }
     }
 
     // No capture within a second (none allowed, or no screen): the wallpaper.
     Timer {
       id: captureFallback
       interval: 1000
-      onTriggered: if (!shot.hasContent) { root.useCapture = false; root.startReveal() }
+      onTriggered: if (!shot.hasContent) { root.useCapture = false; root.tryReveal() }
     }
 
     Image {
