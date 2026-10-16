@@ -1,7 +1,7 @@
 # Changelog
 
 ## Unreleased (1.4.0)
-- Lock screen: the shell captures the screen itself as the lock comes up (Quickshell screencopy) instead of running `grim` first, so the lock appears at once; the desktop shows sharp for a moment and blurs in over Motion's slow duration (instant with Motion off or in power saver). No capture within a second falls back to the wallpaper. The screensaver is still closed first.
+- Lock screen: the shell captures the screen itself as the lock comes up (Quickshell screencopy) instead of running `grim` first, so the lock appears at once. The sharp desktop fades into the lock (blur, clock and password), and on unlock the lock fades back to the sharp desktop before the windows return, so both directions move (instant with Motion off or in power saver). The blur is computed once and only the fade moves, so it stays smooth on a 5K screen. No capture within a second falls back to the wallpaper. The screensaver is still closed first.
 - Now playing on the lock screen: cover, title and artist with previous, play/pause and next above the power row, for whichever player is playing (or paused). Settings › System › Now playing on the lock screen.
 
 ## 1.3.0 — 2026-10-15

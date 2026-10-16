@@ -22,6 +22,17 @@ Item {
   // because the lock doesn't import other plugin folders.
   property real motionScale: 1
   property bool showNowPlaying: true
+  // Set by the service on a good password: the lock fades back to the sharp
+  // desktop, then the service unlocks, so the real windows appear in place.
+  property bool leaving: false
+  onLeavingChanged: {
+    if (!leaving) return
+    if (root.motionScale <= 0 || !root.coverReady) { revealAnim.stop(); reveal = 0; return }
+    revealAnim.stop()
+    revealAnim.to = 0
+    revealAnim.duration = Math.round(350 * root.motionScale)
+    revealAnim.start()
+  }
   // The player to show: the one playing, else the first that has a track.
   readonly property var player: {
     var list = Mpris.players ? Mpris.players.values : []
@@ -44,18 +55,25 @@ Item {
   property bool syncingPasswordText: false
   property bool useCapture: true
   property real reveal: 0
+  // reveal: 0 = the sharp desktop covers everything, 1 = the lock (blurred
+  // desktop + clock and password). Only the cover's opacity moves; the blur
+  // itself is computed once, so the fade stays smooth on a 5K screen.
   NumberAnimation on reveal {
     id: revealAnim
     running: false
     to: 1
-    duration: Math.round(600 * root.motionScale)
+    duration: 500
     easing.type: Easing.BezierSpline
     easing.bezierCurve: [0.23, 1.00, 0.32, 1.00, 1, 1]
   }
   function startReveal() {
-    if (root.motionScale <= 0) { revealAnim.stop(); reveal = 1; return }
-    revealAnim.restart()
+    if (root.motionScale <= 0 || !root.coverReady) { revealAnim.stop(); reveal = 1; return }
+    revealAnim.stop()
+    revealAnim.to = 1
+    revealAnim.duration = Math.round(500 * root.motionScale)
+    revealAnim.start()
   }
+  readonly property bool coverReady: useCapture && shot.hasContent
   property bool controlsOpen: false
   property bool displayOpen: false
   property int blankTimeoutMs: 12 * 60 * 60 * 1000
@@ -194,8 +212,7 @@ Item {
       source: root.useCapture ? shot : wallpaper
       autoPaddingEnabled: false
       blurEnabled: true
-      // The desktop shows sharp for a moment and blurs in (Motion.slow).
-      blur: 0.5 * root.reveal
+      blur: 0.5
       blurMax: 64
       blurMultiplier: 1.0
       // Blur only — no colour or brightness shift (design choice, 2026-10-06).
@@ -981,5 +998,15 @@ Item {
         font.pixelSize: 12
       }
     }
+  }
+
+  // The sharp desktop on top of everything, fading out as the lock comes up
+  // and back in before unlocking.
+  ShaderEffectSource {
+    anchors.fill: parent
+    z: 1000
+    sourceItem: shot
+    opacity: 1 - root.reveal
+    visible: root.loadBackground && root.coverReady && root.reveal < 1
   }
 }

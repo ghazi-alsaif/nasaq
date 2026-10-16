@@ -229,7 +229,21 @@ Item {
     return true
   }
 
+  // A good password: the lock fades back to the sharp desktop first
+  // (LockView.leaving), then unlocks.
+  property bool leaving: false
+  Timer { id: leaveTimer; interval: Math.round(350 * root.motionScale) + 30; onTriggered: root.finishUnlock() }
+  function beginUnlock() {
+    if (!root.locked && !lockRequested) return
+    if (leaving) return
+    if (root.motionScale <= 0) { finishUnlock(); return }
+    leaving = true
+    leaveTimer.restart()
+  }
+
   function finishUnlock() {
+    leaveTimer.stop()
+    leaving = false
     if (!root.locked && !lockRequested) return
     Quickshell.execDetached(["nasaq-sound", "unlock"])
 
@@ -329,7 +343,7 @@ Item {
 
     if (!lockRequested) return
     if (result === PamResult.Success) {
-      finishUnlock()
+      beginUnlock()
     } else if (fingerprintConfigured) {
       fingerprintRetryTimer.restart()
     }
@@ -381,6 +395,7 @@ Item {
         captureScreen: lockSurface.screen
         motionScale: root.motionScale
         showNowPlaying: root.nowPlayingSetting
+        leaving: root.leaving
         captureVersion: root.captureVersion
         fingerprintConfigured: root.fingerprintConfigured
         authenticatingPassword: root.authenticatingPassword
@@ -455,7 +470,7 @@ Item {
       root.pendingPassword = ""
 
       if (!root.lockRequested) return
-      if (result === PamResult.Success) root.finishUnlock()
+      if (result === PamResult.Success) root.beginUnlock()
       else root.handlePasswordFailure()
     }
 
