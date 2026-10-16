@@ -37,13 +37,17 @@ Item {
   property date now: new Date()
 
   property var expandedGroups: ({})
+  function groupKey(e, i) {
+    var key = e.app === "omarchy-action" ? "Omarchy" : (e.app || "Other")
+    // NASAQ Settings > Notifications > Group by app (off = one card each)
+    if (!Nasaq.Settings.get("notifications.groupByApp", true)) key = key + "\u0000" + (e.id || i)
+    return key
+  }
   readonly property var groups: {
     var order = [], map = {}
     for (var i = 0; i < entries.length; i++) {
       var e = entries[i]
-      var key = e.app === "omarchy-action" ? "Omarchy" : (e.app || "Other")
-      // NASAQ Settings > Notifications > Group by app (off = one card each)
-      if (!Nasaq.Settings.get("notifications.groupByApp", true)) key = key + "\u0000" + (e.id || i)
+      var key = groupKey(e, i)
       if (!map[key]) { map[key] = { app: key.split("\u0000")[0], key: key, icon: e.appIcon || (String(e.image || "").indexOf("image://icon/") === 0 ? String(e.image).slice(13) : ""), glyph: e.glyph || "", items: [] }; order.push(key) }
       map[key].items.push(e)
     }
@@ -111,7 +115,11 @@ Item {
     var files = group.items.map(function(e) { return service.historyDir + NotificationLogic.popupFileName(e) })
     Quickshell.execDetached(["rm", "-f"].concat(files))
     service.dismissPopupsMatching(group.items.map(function(e) { return e.originalId }).filter(function(x) { return x !== undefined && x !== null && x >= 0 }))
-    entries = entries.filter(function(e) { return group.items.indexOf(e) === -1 })
+    // By key, not by identity: a delegate's modelData is a copy of the entry
+    // (the Repeater hands out converted objects), so indexOf never matched
+    // from the X or a swipe. The group then stayed in `entries`, its tile
+    // grew back empty when `leaving` was cleared, and the reload cut it off.
+    entries = entries.filter(function(e, i) { return groupKey(e, i) !== group.key })
     reloadTimer.restart()
   }
 
