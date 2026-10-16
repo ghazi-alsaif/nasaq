@@ -2,21 +2,22 @@ import QtQuick
 import QtQuick.Effects
 import Quickshell
 import Quickshell.Io
-import Quickshell.Wayland
 import Quickshell.Services.Mpris
 import qs.Commons
 import qs.Ui
 
-// NASAQ: lock screen. The open windows (captured by the shell itself as the
-// lock comes up) blur in behind a large clock, the password pill sits low and
+// NASAQ: lock screen. The open windows (captured just before the lock, at
+// full size) fade in blurred behind a large clock, the password pill sits low and
 // centred, and a control-center popover hangs off the top-right status icons.
 Item {
   id: root
 
   property string backgroundPath: ""
   property int backgroundVersion: 0
-  // The screen to capture. Shown sharp first, then blurred over Motion.slow.
-  property var captureScreen: null
+  // The snapshot of this screen taken just before locking. Loaded
+  // synchronously, so the lock's very first frame already shows it (an
+  // in-shell screencopy arrives a frame or two late: a black blink).
+  property string capturePath: ""
   property int captureVersion: 0
   // Same scale as Nasaq.Motion (1 normal, 0.5 reduced, 0 off); passed in
   // because the lock doesn't import other plugin folders.
@@ -30,11 +31,11 @@ Item {
   // still being built and mapped, which is what made it stutter.
   property bool surfaceShown: true
   onSurfaceShownChanged: tryReveal()
-  Timer { id: revealSettle; interval: 90; onTriggered: root.startReveal() }
+  Timer { id: revealSettle; interval: 40; onTriggered: root.startReveal() }
   function tryReveal() {
     if (!loadBackground || reveal > 0 || revealAnim.running) return
     if (!surfaceShown) return
-    if (useCapture && !shot.hasContent) return
+    if (useCapture && shot.status !== Image.Ready) return
     revealSettle.restart()
   }
   onLeavingChanged: {
@@ -83,13 +84,13 @@ Item {
     if (root.motionScale <= 0 || !root.coverReady) { revealAnim.stop(); reveal = 1; return }
     revealAnim.stop()
     revealAnim.to = 1
-    revealAnim.duration = Math.round(500 * root.motionScale)
+    revealAnim.duration = Math.round(400 * root.motionScale)
     // Even in and out: a front-loaded curve does most of a full-screen fade
     // in the first frames, which is where a fresh lock surface drops some.
     revealAnim.easing.bezierCurve = [0.40, 0.00, 0.20, 1.00, 1, 1]
     revealAnim.start()
   }
-  readonly property bool coverReady: useCapture && shot.hasContent
+  readonly property bool coverReady: useCapture && shot.status === Image.Ready
   property bool controlsOpen: false
   property bool displayOpen: false
   property int blankTimeoutMs: 12 * 60 * 60 * 1000
@@ -171,8 +172,7 @@ Item {
   function recapture() {
     useCapture = true
     reveal = 0
-    if (shot.captureSource) shot.captureFrame()
-    captureFallback.restart()
+    Qt.callLater(tryReveal)
   }
   onInputEnabledChanged: {
     if (inputEnabled) Qt.callLater(forcePasswordFocus)
@@ -192,23 +192,22 @@ Item {
     anchors.fill: parent
     color: Color.background
 
-    // In-shell capture: Quickshell copies this screen as the lock surface
-    // appears, before the lock covers it. No external grab, so the lock comes
-    // up at once.
-    ScreencopyView {
+    Image {
       id: shot
       anchors.fill: parent
-      captureSource: root.loadBackground ? root.captureScreen : null
-      live: false
+      source: root.loadBackground && root.useCapture && root.capturePath ? root.fileUrl(root.capturePath, root.captureVersion) : ""
+      fillMode: Image.PreserveAspectCrop
+      asynchronous: false
+      cache: false
       visible: false
-      onHasContentChanged: if (hasContent && root.useCapture) { captureFallback.stop(); root.tryReveal() }
-    }
-
-    // No capture within a second (none allowed, or no screen): the wallpaper.
-    Timer {
-      id: captureFallback
-      interval: 1000
-      onTriggered: if (!shot.hasContent) { root.useCapture = false; root.tryReveal() }
+      onStatusChanged: {
+        if (status === Image.Ready) root.tryReveal()
+        // No snapshot for this screen (or it failed): fall back to the wallpaper.
+        // Deferred: the status changes inside the synchronous load, i.e. while
+        // `source` is still being evaluated, and writing useCapture there is a
+        // binding loop.
+        else if (status === Image.Error && root.useCapture) Qt.callLater(function() { root.useCapture = false; root.tryReveal() })
+      }
     }
 
     Image {
@@ -221,7 +220,7 @@ Item {
       visible: false
     }
 
-    readonly property bool backdropReady: root.useCapture ? shot.hasContent : wallpaper.status === Image.Ready
+    readonly property bool backdropReady: root.useCapture ? shot.status === Image.Ready : wallpaper.status === Image.Ready
 
     MultiEffect {
       anchors.fill: parent
