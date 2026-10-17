@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "nasaq.frame",
   "name": "Screen Frame",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "author": "NASAQ (GHS)",
   "description": "A soft rounded frame around the screen in the theme's colour, drawn inside the window gaps (TEST).",
   "kinds": ["service"],

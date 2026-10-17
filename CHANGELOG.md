@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (1.4.0)
+## 1.4.0 — 2026-10-17
 - Lock screen: the sharp desktop fades into the lock (blur, clock and password), and on unlock the lock fades back to the sharp desktop before the windows return, so both directions move (instant with Motion off or in power saver). The snapshot is taken at full size in about 80 ms (scaling it down cost half a second) and loaded before the lock's first frame, so there is no black blink; the blur is computed once and only the fade moves, so it stays smooth on a 5K screen. Omarchy's half-second wait for the screens to settle is skipped unless a screen changed in the last few seconds, so the lock starts at once.
 - Now playing on the lock screen: cover, title and artist with previous, play/pause and next above the power row, for whichever player is playing (or paused). Settings › System › Now playing on the lock screen.
 - Brightness in Quick Settings (bar and lock screen) goes through `omarchy-brightness-display` for the right monitor, so an external monitor over DDC/CI, an Apple display and a laptop panel all work the same; before, the slider read the laptop backlight only. One set at a time, the latest value re-sent after a slow (DDC) one.
