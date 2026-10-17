@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "nasaq.settings",
   "name": "NASAQ Settings",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "author": "NASAQ (GHS)",
   "description": "One settings window for everything NASAQ: appearance, bar, widgets, launcher, notifications, windows, system, shortcuts, AI, plugins. Open with: omarchy-shell shell toggle nasaq.settings '{}'",
   "kinds": ["panel"],

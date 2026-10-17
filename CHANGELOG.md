@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.5.1 — 2026-10-17
+- Fix: Search's command completions (`> ls`) never appeared; the mode was read from a property that had not updated yet.
+
 ## 1.5.0 — 2026-10-17
 - App icons on the workspace numbers: next to each number, the icons of up to three apps open on that workspace (horizontal bars; Settings › Workspaces & Windows › App icons). A click on them focuses the workspace too.
 - Search runs commands: start with `>` (`> htop`). Enter runs it in the background, Shift+Enter in Omarchy's floating terminal; the first word completes from your PATH. Settings › Launcher › Run commands.

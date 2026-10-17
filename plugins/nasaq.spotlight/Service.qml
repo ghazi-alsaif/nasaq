@@ -328,7 +328,8 @@ Item {
     selected = 0
     fileHits = []
     pathDir = ""
-    if (cmdMode) { cmdTimer.restart(); return }
+    // Read the mode directly: a bound property can still be stale inside this handler.
+    if (commandsOn && /^>/.test(query)) { cmdTimer.restart(); return }
     cmdHits = []
     if (query.trim().length >= 2 || pathMode) fileTimer.restart()
   }
