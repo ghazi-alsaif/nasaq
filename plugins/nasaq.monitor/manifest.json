@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "nasaq.monitor",
   "name": "Display",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "author": "NASAQ (GHS)",
   "description": "Brightness slider and laptop display controls",
   "kinds": [

@@ -516,7 +516,7 @@ BarWidget {
 
   implicitWidth: compactWidth
   implicitHeight: Style.bar.iconSlot
-  Behavior on implicitWidth { SpringAnimation { spring: 3.5; damping: 0.35 } }
+  Behavior on implicitWidth { enabled: Nasaq.Motion.enabled; SpringAnimation { spring: 3.5; damping: 0.35 } }
 
   Rectangle {
     id: pill
@@ -704,7 +704,8 @@ BarWidget {
       color: overlay.mode === "compact" ? Util.alpha(root.barForeground, pillMouse.containsMouse ? 0.16 : 0.08) : root.cardColor
       border.color: Qt.rgba(1, 1, 1, overlay.mode === "compact" ? 0 : 0.14)
       border.width: 1
-      Behavior on color { Nasaq.NColour {} }
+      // The compact pill's hover tint and the bar pill's use the same short length.
+      Behavior on color { Nasaq.NColour { duration: overlay.mode === "compact" ? Nasaq.Motion.micro : Nasaq.Motion.colour } }
       y: overlay.topY
       x: overlay.centerX - width / 2
       width: overlay.mode === "expanded" ? 440
@@ -722,7 +723,15 @@ BarWidget {
       // One curve and one length for width, height and corners, so the shape
       // arrives as one piece. Opening grows a hair past and settles; closing
       // is shorter and leaves quickly.
-      readonly property string motionKind: root.overlayWanted ? "open" : "close"
+      // Once open, a change of content (a toggle, a longer list) moves the shape
+      // in place: the overshoot belongs to opening only.
+      property bool openSettled: false
+      readonly property string motionKind: root.overlayWanted ? (openSettled ? "move" : "open") : "close"
+      Timer { id: openSettle; interval: Nasaq.Motion.open + 20; onTriggered: shape.openSettled = true }
+      Connections {
+        target: root
+        function onOverlayWantedChanged() { shape.openSettled = false; if (root.overlayWanted) openSettle.restart(); else openSettle.stop() }
+      }
       Behavior on width { Nasaq.NAnim { kind: shape.motionKind } }
       Behavior on height { Nasaq.NAnim { kind: shape.motionKind } }
       Behavior on radius { Nasaq.NAnim { kind: shape.motionKind } }

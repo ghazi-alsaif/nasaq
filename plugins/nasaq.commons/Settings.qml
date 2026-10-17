@@ -17,17 +17,16 @@ Singleton {
   readonly property var defaults: ({
     "general": { "language": "en", "rtl": "auto" },
     "appearance": { "textFont": "IBM Plex Sans Arabic" },
-    "island": { "hijri": "both", "notifDuration": 5, "stopwatch": true },
-    "notifications": { "duration": 5, "expandOnHover": true, "maxQueued": 5, "sound": true, "groupByApp": true, "rules": [] },
+    "island": { "hijri": "both" },
+    "notifications": { "duration": 8, "groupByApp": true, "rules": [] },
     "hotCorners": { "tl": "none", "tr": "none", "bl": "none", "br": "none", "delay": 150 },
     "switcher": { "enabled": true },
     "scratchpads": [{ "name": "term", "command": "ptyxis --standalone --new-window -T 'NASAQ Scratch'", "title": "NASAQ Scratch", "key": "SUPER + code:49", "width": 1400, "height": 760 }],
-    "temps": { "enabled": true, "warn": 60, "hot": 80 },
-    "shortcuts": { "arabicSafe": false },
+    "temps": { "warn": 60, "hot": 80 },
     "ocr": { "languages": "ara+eng" },
     "translate": { "target": "auto" },
-    "ai": { "agent": "claude" },
-    "bars": { "perMonitor": {}, "extraLaunchers": [] },
+    "plugins": { "off": [] },
+    "bars": { "extraLaunchers": [] },
     "automations": []
   })
 
@@ -41,7 +40,7 @@ Singleton {
     return cur
   }
 
-  // get("notifications.duration", 5). Reading `revision` makes bindings live.
+  // get("notifications.duration", 8). Reading `revision` makes bindings live.
   function get(key, fallback) {
     void revision
     var v = _walk(data, key)

@@ -34,12 +34,33 @@ Item {
   property string lastEventAt: ""
   property bool strandedLock: false
   property bool strandedLockResolved: false
-  // NASAQ: blurred snapshot of the open windows, taken just before locking,
-  // so the lock screen sits on the desktop itself instead of the wallpaper.
+  // NASAQ: the lock screen sits on the desktop itself, blurred: a full-size
+  // snapshot of each screen, taken just before locking (about 80 ms; scaling
+  // it down in grim costs more than it saves), so the lock's first frame
+  // already shows it. Kept in the runtime dir and removed on unlock.
   readonly property string captureDir: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/nasaq-lock"
   property bool capturing: false
   property bool captureForPreview: false
   property int captureVersion: 0
+  // Nasaq.Motion's scale, read here because the lock imports no other plugin
+  // folder: settings.json motion.scale, and 0 in power saver.
+  property real motionSetting: 1
+  property bool nowPlayingSetting: true
+  readonly property real motionScale: powerProfile === "power-saver" ? 0 : Math.max(0, Math.min(1.5, motionSetting))
+  FileView {
+    path: (Quickshell.env("HOME") || "") + "/.config/omarchy/nasaq/settings.json"
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoaded: {
+      try {
+        var all = JSON.parse(text())
+        var m = all.motion
+        root.motionSetting = m && m.scale !== undefined ? Number(m.scale) : 1
+        root.nowPlayingSetting = !(all.lock && all.lock.nowPlaying === false)
+      } catch (e) {}
+    }
+  }
   // NASAQ: how long the locked screen stays lit after the last input, picked
   // from the slider on the lock screen and kept across locks. -1 = never.
   readonly property int defaultBlankTimeoutMs: 12 * 60 * 60 * 1000
@@ -81,8 +102,17 @@ Item {
     return realScreenCount() > 0
   }
 
+  // Omarchy waits 500 ms for the screens to settle before every lock. That
+  // matters on resume or when a monitor is being plugged in, not when the user
+  // just pressed the key, so the wait is kept only when the screens changed
+  // in the last few seconds.
+  property double lastScreensChange: 0
   function queueSessionLock() {
     pendingSessionLock = true
+    if (hasRealScreen() && Date.now() - lastScreensChange > 3000 && !sessionLockStabilizeTimer.running) {
+      requestSessionLock()
+      if (sessionLock.locked) return
+    }
     if (!sessionLockStabilizeTimer.running) logEvent("lock-pending: screen-stabilizing")
     sessionLockStabilizeTimer.restart()
     if (!pendingSessionLockTimer.running) pendingSessionLockTimer.start()
@@ -210,7 +240,21 @@ Item {
     return true
   }
 
+  // A good password: the lock fades back to the sharp desktop first
+  // (LockView.leaving), then unlocks.
+  property bool leaving: false
+  Timer { id: leaveTimer; interval: Math.round(300 * root.motionScale) + 30; onTriggered: root.finishUnlock() }
+  function beginUnlock() {
+    if (!root.locked && !lockRequested) return
+    if (leaving) return
+    if (root.motionScale <= 0) { finishUnlock(); return }
+    leaving = true
+    leaveTimer.restart()
+  }
+
   function finishUnlock() {
+    leaveTimer.stop()
+    leaving = false
     if (!root.locked && !lockRequested) return
     Quickshell.execDetached(["nasaq-sound", "unlock"])
 
@@ -311,7 +355,7 @@ Item {
 
     if (!lockRequested) return
     if (result === PamResult.Success) {
-      finishUnlock()
+      beginUnlock()
     } else if (fingerprintConfigured) {
       fingerprintRetryTimer.restart()
     }
@@ -360,9 +404,16 @@ Item {
         anchors.fill: parent
         backgroundPath: root.backgroundPath
         backgroundVersion: root.backgroundVersion
-        capturePath: root.captureDir + "/" + (lockSurface.screen ? lockSurface.screen.name : "") + ".jpg"
+        // Empty until the surface knows its screen: a path without the name
+        // would load (and fail) at once, since the load is synchronous.
+        capturePath: lockSurface.screen ? root.captureDir + "/" + lockSurface.screen.name + ".ppm" : ""
+        motionScale: root.motionScale
+        showNowPlaying: root.nowPlayingSetting
+        leaving: root.leaving
+        surfaceShown: sessionLock.secure
         captureVersion: root.captureVersion
         fingerprintConfigured: root.fingerprintConfigured
+        screenName: lockSurface.screen ? lockSurface.screen.name : ""
         authenticatingPassword: root.authenticatingPassword
         failureMessage: root.failureMessage
         failedAttempts: root.failedAttempts
@@ -395,10 +446,13 @@ Item {
       anchors.fill: parent
       backgroundPath: root.backgroundPath
       backgroundVersion: root.backgroundVersion
-      capturePath: root.captureDir + "/" + (previewWindow.screen ? previewWindow.screen.name : "") + ".jpg"
+      capturePath: previewWindow.screen ? root.captureDir + "/" + previewWindow.screen.name + ".ppm" : ""
+      motionScale: root.motionScale
+      showNowPlaying: root.nowPlayingSetting
       blankTimeoutMs: root.blankTimeoutMs
       captureVersion: root.captureVersion
       fingerprintConfigured: root.fingerprintConfigured
+      screenName: previewWindow.screen ? previewWindow.screen.name : ""
       authenticatingPassword: false
       failureMessage: ""
       failedAttempts: 0
@@ -433,7 +487,7 @@ Item {
       root.pendingPassword = ""
 
       if (!root.lockRequested) return
-      if (result === PamResult.Success) root.finishUnlock()
+      if (result === PamResult.Success) root.beginUnlock()
       else root.handlePasswordFailure()
     }
 
@@ -505,18 +559,23 @@ Item {
     }
   }
 
-  // Half-scale JPEGs are plenty under a heavy blur and keep the grab fast.
   // The screensaver is closed first so the snapshot shows the real windows.
+  // PPM: no compression, the fastest to write and to load.
   Process {
     id: captureProc
     command: ["bash", "-c",
-      "dir=\"$1\"; mkdir -p -m 700 \"$dir\"; rm -f \"$dir\"/*.jpg; " +
+      "dir=\"$1\"; mkdir -p -m 700 \"$dir\"; rm -f \"$dir\"/*.ppm \"$dir\"/*.jpg; " +
       "if pgrep -x ttfx >/dev/null || pgrep -f '[o]rg.omarchy.screensaver' >/dev/null; then " +
       "pkill -x ttfx; pkill -f '[o]rg.omarchy.screensaver'; sleep 0.35; fi; " +
       "for m in $(hyprctl monitors -j | jq -r '.[].name'); do " +
-      "grim -o \"$m\" -s 0.5 -t jpeg -q 85 \"$dir/$m.jpg\" & done; wait",
+      "grim -o \"$m\" -t ppm \"$dir/$m.ppm\" & done; wait",
       "nasaq-lock-capture", root.captureDir]
     onExited: root.finishCapture()
+  }
+
+  Process {
+    id: clearCaptureProc
+    command: ["bash", "-c", "rm -f \"$1\"/*.ppm", "nasaq-lock-clear", root.captureDir]
   }
 
   Timer {
@@ -524,11 +583,6 @@ Item {
     interval: 2000
     repeat: false
     onTriggered: { root.logEvent("capture-timeout"); root.finishCapture() }
-  }
-
-  Process {
-    id: clearCaptureProc
-    command: ["bash", "-c", "rm -f \"$1\"/*.jpg", "nasaq-lock-clear", root.captureDir]
   }
 
   Process {
@@ -597,6 +651,7 @@ Item {
   Connections {
     target: Quickshell
     function onScreensChanged() {
+      root.lastScreensChange = Date.now()
       root.requestSessionLock()
 
       // A monitor still coming up has no workspace, so cannot answer yet.

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "nasaq.power",
   "name": "Power Behaviour",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "author": "NASAQ (GHS)",
   "description": "Power saving and per-profile behaviour",
   "kinds": [

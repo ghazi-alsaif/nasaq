@@ -258,6 +258,8 @@ Item {
 
     persistPopupFile(snapshot)
     watchForUpdates(notification, snapshot)
+    // The centre lists live toasts too (liveRowsForReplay): show it now if open.
+    notificationCenter.refreshIfOpen()
     // NASAQ: soft chime for real notifications (not low-urgency or our own
     // action toasts). DND already returned above.
     if (!silentRule && !fullscreen.active && !game.active && notification.urgency !== NotificationUrgency.Low && snapshot.app !== "omarchy-action")
@@ -412,7 +414,9 @@ Item {
     // instead. Rows that never had a file (a history replay, the empty-history
     // placeholder) archive to nothing, which the move tolerates.
     if (entry) {
-      archivePopupFileFor(entry)
+      // "discard": cleared from the centre, so the file is deleted, not archived.
+      if (reason === "discard") discardPopupFileFor(entry)
+      else archivePopupFileFor(entry)
       if (restored) delete restoredPopups[NotificationLogic.popupFileName(entry)]
     }
     popupModel.remove(index)
@@ -429,7 +433,7 @@ Item {
   }
 
   function clearPopups() {
-    while (popupModel.count > 0) dismissPopup(0)
+    while (popupModel.count > 0) removePopup(0, "discard")
   }
 
   // Run the popup's click action, then dismiss. Omarchy's own toasts carry the
@@ -615,6 +619,15 @@ Item {
   readonly property string trimHistoryScript:
     "ls -1 \"$hist\" 2>/dev/null | sort -n | head -n \"-$limit\" | while IFS= read -r stale; do rm -f \"$hist/$stale\" \"$imgs/${stale%.json}\"-*; done"
 
+  // A popup cleared from the centre: its file (and the images only it uses)
+  // go away instead of becoming history.
+  function discardPopupFileFor(row) {
+    if (!row) return
+    var stem = NotificationLogic.popupFileName(row).replace(/\.json$/, "")
+    enqueuePopupFileJob(["bash", "-c", "rm -f \"$1/$2.json\" \"$3/$2\"-* 2>/dev/null; exit 0", "--",
+      popupStateDir, stem, imagesDir])
+  }
+
   function archivePopupFileFor(row) {
     if (!row) return
     // A history replay or the empty-history placeholder has no file to move;
@@ -662,7 +675,10 @@ Item {
       imagesDir]
     for (var i = 0; i < persistable.copies.length; i++)
       command.push(persistable.copies[i].from, persistable.copies[i].to)
-    enqueuePopupFileJob(command, done)
+    enqueuePopupFileJob(command, function() {
+      notificationCenter.refreshIfOpen()
+      if (done) done()
+    })
   }
 
   // When history was last wiped (Clear All here, or Clear in the island). The
@@ -738,6 +754,15 @@ Item {
   // left behind rather than replayed as one. The replay dismisses these
   // notifications, and senders delete their images on close — so the carried
   // rows point at the persisted copies, like the archived files they join.
+  // Live toasts of a group cleared in the centre: dismissed too, or the next
+  // history read (which lists live toasts) would bring the group back.
+  function dismissPopupsMatching(originalIds) {
+    for (var i = popupModel.count - 1; i >= 0; i--) {
+      var row = popupModel.get(i)
+      if (row && originalIds.indexOf(row.originalId) >= 0) removePopup(i, "discard")
+    }
+  }
+
   function liveRowsForReplay() {
     var rows = []
     for (var i = 0; i < popupModel.count; i++) {
@@ -1043,6 +1068,7 @@ Item {
     function toggle(): string { notificationCenter.toggle(); return "ok" }
     function open(): string { notificationCenter.show(); return "ok" }
     function close(): string { notificationCenter.close(); return "ok" }
+    function clearAll(): string { notificationCenter.clearAllCascade(); return "ok" }
   }
 
   NotificationServer {
@@ -1206,9 +1232,9 @@ Item {
               transformOrigin: Item.Top
               opacity: cardSlot.born ? 1 : 0
               scale: cardSlot.born ? 1 : 0.35
-              transform: Translate { y: cardSlot.born ? 0 : -36 * (cardSlot.index + 1); Behavior on y { SpringAnimation { spring: 3; damping: 0.32 } } }
-              Behavior on opacity { NumberAnimation { duration: 160 } }
-              Behavior on scale { SpringAnimation { spring: 3; damping: 0.30; epsilon: 0.005 } }
+              transform: Translate { y: cardSlot.born ? 0 : -36 * (cardSlot.index + 1); Behavior on y { enabled: Nasaq.Motion.enabled; SpringAnimation { spring: 3; damping: 0.32 } } }
+              Behavior on opacity { Nasaq.NFade {} }
+              Behavior on scale { enabled: Nasaq.Motion.enabled; SpringAnimation { spring: 3; damping: 0.30; epsilon: 0.005 } }
               app: cardSlot.app
               appIcon: cardSlot.appIcon
               summary: cardSlot.summary

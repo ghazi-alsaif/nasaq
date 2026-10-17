@@ -35,11 +35,26 @@ NPage {
     title: "POWER"
     NRow {
       title: "Power profile"
-      subtitle: "Power saver = Low Power Mode (no blur or animations)."
+      subtitle: "Power saver turns blur and motion off."
       NDropdown {
         model: [{ value: "performance", label: "Performance" }, { value: "balanced", label: "Balanced" }, { value: "power-saver", label: "Power saver" }]
         value: profile.out
         onActivated: function(v) { Sys.run("omarchy powerprofiles set autodetect " + v); profile.out = v }
+      }
+    }
+    NRow {
+      title: "Hibernate before the battery dies"
+      subtitle: "On battery, at the level below: a 30-second countdown in the island, then hibernate. The charger cancels it."
+      NSwitch { checked: { void Settings.revision; return Settings.get("power.hibernateOnCritical", true) !== false }
+        onToggled: function(c) { Settings.set("power.hibernateOnCritical", c) } }
+    }
+    NRow {
+      title: "Hibernate at"
+      NSlider {
+        width: 220; from: 1; to: 10; stepSize: 1
+        value: { void Settings.revision; return Number(Settings.get("power.hibernateAt", 3)) || 3 }
+        valueText: Math.round(value) + "%"
+        onCommitted: function(v) { Settings.set("power.hibernateAt", Math.round(v)) }
       }
     }
     NRow {
@@ -81,6 +96,12 @@ NPage {
         onMoved: function(v) { var c = Object.assign({}, page.idle); c.lock = v; page.idle = c }
         onCommitted: function(v) { page.setIdle("lock", v) }
       }
+    }
+    NRow {
+      title: "Now playing on the lock screen"
+      subtitle: "The song and its controls under the password, to pause or skip without unlocking."
+      NSwitch { checked: { void Settings.revision; return Settings.get("lock.nowPlaying", true) }
+        onToggled: function(c) { Settings.set("lock.nowPlaying", c) } }
     }
     NRow { title: "Lock now"; subtitle: "SUPER + CTRL + L"; NButton { text: "Lock"; onClicked: Sys.run("omarchy-system-lock") } }
   }
@@ -180,14 +201,53 @@ NPage {
         title: "󰋊  " + modelData.label + "  ·  " + modelData.size
         subtitle: modelData.mount ? "Mounted at " + modelData.mount : modelData.dev + " · not mounted"
         Row { spacing: 8
-          NButton { visible: !!modelData.mount; text: "Open"; onClicked: Sys.run("omarchy-launch-nautilus " + JSON.stringify(modelData.mount)) }
-          NButton { text: "Eject"; onClicked: { Sys.run("udisksctl unmount -b " + modelData.dev + " ; udisksctl power-off -b " + modelData.dev.replace(/[0-9]+$/, "") + " && notify-send -a NASAQ 'Safe to unplug' " + JSON.stringify(modelData.label)); ejectLater.restart() } } }
+          NButton { visible: !!modelData.mount; text: "Open"; onClicked: Sys.runArgs("omarchy-launch-nautilus \"$1\"", [modelData.mount]) }
+          NButton { text: "Eject"; onClicked: { Sys.runArgs("udisksctl unmount -b \"$1\" ; udisksctl power-off -b \"$2\" && omarchy-notification-send --app-name NASAQ 'Safe to unplug' \"$3\"", [modelData.dev, modelData.dev.replace(/[0-9]+$/, ""), modelData.label]); ejectLater.restart() } } }
       }
     }
     NRow { title: "USB devices"; subtitle: page.dev.usb.join("  ·  ") || "None" }
     NRow { title: "Cameras"; subtitle: page.dev.cameras.join("  ·  ") || "None" }
   }
   Timer { id: ejectLater; interval: 2500; onTriggered: devices.refresh() }
+
+  // The login and boot screens are system files (sudo), installed by the
+  // scripts in the repository; its place is in ~/.config/omarchy/nasaq/source.
+  Cmd { id: loginState; script: "grep -qs '^Current=nasaq-login' /etc/sddm.conf.d/zz-nasaq-login.conf && echo on || echo off" }
+  Cmd { id: bootState; script: "[ \"$(plymouth-set-default-theme 2>/dev/null)\" = nasaq ] && echo on || echo off" }
+  Cmd { id: greetState; script: "nasaq-greeting status" }
+  Cmd { id: saverState; script: "screensaver-mode status 2>/dev/null | head -1 | awk '{print $NF}'" }
+  Timer { id: screensRecheck; interval: 2500; repeat: true; running: page.visible; onTriggered: { loginState.refresh(); bootState.refresh(); greetState.refresh() } }
+  function sessionScript(name, remove) {
+    Sys.term("src=$(cat ~/.config/omarchy/nasaq/source 2>/dev/null); if [ ! -x \"$src/login/" + name + "\" ]; then echo 'NASAQ source folder not found (run install.sh --update once).'; else \"$src/login/" + name + "\"" + (remove ? " --remove" : "") + "; fi; echo; read -r -n1 -p 'Done. Press any key to close.'")
+  }
+  NSection {
+    title: "SESSION SCREENS"
+    note: "Login and boot screens are system files, so a switch asks for your password in a terminal."
+    NRow {
+      title: "NASAQ login screen"
+      subtitle: "The SDDM login in NASAQ's look, following the theme."
+      NSwitch { checked: loginState.out === "on"; onToggled: function(c) { page.sessionScript("install-login.sh", !c) } }
+    }
+    NRow {
+      title: "NASAQ boot and shutdown screens"
+      subtitle: "Plymouth in NASAQ's look. Off puts the previous theme back."
+      NSwitch { checked: bootState.out === "on"; onToggled: function(c) { page.sessionScript("install-plymouth.sh", !c) } }
+    }
+    NRow {
+      title: "Terminal greeting"
+      subtitle: "System info (fastfetch) when a terminal opens."
+      NSwitch { checked: greetState.out === "on"; onToggled: function(c) { Sys.run("nasaq-greeting " + (c ? "on" : "off")); greetState.out = c ? "on" : "off" } }
+    }
+    NRow {
+      title: "Screensaver"
+      subtitle: "What the screen shows after the idle time above."
+      NDropdown {
+        model: [{ value: "matrix", label: "Matrix rain" }, { value: "image", label: "Picture" }, { value: "ascii", label: "Omarchy effects" }]
+        value: saverState.out
+        onActivated: function(v) { Sys.run("screensaver-mode " + v); saverState.out = v }
+      }
+    }
+  }
 
   NSection {
     title: "CONNECTIVITY AND SOUND"

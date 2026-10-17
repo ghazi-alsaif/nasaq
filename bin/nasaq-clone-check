@@ -30,13 +30,15 @@ snapshot() {
     echo "$clone $from $dir $(cd "$dir" && find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -c1-16)"
   done
   local f name pkg
-  for f in "$HOME"/.local/share/omarchy-overrides/*; do
+  # Only the overrides NASAQ itself ships (others, like an agent wrapper, are the user's).
+  for f in "$HOME"/.local/share/omarchy-overrides/omarchy-launch-screensaver "$HOME"/.local/share/omarchy-overrides/omarchy-screensaver; do
+    [[ -e $f ]] || continue
     name=${f##*/}; pkg="${OMARCHY_PATH:-/usr/share/omarchy}/bin/$name"
     [[ -f $pkg ]] && echo "override:$name $name $pkg $(sha256sum < "$pkg" | cut -c1-16)"
   done
   [[ -d ${OMARCHY_PATH:-/usr/share/omarchy}/default/sddm ]] && \
     echo "login-theme omarchy-sddm - $(find "${OMARCHY_PATH:-/usr/share/omarchy}/default/sddm" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -c1-16)"
-  echo "hyprland-hook nasaq - $(grep -q 'nasaq-remap.lua' "$HOME/.config/hypr/hyprland.lua" && echo present || echo missing)"
+  echo "hyprland-hook nasaq - $(grep -q 'nasaq-pre.lua' "$HOME/.config/hypr/hyprland.lua" && echo present || echo missing)"
 }
 
 case ${1:-} in
@@ -51,4 +53,4 @@ changed=$(diff <(norm < "$base" | sort) <(snapshot | norm | sort) | sed -n 's/^>
 if [[ -z $changed ]]; then echo "Omarchy's originals are unchanged since the copies were made."; exit 0; fi
 echo "Omarchy changed the originals of:"; echo "$changed" | sed 's/^/  • /'
 echo "The copies still work as they are, but may miss a fix. Ask your agent to compare, then: nasaq-clone-check accept"
-[[ -n ${NASAQ_CLONE_QUIET:-} ]] || notify-send -u critical -a "Omarchy" "Omarchy update changed plugins you customised" "$(echo "$changed" | tr '\n' ' ')— ask your agent to compare them (nasaq-clone-check)." 2>/dev/null || true
+[[ -n ${NASAQ_CLONE_QUIET:-} ]] || omarchy-notification-send -u critical --app-name NASAQ "Omarchy update changed plugins you customised" "$(echo "$changed" | tr '\n' ' ')— ask your agent to compare them (nasaq-clone-check)." 2>/dev/null || true

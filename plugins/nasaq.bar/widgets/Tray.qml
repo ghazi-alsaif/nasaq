@@ -5,6 +5,7 @@ import QtQuick.Effects
 import Quickshell.Services.SystemTray
 import qs.Commons
 import qs.Ui
+import "../../nasaq.commons" as Nasaq
 import "TrayModel.js" as TrayModel
 
 BarWidget {
@@ -28,8 +29,8 @@ BarWidget {
   readonly property int trayItemGap: 0
   readonly property int trayJoinGap: 0
   readonly property int drawerExtent: drawerCount > 0 ? drawerCount * trayItemExtent + (drawerCount - 1) * trayItemGap : 0
-  // Match Waybar's group/tray-expander drawer transition-duration.
-  readonly property int animationDuration: 600
+  // The drawer opens on NASAQ's panel-open length (Omarchy's copy uses Waybar's 600 ms).
+  readonly property int animationDuration: Nasaq.Motion.open
   property real revealProgress: expanded ? 1 : 0
   readonly property real revealExtent: drawerExtent * revealProgress
 

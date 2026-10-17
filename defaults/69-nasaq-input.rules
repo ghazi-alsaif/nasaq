@@ -1,1 +1,5 @@
-KERNEL=="event*", SUBSYSTEM=="input", TAG+="uaccess"
+# NASAQ: the app switcher (nasaq-altwatch) and the Caps Lock watcher
+# (nasaq-keywatch) read key state from the kernel, because Hyprland never
+# reports a modifier's release. The logged-in user gets read access to the
+# KEYBOARD event devices only (not mice, touchpads or tablets).
+KERNEL=="event*", SUBSYSTEM=="input", ENV{ID_INPUT_KEYBOARD}=="?*", TAG+="uaccess"

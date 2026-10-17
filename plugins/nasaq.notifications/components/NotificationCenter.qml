@@ -37,13 +37,17 @@ Item {
   property date now: new Date()
 
   property var expandedGroups: ({})
+  function groupKey(e, i) {
+    var key = e.app === "omarchy-action" ? "Omarchy" : (e.app || "Other")
+    // NASAQ Settings > Notifications > Group by app (off = one card each)
+    if (!Nasaq.Settings.get("notifications.groupByApp", true)) key = key + "\u0000" + (e.id || i)
+    return key
+  }
   readonly property var groups: {
     var order = [], map = {}
     for (var i = 0; i < entries.length; i++) {
       var e = entries[i]
-      var key = e.app === "omarchy-action" ? "Omarchy" : (e.app || "Other")
-      // NASAQ Settings > Notifications > Group by app (off = one card each)
-      if (!Nasaq.Settings.get("notifications.groupByApp", true)) key = key + "\u0000" + (e.id || i)
+      var key = groupKey(e, i)
       if (!map[key]) { map[key] = { app: key.split("\u0000")[0], key: key, icon: e.appIcon || (String(e.image || "").indexOf("image://icon/") === 0 ? String(e.image).slice(13) : ""), glyph: e.glyph || "", items: [] }; order.push(key) }
       map[key].items.push(e)
     }
@@ -58,9 +62,14 @@ Item {
   }
 
   function toggle() { open ? close() : show() }
+  // Entries newer than this slide in when the list is rebuilt: a notification
+  // that arrives while the panel is open. Set on show, so the opening list
+  // doesn't animate every tile.
+  property double listedAt: 0
   function show() {
     now = new Date()
     viewMonth = new Date()
+    listedAt = Date.now()
     open = true
     reload()
     Qt.callLater(function() { root.shown = true })
@@ -105,7 +114,12 @@ Item {
     if (!service) return
     var files = group.items.map(function(e) { return service.historyDir + NotificationLogic.popupFileName(e) })
     Quickshell.execDetached(["rm", "-f"].concat(files))
-    entries = entries.filter(function(e) { return group.items.indexOf(e) === -1 })
+    service.dismissPopupsMatching(group.items.map(function(e) { return e.originalId }).filter(function(x) { return x !== undefined && x !== null && x >= 0 }))
+    // By key, not by identity: a delegate's modelData is a copy of the entry
+    // (the Repeater hands out converted objects), so indexOf never matched
+    // from the X or a swipe. The group then stayed in `entries`, its tile
+    // grew back empty when `leaving` was cleared, and the reload cut it off.
+    entries = entries.filter(function(e, i) { return groupKey(e, i) !== group.key })
     reloadTimer.restart()
   }
 
@@ -116,7 +130,72 @@ Item {
     entries = []
     reloadTimer.restart()
   }
+
+  // Exit motion. A group slides off to the side (the way it was swiped, or to
+  // the right), fades and folds up at the same time so the groups below rise
+  // with it, and is cleared once that is over. Clear all sends the groups off
+  // one after another, top to bottom. With Motion off this is immediate.
+  // leaving: group key -> "r" | "l"
+  property var leaving: ({})
+  function markLeaving(key, dir) {
+    var l = Object.assign({}, leaving); l[key] = dir; leaving = l
+  }
+  function dismissGroup(group, dir) {
+    if (!Nasaq.Motion.enabled || leaving[group.key]) { clearGroup(group); return }
+    markLeaving(group.key, dir || "r")
+    // Each group gets its own deadline: a second dismiss must not postpone the first.
+    removeTimer.pending.push({ group: group, due: Date.now() + removeTimer.delay })
+    if (!removeTimer.running) { removeTimer.interval = removeTimer.delay; removeTimer.start() }
+  }
+  Timer {
+    id: removeTimer
+    readonly property int delay: Nasaq.Motion.close + 10
+    property var pending: []
+    onTriggered: {
+      var now = Date.now(), ready = [], rest = []
+      pending.forEach(function(e) { (e.due <= now + 5 ? ready : rest).push(e) })
+      pending = rest
+      ready.forEach(function(e) { root.clearGroup(e.group) })
+      var l = Object.assign({}, root.leaving)
+      ready.forEach(function(e) { delete l[e.group.key] })
+      root.leaving = l
+      if (rest.length) { interval = Math.max(1, rest[0].due - now); start() }
+    }
+  }
+  function clearAllCascade() {
+    if (!Nasaq.Motion.enabled || groups.length === 0) { clearAll(); return }
+    cascade.queue = groups.slice()
+    cascadeEnd.keys = groups.map(function(g) { return g.key })
+    cascade.restart()
+  }
+  Timer {
+    id: cascade
+    interval: 45
+    repeat: true
+    triggeredOnStart: true
+    property var queue: []
+    onTriggered: {
+      if (queue.length === 0) { stop(); cascadeEnd.restart(); return }
+      var g = queue.shift()
+      root.markLeaving(g.key, "r")
+    }
+  }
+  Timer {
+    id: cascadeEnd
+    interval: Nasaq.Motion.close + 10
+    property var keys: []
+    onTriggered: {
+      root.clearAll()
+      // Only this cascade's keys: a single dismiss still in flight keeps its own.
+      var l = Object.assign({}, root.leaving)
+      keys.forEach(function(k) { delete l[k] })
+      root.leaving = l
+    }
+  }
+
   Timer { id: reloadTimer; interval: 400; onTriggered: root.reload() }
+  // A notification filed while the panel is open: show it without a reopen.
+  function refreshIfOpen() { if (open) reloadTimer.restart() }
 
   Process {
     id: historyProc
@@ -124,7 +203,12 @@ Item {
       waitForEnd: true
       onStreamFinished: {
         var live = root.service ? root.service.liveRowsForReplay() : []
-        root.entries = NotificationLogic.historyRows(text, live, NotificationUrgency.Normal, 50)
+        var rows = NotificationLogic.historyRows(text, live, NotificationUrgency.Normal, 50)
+        // Clear all deletes the files in a queued job; a reload that lands
+        // before it would bring the cleared entries back for a moment.
+        var clearedAt = root.service ? Number(root.service.historyClearedAt) || 0 : 0
+        root.entries = rows.filter(function(e) { return (e.timestamp || 0) > clearedAt })
+        root.listedAt = Date.now()
       }
     }
   }
@@ -503,7 +587,7 @@ Item {
                 anchors.margins: -6
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onClicked: root.clearAll()
+                onClicked: root.clearAllCascade()
               }
             }
           }
@@ -526,7 +610,66 @@ Item {
               id: groupTile
               required property var modelData
               width: content.width
-              height: groupCol.implicitHeight + 20
+
+              // Swipe sideways to clear the group: it follows the pointer and
+              // springs back if let go early; past a third of its width it
+              // carries on out from where it was let go. Clear all and the X
+              // send it the same way. It folds up (height to 0) as it goes, so
+              // the groups below rise instead of jumping.
+              readonly property string out: root.leaving[modelData.key] || ""
+              property real dragX: 0
+              property real fade: 0
+              // A new arrival grows into its place (0 → 1) while it slides in, so
+              // the groups below it glide down instead of jumping.
+              property real grow: 1
+              x: dragX
+              opacity: (1 - fade) * (1 - Math.min(0.5, Math.abs(dragX) / Math.max(1, width)))
+              height: out ? 0 : (groupCol.implicitHeight + 20) * grow
+              clip: true
+              // The height animates only once the tile is settled: the tiles
+              // are rebuilt after a clear, and a new one must not grow in from
+              // 0. (Gating on `out` itself raced the height binding.)
+              property bool settled: false
+              // Leaving folds on the same length and curve as the slide out, so the
+              // tile arrives at nothing in one motion; other height changes move in place.
+              Behavior on height { enabled: groupTile.settled; Nasaq.NAnim { kind: groupTile.out ? "close" : "move" } }
+              onOutChanged: if (out === "r" || out === "l") leave(out === "r")
+              // Arrived while the panel was open: slide in from the right.
+              Component.onCompleted: {
+                Qt.callLater(function() { groupTile.settled = true })
+                var ts = modelData.items.length ? Number(modelData.items[0].timestamp) || 0 : 0
+                if (Nasaq.Motion.enabled && !out && ts > root.listedAt) { dragX = 28; fade = 1; grow = 0; enterAnim.start() }
+              }
+              ParallelAnimation {
+                id: enterAnim
+                NumberAnimation { target: groupTile; property: "dragX"; to: 0; duration: Nasaq.Motion.open; easing.type: Easing.BezierSpline; easing.bezierCurve: Nasaq.Motion.enter }
+                NumberAnimation { target: groupTile; property: "fade"; to: 0; duration: Nasaq.Motion.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: Nasaq.Motion.decel }
+                NumberAnimation { target: groupTile; property: "grow"; to: 1; duration: Nasaq.Motion.base; easing.type: Easing.BezierSpline; easing.bezierCurve: Nasaq.Motion.standard }
+              }
+              function leave(right) {
+                backAnim.stop(); exitAnim.stop()
+                exitX.to = right ? width + 24 : -(width + 24)
+                exitAnim.start()
+              }
+              ParallelAnimation {
+                id: exitAnim
+                NumberAnimation { id: exitX; target: groupTile; property: "dragX"; duration: Nasaq.Motion.close; easing.type: Easing.BezierSpline; easing.bezierCurve: Nasaq.Motion.exit }
+                NumberAnimation { target: groupTile; property: "fade"; to: 1; duration: Nasaq.Motion.close; easing.type: Easing.BezierSpline; easing.bezierCurve: Nasaq.Motion.decel }
+              }
+              NumberAnimation { id: backAnim; target: groupTile; property: "dragX"; to: 0; duration: Nasaq.Motion.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: Nasaq.Motion.decel }
+              DragHandler {
+                id: swipe
+                target: null
+                enabled: !groupTile.out
+                xAxis.enabled: true
+                yAxis.enabled: false
+                onTranslationChanged: if (active) { backAnim.stop(); groupTile.dragX = translation.x }
+                onActiveChanged: {
+                  if (active) return
+                  if (Math.abs(groupTile.dragX) > groupTile.width / 3) root.dismissGroup(groupTile.modelData, groupTile.dragX > 0 ? "r" : "l")
+                  else backAnim.restart()
+                }
+              }
 
               Column {
                 id: groupCol
@@ -579,7 +722,7 @@ Item {
                       anchors.margins: -6
                       hoverEnabled: true
                       cursorShape: Qt.PointingHandCursor
-                      onClicked: root.clearGroup(groupTile.modelData)
+                      onClicked: root.dismissGroup(groupTile.modelData, "r")
                     }
                   }
                 }

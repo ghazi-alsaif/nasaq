@@ -1,0 +1,14 @@
+#!/bin/bash
+# NASAQ: bring the sound back when the speakers go silent while everything
+# still looks fine. Restarts the audio stack (PipeWire, WirePlumber) through
+# Omarchy's own command. A machine that needs more than that (some iMacs need
+# the sound card rebound) can put its own script at ~/.local/bin/fix-sound,
+# which then runs instead.
+#   nasaq-fix-sound            fix now
+#   nasaq-fix-sound --status   print "custom" when a machine script is in place
+set -uo pipefail
+custom="$HOME/.local/bin/fix-sound"
+if [[ ${1:-} == --status ]]; then [[ -x $custom ]] && echo custom || echo omarchy; exit 0; fi
+if [[ -x $custom ]]; then exec "$custom"; fi
+omarchy-notification-send --app-name NASAQ -u normal -t 4000 "Sound" "Restarting the audio stack…" 2>/dev/null || true
+omarchy-restart-audio

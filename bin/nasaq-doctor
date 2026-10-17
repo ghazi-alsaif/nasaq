@@ -25,7 +25,9 @@
 #   6. The running shell: NASAQ plugins that failed to load.
 # It repairs only what NASAQ itself added, merging into the user's files (a copy
 # of each file goes to ~/.local/state/nasaq/doctor-backup/ first) and never
-# re-enables a NASAQ plugin the user turned off.
+# re-enables a NASAQ plugin the user turned off (the Plugins page records that
+# choice in settings.json under plugins.off, since Omarchy itself records an
+# external plugin's "off" by dropping it from the list).
 set -uo pipefail
 FIX=false NOTIFY=false SUMMARY=false CHANGES_ONLY=false
 HY="$HOME/.config/hypr"
@@ -111,13 +113,18 @@ errs=$(hyprctl configerrors 2>/dev/null | grep -c . || true)
 SJ="$C/omarchy/shell.json" PATCH="$D/shell.json.patch.json"
 if [[ -f $SJ && -f $PATCH ]]; then
   $FIX && backup "$SJ"
-  out=$(python3 - "$SJ" "$PATCH" "$FIX" <<'PY'
-import json, sys
+  out=$(python3 - "$SJ" "$PATCH" "$FIX" "$C/omarchy/nasaq/settings.json" <<'PY'
+import json, os, sys
 p, patch, fix = sys.argv[1], json.load(open(sys.argv[2])), sys.argv[3] == "true"
 d = json.load(open(p))
 issues = []
 bar = d.setdefault("bar", {})
-off = set(d.get("disabledPlugins", []))
+# Omarchy records an external plugin switched off by dropping it from the list,
+# which looks like "missing". The Plugins page therefore also notes the choice
+# in NASAQ's settings (plugins.off); those are the user's and stay off.
+try: user_off = set(json.load(open(sys.argv[4])).get("plugins", {}).get("off", []))
+except Exception: user_off = set()
+off = set(d.get("disabledPlugins", [])) | user_off
 for k in ("id", "centerAnchor"):
     if bar.get(k) != patch["bar"][k]:
         issues.append(f"bar {k} is {bar.get(k)!r}, NASAQ uses {patch['bar'][k]!r}")
@@ -134,13 +141,16 @@ for sec, widgets in patch["bar"]["layout"].items():
         lst.insert(min(i, len(lst)), dict(w))
 ids = [x.get("id") if isinstance(x, dict) else x for x in d.get("plugins", [])]
 for pid in patch["plugins"]:
-    if pid not in ids:
+    if pid not in ids and pid not in user_off:
         issues.append(f"plugin {pid} missing from the plugin list")
         d.setdefault("plugins", []).append({"id": pid})
 # The Omarchy plugins NASAQ replaces stay off while their replacement is on.
 replaced_by = {"omarchy.lock": "nasaq.lock", "omarchy.notifications": "nasaq.notifications", "omarchy.osd": "nasaq.island"}
+ids = [x.get("id") if isinstance(x, dict) else x for x in d.get("plugins", [])]
+present = {w.get("id") for sec in layout.values() if isinstance(sec, list) for w in sec if isinstance(w, dict)}
+def replacement_on(r): return r not in off and (r in ids or r in present)
 for stock in patch["disabledPlugins"]:
-    if stock not in off and replaced_by.get(stock, "") not in off:
+    if stock not in off and replacement_on(replaced_by.get(stock, "")):
         issues.append(f"{stock} is on again next to its NASAQ replacement")
         d["disabledPlugins"] = sorted(set(d.get("disabledPlugins", [])) | {stock})
 for i in issues:
@@ -253,6 +263,6 @@ if $NOTIFY && ! { $CHANGES_ONLY && ((${#fixed[@]} + ${#problems[@]} == 0)); }; t
   else
     title="NASAQ is in place"; body=$( ((${#notes[@]})) && printf '%s\n' "${notes[@]}" || echo "Nothing needed repair.")
   fi
-  notify-send ${problems:+-u critical} -a NASAQ "$title" "$body" 2>/dev/null || true
+  omarchy-notification-send --app-name NASAQ -u "$( ((${#problems[@]})) && echo critical || echo normal)" "$title" "$body" 2>/dev/null || true
 fi
 ((${#problems[@]} == 0))

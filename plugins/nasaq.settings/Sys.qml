@@ -5,6 +5,9 @@ import Quickshell
 // Small helpers every page uses to act on the real system.
 Singleton {
   function run(cmd) { Quickshell.execDetached(["bash", "-c", cmd]) }
+  // Same, with values the script must not trust (a drive label, a pasted
+  // address) handed over as $1, $2… instead of being spliced into the text.
+  function runArgs(script, args) { Quickshell.execDetached(["bash", "-c", script, "nasaq"].concat(args.map(String))) }
   // Opens an interactive command in Omarchy's floating terminal.
   function term(cmd) { Quickshell.execDetached(["omarchy-launch-floating-terminal-with-presentation", "bash", "-c", cmd]) }
   function edit(path) { Quickshell.execDetached(["omarchy-launch-editor", path]) }

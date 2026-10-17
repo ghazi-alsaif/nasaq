@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import "../nasaq.commons" as Nasaq
 
 // NASAQ: every window-look setting — transparency, blur, blur colours,
 // inactive dim, shadows, shape — as a section list that slides to one page per
@@ -22,7 +23,7 @@ Item {
   signal backRequested()
 
   implicitHeight: page === "" ? listPage.implicitHeight : detailPage.implicitHeight
-  Behavior on implicitHeight { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+  Behavior on implicitHeight { Nasaq.NAnim { kind: "move" } }
 
   // ── Settings ───────────────────────────────────────────────────────
   // Values used before anything was saved (what this iMac had on 2026-10-06).
@@ -320,7 +321,7 @@ Item {
     height: 22
     radius: 11
     color: checked ? Color.accent : Qt.rgba(1, 1, 1, 0.22)
-    Behavior on color { ColorAnimation { duration: 140 } }
+    Behavior on color { Nasaq.NColour { duration: Nasaq.Motion.micro } }
     Rectangle {
       width: 18
       height: 18
@@ -328,7 +329,7 @@ Item {
       y: 2
       x: sw.checked ? sw.width - width - 2 : 2
       color: "white"
-      Behavior on x { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+      Behavior on x { Nasaq.NAnim { kind: "fast" } }
     }
     MouseArea {
       anchors.fill: parent
@@ -479,8 +480,8 @@ Item {
     spacing: 6
     opacity: root.page === "" ? 1 : 0
     visible: opacity > 0
-    Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-    Behavior on opacity { NumberAnimation { duration: 160 } }
+    Behavior on x { Nasaq.NAnim { kind: "fast" } }
+    Behavior on opacity { Nasaq.NFade {} }
 
     Item {
       width: parent.width
@@ -553,7 +554,7 @@ Item {
               radius: 15
               // Accent only where something is switched on; plain for the rest.
               color: modelData.on === true ? Color.accent : Qt.rgba(1, 1, 1, 0.14)
-              Behavior on color { ColorAnimation { duration: 140 } }
+              Behavior on color { Nasaq.NColour { duration: Nasaq.Motion.micro } }
               Text {
                 anchors.centerIn: parent
                 text: modelData.icon
@@ -631,7 +632,7 @@ Item {
         height: 34
         radius: 17
         color: root.justSaved ? "#30d158" : (saveMouse.containsMouse ? Qt.lighter(Color.accent, 1.12) : Color.accent)
-        Behavior on color { ColorAnimation { duration: 160 } }
+        Behavior on color { Nasaq.NColour { duration: Nasaq.Motion.fast } }
         Sub { anchors.centerIn: parent; color: root.justSaved ? "white" : root.onAccent; font.weight: Font.DemiBold; text: root.justSaved ? "Saved ✓" : "Save as default" }
         MouseArea {
           id: saveMouse
@@ -674,8 +675,8 @@ Item {
     spacing: 8
     opacity: root.page !== "" ? 1 : 0
     visible: opacity > 0
-    Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-    Behavior on opacity { NumberAnimation { duration: 160 } }
+    Behavior on x { Nasaq.NAnim { kind: "fast" } }
+    Behavior on opacity { Nasaq.NFade {} }
 
     // Back · title · on/off switch for sections that have one.
     Item {

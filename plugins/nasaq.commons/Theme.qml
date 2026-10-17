@@ -37,8 +37,8 @@ Singleton {
   readonly property int fontSize: 13
   readonly property int fontSizeSmall: 11
   readonly property int fontSizeTitle: 15
-  readonly property int durFast: 140
-  readonly property int durNormal: 220
+  readonly property int durFast: Motion.fast      // NButton/NSwitch: same rhythm as everything else
+  readonly property int durNormal: Motion.base
   readonly property int easing: Easing.OutCubic
 
   FileView {

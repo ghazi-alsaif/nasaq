@@ -398,6 +398,14 @@ Item {
   // ── UI ───────────────────────────────────────────────────────────
   component Card: Rectangle {
     property string key: ""
+    // `on` is the card's switch; it fades out before it leaves the column
+    // (visible stays true for the fade), and fades in once it has its place.
+    property bool on: true
+    visible: on || hideWait.running
+    opacity: on ? 1 : 0
+    Behavior on opacity { enabled: widgets.ready; Nasaq.NFade {} }
+    Timer { id: hideWait; interval: Nasaq.Motion.fast + 20 }
+    onOnChanged: if (!on && widgets.ready) hideWait.restart()
     // Cards glide to their new place when one is turned on, off or moved.
     Behavior on y { enabled: widgets.ready; Nasaq.NAnim { kind: "move" } }
     width: 320
@@ -500,7 +508,7 @@ Item {
             Card {
               key: "clock"
               height: 150
-              visible: root.columnOf("clock") === win.side && (root.clockEnabled)
+              on: root.columnOf("clock") === win.side && (root.clockEnabled)
               Column {
                 anchors.centerIn: parent
                 spacing: -6
@@ -537,7 +545,7 @@ Item {
             Card {
               key: "prayer-missing"
               height: 64
-              visible: root.columnOf("prayer") === win.side && (root.prayerEnabled && root.prayerMissing)
+              on: root.columnOf("prayer") === win.side && (root.prayerEnabled && root.prayerMissing)
               Text {
                 anchors.centerIn: parent
                 width: parent.width - 36
@@ -554,7 +562,7 @@ Item {
             Card {
               key: "prayer"
               height: 132
-              visible: root.columnOf("prayer") === win.side && (root.prayerEnabled && root.prayerDay !== null && root.nextPrayer !== null)
+              on: root.columnOf("prayer") === win.side && (root.prayerEnabled && root.prayerDay !== null && root.nextPrayer !== null)
               Item {
                 anchors.fill: parent
                 anchors.margins: 18
@@ -622,7 +630,7 @@ Item {
             Card {
               key: "weather"
               height: 132
-              visible: root.columnOf("weather") === win.side && (root.weatherEnabled && root.weather !== null)
+              on: root.columnOf("weather") === win.side && (root.weatherEnabled && root.weather !== null)
               Item {
                 anchors.fill: parent
                 anchors.margins: 18
@@ -676,7 +684,7 @@ Item {
             Card {
               key: "calendar"
               height: calCol.implicitHeight + 32
-              visible: root.columnOf("calendar") === win.side && (root.calendarEnabled && root.calendar.configured && root.upNext.length > 0)
+              on: root.columnOf("calendar") === win.side && (root.calendarEnabled && root.calendar.configured && root.upNext.length > 0)
               Column {
                 id: calCol
                 x: 20; y: 16
@@ -700,7 +708,7 @@ Item {
             Card {
               key: "system"
               height: 96
-              visible: root.columnOf("system") === win.side && (root.sysEnabled && root.sys !== null)
+              on: root.columnOf("system") === win.side && (root.sysEnabled && root.sys !== null)
               Row {
                 anchors.centerIn: parent
                 spacing: 26
@@ -726,7 +734,7 @@ Item {
               // With nothing playing it rests as "Not Playing".
               key: "player"
               height: 178
-              visible: root.columnOf("player") === win.side && (root.playerEnabled)
+              on: root.columnOf("player") === win.side && (root.playerEnabled)
               Rectangle {
                 id: art
                 x: 16
@@ -884,7 +892,7 @@ Item {
             Card {
               id: notesCard
               key: "notes"
-              visible: root.columnOf("notes") === win.side && (root.notesEnabled)
+              on: root.columnOf("notes") === win.side && (root.notesEnabled)
               // As the last card it stretches to the bottom of the screen, ending
               // at the same 10 px gap as the windows (widgets are scaled by
               // win.ui). Wherever it sits, it takes what the other cards leave, so the

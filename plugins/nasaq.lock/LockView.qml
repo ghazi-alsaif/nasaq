@@ -2,20 +2,66 @@ import QtQuick
 import QtQuick.Effects
 import Quickshell
 import Quickshell.Io
+import Quickshell.Services.Mpris
 import qs.Commons
 import qs.Ui
 
-// NASAQ: lock screen. The open windows (captured just before the
-// lock) sit blurred behind a large clock, the password pill sits low and
+// NASAQ: lock screen. The open windows (captured just before the lock, at
+// full size) fade in blurred behind a large clock, the password pill sits low and
 // centred, and a control-center popover hangs off the top-right status icons.
 Item {
   id: root
 
   property string backgroundPath: ""
   property int backgroundVersion: 0
+  // The snapshot of this screen taken just before locking. Loaded
+  // synchronously, so the lock's very first frame already shows it (an
+  // in-shell screencopy arrives a frame or two late: a black blink).
   property string capturePath: ""
   property int captureVersion: 0
+  // Same scale as Nasaq.Motion (1 normal, 0.5 reduced, 0 off); passed in
+  // because the lock doesn't import other plugin folders.
+  property real motionScale: 1
+  property bool showNowPlaying: true
+  // Set by the service on a good password: the lock fades back to the sharp
+  // desktop, then the service unlocks, so the real windows appear in place.
+  property bool leaving: false
+  // True once the compositor shows the lock (session lock "secure"). The fade
+  // waits for it, plus a short settle, so it doesn't run while the surface is
+  // still being built and mapped, which is what made it stutter.
+  property bool surfaceShown: true
+  onSurfaceShownChanged: tryReveal()
+  Timer { id: revealSettle; interval: 40; onTriggered: root.startReveal() }
+  function tryReveal() {
+    if (leaving || !loadBackground || reveal > 0 || revealAnim.running) return
+    if (!surfaceShown) return
+    if (useCapture && shot.status !== Image.Ready) return
+    revealSettle.restart()
+  }
+  onLeavingChanged: {
+    if (!leaving) return
+    if (root.motionScale <= 0 || !root.coverReady) { revealAnim.stop(); reveal = 0; return }
+    revealAnim.stop()
+    revealAnim.to = 0
+    revealAnim.duration = Math.round(300 * root.motionScale)
+    revealAnim.easing.bezierCurve = [0.23, 1.00, 0.32, 1.00, 1, 1]
+    revealAnim.start()
+  }
+  // The player to show: the one playing, else the first that has a track.
+  readonly property var player: {
+    var list = Mpris.players ? Mpris.players.values : []
+    var paused = null
+    for (var i = 0; i < list.length; i++) {
+      var p = list[i]
+      if (!p || !p.trackTitle) continue
+      if (p.isPlaying) return p
+      if (!paused) paused = p
+    }
+    return paused
+  }
   property bool fingerprintConfigured: false
+  // This surface's monitor, for the brightness slider in Quick Settings.
+  property string screenName: ""
   property bool authenticatingPassword: false
   property string failureMessage: ""
   property int failedAttempts: 0
@@ -24,6 +70,32 @@ Item {
   property string passwordText: ""
   property bool syncingPasswordText: false
   property bool useCapture: true
+  property real reveal: 0
+  // reveal: 0 = the sharp desktop covers everything, 1 = the lock (blurred
+  // desktop + clock and password). Only the cover's opacity moves; the blur
+  // itself is computed once, so the fade stays smooth on a 5K screen.
+  NumberAnimation on reveal {
+    id: revealAnim
+    running: false
+    to: 1
+    duration: 500
+    easing.type: Easing.BezierSpline
+    easing.bezierCurve: [0.23, 1.00, 0.32, 1.00, 1, 1]
+  }
+  function startReveal() {
+    if (leaving) return
+    if (root.motionScale <= 0 || !root.coverReady) { revealAnim.stop(); reveal = 1; return }
+    revealAnim.stop()
+    revealAnim.to = 1
+    // The same lengths as Motion.open / Motion.close (nasaq.commons); this file
+    // reads motion.scale itself because the lock stays free of sibling imports.
+    revealAnim.duration = Math.round(450 * root.motionScale)
+    // Even in and out: a front-loaded curve does most of a full-screen fade
+    // in the first frames, which is where a fresh lock surface drops some.
+    revealAnim.easing.bezierCurve = [0.40, 0.00, 0.20, 1.00, 1, 1]
+    revealAnim.start()
+  }
+  readonly property bool coverReady: useCapture && shot.status === Image.Ready
   property bool controlsOpen: false
   property bool displayOpen: false
   property int blankTimeoutMs: 12 * 60 * 60 * 1000
@@ -101,13 +173,22 @@ Item {
   }
 
   onPasswordTextChanged: syncPasswordText()
-  onCaptureVersionChanged: useCapture = true
+  onCaptureVersionChanged: recapture()
+  function recapture() {
+    useCapture = true
+    reveal = 0
+    Qt.callLater(tryReveal)
+  }
   onInputEnabledChanged: {
     if (inputEnabled) Qt.callLater(forcePasswordFocus)
   }
-  onLoadBackgroundChanged: if (!loadBackground) { controlsOpen = false; displayOpen = false }
+  onLoadBackgroundChanged: {
+    if (!loadBackground) { controlsOpen = false; displayOpen = false; reveal = 0; return }
+    recapture()
+  }
   onFailedAttemptsChanged: if (failedAttempts > 0) shake.restart()
   Component.onCompleted: {
+    if (loadBackground) recapture()
     syncPasswordText()
     if (inputEnabled) Qt.callLater(forcePasswordFocus)
   }
@@ -117,31 +198,45 @@ Item {
     color: Color.background
 
     Image {
-      id: backdrop
+      id: shot
       anchors.fill: parent
-      source: !root.loadBackground ? ""
-        : (root.useCapture && root.capturePath ? root.fileUrl(root.capturePath, root.captureVersion)
-                                               : root.fileUrl(root.backgroundPath, root.backgroundVersion))
+      source: root.loadBackground && root.useCapture && root.capturePath ? root.fileUrl(root.capturePath, root.captureVersion) : ""
+      fillMode: Image.PreserveAspectCrop
+      asynchronous: false
+      cache: false
+      visible: false
+      onStatusChanged: {
+        if (status === Image.Ready) root.tryReveal()
+        // No snapshot for this screen (or it failed): fall back to the wallpaper.
+        // Deferred: the status changes inside the synchronous load, i.e. while
+        // `source` is still being evaluated, and writing useCapture there is a
+        // binding loop.
+        else if (status === Image.Error && root.useCapture) Qt.callLater(function() { root.useCapture = false; root.tryReveal() })
+      }
+    }
+
+    Image {
+      id: wallpaper
+      anchors.fill: parent
+      source: !root.loadBackground || root.useCapture ? "" : root.fileUrl(root.backgroundPath, root.backgroundVersion)
       fillMode: Image.PreserveAspectCrop
       asynchronous: true
       cache: false
       visible: false
-      onStatusChanged: {
-        // No snapshot for this screen (or it failed): fall back to the wallpaper.
-        if (status === Image.Error && root.useCapture) root.useCapture = false
-      }
     }
 
+    readonly property bool backdropReady: root.useCapture ? shot.status === Image.Ready : wallpaper.status === Image.Ready
+
     MultiEffect {
-      anchors.fill: backdrop
-      source: backdrop
+      anchors.fill: parent
+      source: root.useCapture ? shot : wallpaper
       autoPaddingEnabled: false
       blurEnabled: true
       blur: 0.5
       blurMax: 64
       blurMultiplier: 1.0
       // Blur only — no colour or brightness shift (design choice, 2026-10-06).
-      visible: root.loadBackground && backdrop.status === Image.Ready
+      visible: root.loadBackground && parent.backdropReady
     }
 
     // Soft vertical gradient: a touch darker at the top and bottom so the
@@ -204,7 +299,7 @@ Item {
       anchors.horizontalCenter: parent.horizontalCenter
       anchors.top: loginColumn.bottom
       anchors.topMargin: 10
-      anchors.bottom: powerRow.top
+      anchors.bottom: nowPlaying.visible ? nowPlaying.top : powerRow.top
       anchors.bottomMargin: 10
       width: Math.min(620, Math.round(root.width * 0.42))
       running: root.loadBackground
@@ -296,6 +391,7 @@ Item {
       anchors.topMargin: 8
       textFont: root.textFont
       iconFont: root.iconFont
+      monitor: root.screenName
       active: root.loadBackground
       interactive: root.inputEnabled
       opened: root.controlsOpen
@@ -504,6 +600,134 @@ Item {
             onClicked: {
               root.displayOpen = false
               root.blankNowRequested()
+            }
+          }
+        }
+      }
+    }
+
+    // ── Now playing (above the power row) ────────────────────────────
+    // Cover, title and artist, with previous / play-pause / next, so music
+    // can be paused or skipped without unlocking.
+    Rectangle {
+      id: nowPlaying
+      readonly property var p: root.player
+      visible: root.showNowPlaying && root.loadBackground && !!p
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.bottom: powerRow.top
+      anchors.bottomMargin: Math.round(root.height * 0.04)
+      width: 380
+      height: 68
+      radius: 18
+      color: root.tint(root.fg, 0.14)
+      border.color: root.tint(root.fg, 0.22)
+      border.width: 1
+
+      Rectangle {
+        id: npArt
+        anchors.left: parent.left
+        anchors.leftMargin: 10
+        anchors.verticalCenter: parent.verticalCenter
+        width: 48
+        height: 48
+        radius: 10
+        color: root.tint(root.fg, 0.12)
+        clip: true
+        Image {
+          id: npImage
+          anchors.fill: parent
+          source: nowPlaying.p && nowPlaying.p.trackArtUrl ? nowPlaying.p.trackArtUrl : ""
+          fillMode: Image.PreserveAspectCrop
+          asynchronous: true
+          visible: false
+        }
+        Rectangle { id: npMask; anchors.fill: parent; radius: 10; visible: false; layer.enabled: true }
+        MultiEffect {
+          anchors.fill: npImage
+          source: npImage
+          maskEnabled: true
+          maskSource: npMask
+          visible: npImage.status === Image.Ready
+        }
+        Text {
+          anchors.centerIn: parent
+          visible: npImage.status !== Image.Ready
+          text: "󰎆"
+          color: root.tint(root.fg, 0.7)
+          font.family: root.iconFont
+          font.pixelSize: 22
+        }
+      }
+
+      Column {
+        anchors.left: npArt.right
+        anchors.leftMargin: 12
+        anchors.right: npControls.left
+        anchors.rightMargin: 10
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: 2
+        Text {
+          width: parent.width
+          text: nowPlaying.p ? nowPlaying.p.trackTitle : ""
+          color: root.fg
+          elide: Text.ElideRight
+          font.family: root.textFont
+          font.weight: Font.DemiBold
+          font.pixelSize: 14
+        }
+        Text {
+          width: parent.width
+          text: nowPlaying.p ? (nowPlaying.p.trackArtist || nowPlaying.p.identity || "") : ""
+          visible: text.length > 0
+          color: root.tint(root.fg, 0.7)
+          elide: Text.ElideRight
+          font.family: root.textFont
+          font.pixelSize: 12
+        }
+      }
+
+      Row {
+        id: npControls
+        anchors.right: parent.right
+        anchors.rightMargin: 14
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: 14
+        Repeater {
+          model: [
+            { key: "prev", icon: "󰒮" },
+            { key: "play", icon: "" },
+            { key: "next", icon: "󰒭" }
+          ]
+          delegate: Text {
+            required property var modelData
+            readonly property var pl: nowPlaying.p
+            readonly property bool can: !pl ? false
+              : modelData.key === "prev" ? pl.canGoPrevious
+              : modelData.key === "next" ? pl.canGoNext
+              : pl.canTogglePlaying
+            text: modelData.key === "play" ? (pl && pl.isPlaying ? "󰏤" : "󰐊") : modelData.icon
+            color: root.fg
+            opacity: !can ? 0.3 : npMouse.containsMouse ? 1 : 0.82
+            scale: npMouse.containsMouse && can ? 1.12 : 1
+            font.family: root.iconFont
+            font.pixelSize: modelData.key === "play" ? 26 : 20
+            anchors.verticalCenter: parent.verticalCenter
+            Behavior on scale { NumberAnimation { duration: 120 } }
+            MouseArea {
+              id: npMouse
+              anchors.fill: parent
+              anchors.margins: -6
+              hoverEnabled: true
+              enabled: root.inputEnabled && parent.can
+              cursorShape: Qt.PointingHandCursor
+              onClicked: {
+                root.wakeRequested()
+                var pl = parent.pl
+                if (modelData.key === "prev") pl.previous()
+                else if (modelData.key === "next") pl.next()
+                else pl.togglePlaying()
+                Qt.callLater(root.forcePasswordFocus)
+              }
             }
           }
         }
@@ -777,8 +1001,8 @@ Item {
         SequentialAnimation {
           id: shake
           loops: 1
-          NumberAnimation { target: field; property: "x"; to: -12; duration: 50 }
-          NumberAnimation { target: field; property: "x"; to: 12; duration: 70 }
+          NumberAnimation { target: field; property: "x"; to: -12; duration: Math.round(50 * root.motionScale) }
+          NumberAnimation { target: field; property: "x"; to: 12; duration: Math.round(70 * root.motionScale) }
           NumberAnimation { target: field; property: "x"; to: -8; duration: 70 }
           NumberAnimation { target: field; property: "x"; to: 8; duration: 70 }
           NumberAnimation { target: field; property: "x"; to: 0; duration: 50 }
@@ -795,5 +1019,15 @@ Item {
         font.pixelSize: 12
       }
     }
+  }
+
+  // The sharp desktop on top of everything, fading out as the lock comes up
+  // and back in before unlocking.
+  ShaderEffectSource {
+    anchors.fill: parent
+    z: 1000
+    sourceItem: shot
+    opacity: 1 - root.reveal
+    visible: root.loadBackground && root.coverReady && root.reveal < 1
   }
 }
