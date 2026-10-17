@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "nasaq.windows",
   "name": "Window Look",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "author": "NASAQ (GHS)",
   "description": "Bar island with every window look setting: transparency, blur, blur colours, dim, rounding, borders, gaps, shadows",
   "kinds": [

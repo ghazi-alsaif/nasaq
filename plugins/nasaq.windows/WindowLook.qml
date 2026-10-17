@@ -299,16 +299,16 @@ Item {
 
   // ── Building blocks (same look as the control center) ─────────────
   component Label: Text {
-    color: "white"
-    font.family: "IBM Plex Sans Arabic"
+    color: Color.foreground
+    font.family: Nasaq.Theme.textFont
     font.pixelSize: 13
     font.weight: Font.DemiBold
     elide: Text.ElideRight
   }
 
   component Sub: Text {
-    color: Qt.rgba(1, 1, 1, 0.6)
-    font.family: "IBM Plex Sans Arabic"
+    color: Qt.alpha(Color.foreground, 0.6)
+    font.family: Nasaq.Theme.textFont
     font.pixelSize: 11
     elide: Text.ElideRight
   }
@@ -320,7 +320,7 @@ Item {
     width: 38
     height: 22
     radius: 11
-    color: checked ? Color.accent : Qt.rgba(1, 1, 1, 0.22)
+    color: checked ? Color.accent : Qt.alpha(Color.foreground, 0.22)
     Behavior on color { Nasaq.NColour { duration: Nasaq.Motion.micro } }
     Rectangle {
       width: 18
@@ -328,7 +328,7 @@ Item {
       radius: 9
       y: 2
       x: sw.checked ? sw.width - width - 2 : 2
-      color: "white"
+      color: Color.foreground
       Behavior on x { Nasaq.NAnim { kind: "fast" } }
     }
     MouseArea {
@@ -368,7 +368,7 @@ Item {
       Sub {
         id: valueText
         anchors.right: parent.right
-        color: "white"
+        color: Color.foreground
         visible: !valueInput.visible
         text: st.percent ? Math.round(st.value * 100) + "%" : st.value.toFixed(st.decimals) + st.suffix
         MouseArea {
@@ -390,9 +390,9 @@ Item {
         anchors.right: parent.right
         width: 52
         horizontalAlignment: TextInput.AlignRight
-        color: "white"
-        selectionColor: Qt.rgba(1, 1, 1, 0.3)
-        font.family: "IBM Plex Sans Arabic"
+        color: Color.foreground
+        selectionColor: Qt.alpha(Color.foreground, 0.3)
+        font.family: Nasaq.Theme.textFont
         font.pixelSize: 11
         inputMethodHints: Qt.ImhFormattedNumbersOnly
         function apply() {
@@ -413,7 +413,7 @@ Item {
           anchors.margins: -3
           z: -1
           radius: 4
-          color: Qt.rgba(1, 1, 1, 0.14)
+          color: Qt.alpha(Color.foreground, 0.14)
         }
       }
     }
@@ -427,12 +427,12 @@ Item {
         width: parent.width
         height: 6
         radius: 3
-        color: Qt.rgba(1, 1, 1, 0.16)
+        color: Qt.alpha(Color.foreground, 0.16)
         Rectangle {
           height: parent.height
           radius: 3
           width: parent.width * Math.max(0, Math.min(1, (st.value - st.from) / (st.to - st.from)))
-          color: Qt.rgba(1, 1, 1, 0.92)
+          color: Qt.alpha(Color.foreground, 0.92)
         }
       }
       Rectangle {
@@ -441,7 +441,7 @@ Item {
         radius: 9
         anchors.verticalCenter: parent.verticalCenter
         x: (parent.width - width) * Math.max(0, Math.min(1, (st.value - st.from) / (st.to - st.from)))
-        color: "white"
+        color: Color.foreground
         border.color: Qt.rgba(0, 0, 0, 0.25)
       }
       MouseArea {
@@ -494,11 +494,11 @@ Item {
         width: visible ? 26 : 0
         height: 26
         radius: 13
-        color: listBackMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.14) : "transparent"
+        color: listBackMouse.containsMouse ? Qt.alpha(Color.foreground, 0.14) : "transparent"
         Text {
           anchors.centerIn: parent
           text: "󰅁"
-          color: "white"
+          color: Color.foreground
           font.family: Style.font.family
           font.pixelSize: 14
         }
@@ -524,8 +524,8 @@ Item {
       width: parent.width
       height: sectionCol.implicitHeight + 8
       radius: 14
-      color: Qt.rgba(1, 1, 1, 0.08)
-      border.color: Qt.rgba(1, 1, 1, 0.06)
+      color: Qt.alpha(Color.foreground, 0.08)
+      border.color: Qt.alpha(Color.foreground, 0.06)
       border.width: 1
 
       Column {
@@ -542,7 +542,7 @@ Item {
             width: sectionCol.width
             height: 50
             radius: 10
-            color: rowMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.07) : "transparent"
+            color: rowMouse.containsMouse ? Qt.alpha(Color.foreground, 0.07) : "transparent"
 
             Rectangle {
               id: rowIcon
@@ -553,7 +553,7 @@ Item {
               height: 30
               radius: 15
               // Accent only where something is switched on; plain for the rest.
-              color: modelData.on === true ? Color.accent : Qt.rgba(1, 1, 1, 0.14)
+              color: modelData.on === true ? Color.accent : Qt.alpha(Color.foreground, 0.14)
               Behavior on color { Nasaq.NColour { duration: Nasaq.Motion.micro } }
               Text {
                 anchors.centerIn: parent
@@ -579,7 +579,7 @@ Item {
               anchors.rightMargin: 10
               anchors.verticalCenter: parent.verticalCenter
               text: "󰅂"
-              color: "white"
+              color: Color.foreground
               font.family: Style.font.family
               font.pixelSize: 12
               opacity: rowMouse.containsMouse ? 0.8 : 0.35
@@ -591,7 +591,7 @@ Item {
               anchors.leftMargin: 48
               anchors.right: parent.right
               height: 1
-              color: Qt.rgba(1, 1, 1, 0.07)
+              color: Qt.alpha(Color.foreground, 0.07)
             }
             MouseArea {
               id: rowMouse
@@ -616,7 +616,7 @@ Item {
         radius: 17
         opacity: root.savedDefault ? 1 : 0.4
         color: Qt.rgba(1, 1, 1, restoreMouse.containsMouse && root.savedDefault ? 0.18 : 0.10)
-        Sub { anchors.centerIn: parent; color: "white"; font.weight: Font.DemiBold; text: "Restore my default" }
+        Sub { anchors.centerIn: parent; color: Color.foreground; font.weight: Font.DemiBold; text: "Restore my default" }
         MouseArea {
           id: restoreMouse
           anchors.fill: parent
@@ -631,7 +631,7 @@ Item {
         width: (parent.width - 8) / 2
         height: 34
         radius: 17
-        color: root.justSaved ? "#30d158" : (saveMouse.containsMouse ? Qt.lighter(Color.accent, 1.12) : Color.accent)
+        color: root.justSaved ? Nasaq.Theme.ok : (saveMouse.containsMouse ? Qt.lighter(Color.accent, 1.12) : Color.accent)
         Behavior on color { Nasaq.NColour { duration: Nasaq.Motion.fast } }
         Sub { anchors.centerIn: parent; color: root.justSaved ? "white" : root.onAccent; font.weight: Font.DemiBold; text: root.justSaved ? "Saved ✓" : "Save as default" }
         MouseArea {
@@ -653,7 +653,7 @@ Item {
       color: Qt.rgba(1, 1, 1, undoMouse.containsMouse ? 0.18 : 0.10)
       Sub {
         anchors.centerIn: parent
-        color: "white"
+        color: Color.foreground
         font.weight: Font.DemiBold
         text: root.undo && root.undo.kind === "save" ? "Undo: keep my previous default" : "Undo: go back to the look I had"
       }
@@ -689,11 +689,11 @@ Item {
         width: 26
         height: 26
         radius: 13
-        color: backMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.14) : "transparent"
+        color: backMouse.containsMouse ? Qt.alpha(Color.foreground, 0.14) : "transparent"
         Text {
           anchors.centerIn: parent
           text: "󰅁"
-          color: "white"
+          color: Color.foreground
           font.family: Style.font.family
           font.pixelSize: 14
         }
@@ -726,15 +726,15 @@ Item {
     Rectangle {
       width: parent.width
       height: 1
-      color: Qt.rgba(1, 1, 1, 0.12)
+      color: Qt.alpha(Color.foreground, 0.12)
     }
 
     Rectangle {
       width: parent.width
       height: settingsCol.implicitHeight + 22
       radius: 14
-      color: Qt.rgba(1, 1, 1, 0.08)
-      border.color: Qt.rgba(1, 1, 1, 0.06)
+      color: Qt.alpha(Color.foreground, 0.08)
+      border.color: Qt.alpha(Color.foreground, 0.06)
       border.width: 1
 
       Column {

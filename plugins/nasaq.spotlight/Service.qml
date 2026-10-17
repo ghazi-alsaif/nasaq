@@ -31,7 +31,7 @@ Item {
   property var usage: ({})
   property string toast: ""
 
-  readonly property string textFont: "IBM Plex Sans Arabic"
+  readonly property string textFont: Nasaq.Theme.textFont
   readonly property string iconFont: Style.font.family
   readonly property string home: Quickshell.env("HOME")
   readonly property string stateFile: home + "/.local/state/nasaq/spotlight.json"
@@ -449,9 +449,9 @@ Item {
       width: listWidth + (root.showPreview ? 340 : 0)
       height: searchRow.height + (list.count > 0 ? Math.max(list.height, root.showPreview ? 380 : 0) + 9 : 0)
       Behavior on width { enabled: root.sizeSettled; Nasaq.NAnim { kind: "move" } }
-      radius: 22
-      color: Util.alpha(Color.background, Math.max(0.55, Nasaq.Theme.glassAlpha))
-      border.color: Qt.rgba(1, 1, 1, 0.14)
+      radius: Nasaq.Theme.radiusPanel
+      color: Nasaq.Theme.glass
+      border.color: Qt.alpha(Color.foreground, 0.14)
       border.width: 1
       clip: true
       opacity: root.shown ? 1 : 0
@@ -473,7 +473,7 @@ Item {
           anchors.leftMargin: 20
           anchors.verticalCenter: parent.verticalCenter
           text: "󰍉"
-          color: Qt.rgba(1, 1, 1, 0.55)
+          color: Qt.alpha(Color.foreground, 0.55)
           font.family: root.iconFont
           font.pixelSize: 22
         }
@@ -485,8 +485,8 @@ Item {
           anchors.right: parent.right
           anchors.rightMargin: 20
           anchors.verticalCenter: parent.verticalCenter
-          color: "white"
-          selectionColor: Qt.rgba(1, 1, 1, 0.3)
+          color: Color.foreground
+          selectionColor: Qt.alpha(Color.foreground, 0.3)
           font.family: root.textFont
           font.pixelSize: 22
           clip: true
@@ -511,7 +511,7 @@ Item {
             verticalAlignment: Text.AlignVCenter
             visible: input.text.length === 0
             text: "Search"
-            color: Qt.rgba(1, 1, 1, 0.35)
+            color: Qt.alpha(Color.foreground, 0.35)
             font: input.font
           }
         }
@@ -528,7 +528,7 @@ Item {
         anchors.top: searchRow.bottom
         anchors.bottom: parent.bottom
         width: 340
-        Rectangle { width: 1; height: parent.height; color: Qt.rgba(1, 1, 1, 0.1) }
+        Rectangle { width: 1; height: parent.height; color: Qt.alpha(Color.foreground, 0.1) }
         Column {
           x: 16; y: 14
           width: parent.width - 32
@@ -542,23 +542,23 @@ Item {
           Text {
             width: parent.width
             text: root.currentItem && root.currentItem.kind === "file" ? root.currentItem.title : ""
-            color: "white"; font.family: root.textFont; font.weight: Font.DemiBold; font.pixelSize: 15
+            color: Color.foreground; font.family: root.textFont; font.weight: Font.DemiBold; font.pixelSize: 15
             wrapMode: Text.WrapAnywhere; maximumLineCount: 2; elide: Text.ElideRight
           }
-          Text { width: parent.width; text: root.pvInfo; color: Qt.rgba(1, 1, 1, 0.5); font.family: root.textFont; font.pixelSize: 11 }
+          Text { width: parent.width; text: root.pvInfo; color: Qt.alpha(Color.foreground, 0.5); font.family: root.textFont; font.pixelSize: 11 }
           Text {
             width: parent.width
             height: Math.min(implicitHeight, 300 - (root.pvImage ? 230 : 0))
             visible: root.pvText.length > 0
             text: root.pvText
-            color: Qt.rgba(1, 1, 1, 0.75)
+            color: Qt.alpha(Color.foreground, 0.75)
             font.family: root.pvKind === "text" ? "monospace" : root.textFont
             font.pixelSize: 11
             wrapMode: Text.WrapAnywhere
             clip: true
             textFormat: Text.PlainText
           }
-          Text { visible: root.pvKind === "other"; text: "No preview · Enter opens it"; color: Qt.rgba(1, 1, 1, 0.4); font.family: root.textFont; font.pixelSize: 12 }
+          Text { visible: root.pvKind === "other"; text: "No preview · Enter opens it"; color: Qt.alpha(Color.foreground, 0.4); font.family: root.textFont; font.pixelSize: 12 }
         }
       }
 
@@ -566,7 +566,7 @@ Item {
         anchors.top: searchRow.bottom
         width: card.listWidth
         height: 1
-        color: Qt.rgba(1, 1, 1, 0.1)
+        color: Qt.alpha(Color.foreground, 0.1)
         visible: list.count > 0
       }
 
@@ -609,7 +609,7 @@ Item {
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 3
             text: section === "app" ? (root.query.trim() ? "Applications" : "Frequently Used") : section === "ai" || section === "aicmd" ? root.agentName : section === "window" ? "Open Windows" : section === "file" ? "Files" : section === "web" ? "Web" : ""
-            color: Qt.rgba(1, 1, 1, 0.45)
+            color: Qt.alpha(Color.foreground, 0.45)
             font.family: root.textFont
             font.weight: Font.DemiBold
             font.pixelSize: 11
@@ -643,7 +643,7 @@ Item {
               anchors.centerIn: parent
               visible: !(row.modelData.kind === "app" || (row.modelData.kind === "window" && !!row.modelData.icon))
               text: row.modelData.glyph || ""
-              color: row.current ? "white" : (row.modelData.kind === "instant" ? Color.accent : Qt.rgba(1, 1, 1, 0.75))
+              color: row.current ? Color.foreground : (row.modelData.kind === "instant" ? Color.accent : Qt.alpha(Color.foreground, 0.75))
               font.family: root.iconFont
               font.pixelSize: row.modelData.kind === "instant" ? 26 : 20
             }
@@ -660,7 +660,7 @@ Item {
               width: parent.width
               horizontalAlignment: row.modelData.kind === "ai" ? Text.AlignAuto : Text.AlignLeft
               text: row.modelData.title
-              color: "white"
+              color: Color.foreground
               wrapMode: row.modelData.kind === "ai" ? Text.Wrap : Text.NoWrap
               maximumLineCount: row.modelData.kind === "ai" ? 6 : 1
               elide: Text.ElideRight
@@ -673,7 +673,7 @@ Item {
               visible: text.length > 0
               horizontalAlignment: Text.AlignLeft
               text: row.modelData.subtitle || ""
-              color: row.current ? Qt.rgba(1, 1, 1, 0.85) : Qt.rgba(1, 1, 1, 0.5)
+              color: row.current ? Qt.alpha(Color.foreground, 0.85) : Qt.alpha(Color.foreground, 0.5)
               elide: Text.ElideMiddle
               font.family: root.textFont
               font.pixelSize: 11
@@ -693,7 +693,7 @@ Item {
               text: row.modelData.kind === "instant" ? (root.toast || "↵ Copy")
                   : row.modelData.kind === "file" ? (root.pathMode && row.modelData.isDir ? "⇥ Enter folder · ↵ Open" : "↵ Open · ⇧↵ Show in folder")
                   : "↵"
-              color: Qt.rgba(1, 1, 1, 0.85)
+              color: Qt.alpha(Color.foreground, 0.85)
               font.family: root.textFont
               font.pixelSize: 11
             }
@@ -708,7 +708,7 @@ Item {
               Text {
                 anchors.centerIn: parent
                 text: "󰉋"
-                color: "white"
+                color: Color.foreground
                 font.family: root.iconFont
                 font.pixelSize: 15
               }

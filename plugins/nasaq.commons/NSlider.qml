@@ -29,14 +29,14 @@ Item {
       width: Math.max(track.height, track.width * s.frac)
       x: Tr.rtl ? track.width - width : 0
       radius: height / 2
-      color: Qt.rgba(1, 1, 1, 0.92)
+      color: Qt.alpha(Theme.text, 0.92)
     }
   }
   NGlyph {
     anchors.left: parent.left; anchors.leftMargin: 7
     anchors.verticalCenter: parent.verticalCenter
     text: s.icon; visible: text.length > 0
-    color: s.frac > 0.08 ? "#2c2c2e" : "white"
+    color: s.frac > 0.08 ? Theme.onAccent : Theme.text
     font.pixelSize: 13
   }
   NSub {

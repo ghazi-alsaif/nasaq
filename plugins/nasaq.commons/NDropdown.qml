@@ -101,8 +101,8 @@ Item {
       radius: 10
       // The panels' glass: the theme background at the window opacity
       // (at least 0.55, above Hyprland's popups_ignorealpha so it blurs).
-      color: Util.alpha(Color.background, Math.max(0.55, Theme.glassAlpha))
-      border.color: Qt.rgba(1, 1, 1, 0.14)
+      color: Theme.glass
+      border.color: Qt.alpha(Color.foreground, 0.14)
       border.width: 1
       opacity: dd.shown ? 1 : 0
       scale: dd.shown ? 1 : 0.96
@@ -124,7 +124,7 @@ Item {
           required property var modelData
           readonly property var v: (typeof modelData === "object") ? modelData.value : modelData
           width: list.width; height: 30; radius: 6
-          color: itemMouse.containsMouse ? Theme.hover : (v === dd.value ? Qt.rgba(1, 1, 1, 0.06) : "transparent")
+          color: itemMouse.containsMouse ? Theme.hover : (v === dd.value ? Qt.alpha(Color.foreground, 0.06) : "transparent")
           NLabel { anchors.left: parent.left; anchors.leftMargin: 8; anchors.right: tick.left; anchors.verticalCenter: parent.verticalCenter; text: Tr.s((typeof modelData === "object") ? modelData.label : modelData); font.weight: Font.Normal }
           NGlyph { id: tick; anchors.right: parent.right; anchors.rightMargin: 8; anchors.verticalCenter: parent.verticalCenter; text: "󰄬"; visible: parent.v === dd.value; color: Theme.accent; font.pixelSize: 12 }
           MouseArea { id: itemMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { dd.closeList(); dd.activated(parent.v) } }

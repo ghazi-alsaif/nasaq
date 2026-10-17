@@ -119,7 +119,7 @@ BarWidget {
       // the pill's light tint: interpolating dark glass towards a light tint
       // passed through light greys, a visible flash while closing. The bar
       // pill shows its own tint again at the end of the close.
-      color: root.opened ? Util.alpha(Color.background, Math.max(0.55, Nasaq.Theme.glassAlpha)) : Util.alpha(Color.background, 0)
+      color: root.opened ? Nasaq.Theme.glass : Util.alpha(Color.background, 0)
       border.color: Qt.rgba(1, 1, 1, root.opened ? 0.14 : 0)
       border.width: 1
       clip: true

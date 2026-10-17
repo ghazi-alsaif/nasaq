@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "nasaq.control-center",
   "name": "Quick Settings",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "author": "NASAQ (GHS)",
   "description": "Quick settings: Wi-Fi, Bluetooth, keyboard, battery, brightness, sound, power",
   "kinds": [

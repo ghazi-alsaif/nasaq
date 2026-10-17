@@ -7,7 +7,7 @@ Rectangle {
   property bool capturing: false
   signal captured(string combo)
   width: 220; height: 28; radius: 8
-  color: capturing ? Qt.rgba(1, 1, 1, 0.22) : Qt.rgba(1, 1, 1, 0.12)
+  color: capturing ? Qt.alpha(Theme.text, 0.22) : Qt.alpha(Theme.text, 0.12)
   border.color: capturing ? Theme.accent : "transparent"
   NLabel {
     anchors.centerIn: parent

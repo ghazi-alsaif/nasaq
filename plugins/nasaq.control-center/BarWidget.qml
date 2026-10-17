@@ -74,7 +74,7 @@ BarWidget {
         visible: text.length > 0
         text: controls.layoutShort
         color: root.barForeground
-        font.family: "IBM Plex Sans Arabic"
+        font.family: Nasaq.Theme.textFont
         font.weight: Font.DemiBold
         font.pixelSize: Math.round(Style.bar.iconFont * 0.8)
       }
@@ -93,14 +93,14 @@ BarWidget {
           anchors.verticalCenter: parent.verticalCenter
           text: controls.batteryPercent + "%"
           color: root.barForeground
-          font.family: "IBM Plex Sans Arabic"
+          font.family: Nasaq.Theme.textFont
           font.pixelSize: Math.round(Style.bar.iconFont * 0.8)
         }
         Text {
           anchors.verticalCenter: parent.verticalCenter
           text: controls.batteryIcon
           // Yellow while in Saver mode.
-          color: controls.powerProfile === "power-saver" ? "#ffd60a" : root.barForeground
+          color: controls.powerProfile === "power-saver" ? Nasaq.Theme.warn : root.barForeground
           font.family: Style.font.family
           font.pixelSize: Style.bar.iconFont
         }
@@ -191,7 +191,7 @@ BarWidget {
       // Grow leftward from the pill's right edge, staying on screen.
       x: Math.min(root.opened ? overlay.barRight : overlay.pillRight, overlay.width - Style.gapsOut - 4) - width
       radius: root.opened ? 24 : pill.height / 2
-      color: root.opened ? Util.alpha(Color.background, root.glassAlpha) : Util.alpha(root.barForeground, pillMouse.containsMouse ? 0.16 : 0.08)
+      color: root.opened ? Nasaq.Theme.glass : Util.alpha(root.barForeground, pillMouse.containsMouse ? 0.16 : 0.08)
       border.color: Qt.rgba(1, 1, 1, root.opened ? 0.14 : 0)
       border.width: 1
       clip: true
@@ -217,8 +217,9 @@ BarWidget {
         id: controls
         anchors.top: parent.top
         anchors.right: parent.right
-        textFont: "IBM Plex Sans Arabic"
+        textFont: Nasaq.Theme.textFont
         iconFont: Style.font.family
+        panelRadius: Nasaq.Theme.radiusPanel
         active: true
         interactive: true
         opened: root.opened

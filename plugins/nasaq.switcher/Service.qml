@@ -182,9 +182,9 @@ Item {
       anchors.centerIn: parent
       width: row.implicitWidth + 32
       height: row.implicitHeight + 32
-      radius: 26
-      color: Util.alpha(Color.background, Math.max(0.55, Nasaq.Theme.glassAlpha))
-      border.color: Qt.rgba(1, 1, 1, 0.12)
+      radius: Nasaq.Theme.radiusPanel
+      color: Nasaq.Theme.glass
+      border.color: Qt.alpha(Color.foreground, 0.12)
       // Fades and grows in a touch on open; closing stays instant so the
       // switch itself is never delayed.
       property bool appeared: false
@@ -209,7 +209,7 @@ Item {
         x: row.x + root.index * (220 + row.spacing)
         y: row.y
         width: 220; height: 140; radius: 14
-        color: Qt.rgba(1, 1, 1, 0.11)
+        color: Qt.alpha(Color.foreground, 0.11)
         border.color: Color.accent
         border.width: 2
         Behavior on x { enabled: card.appeared; Nasaq.NAnim { kind: "fast" } }
@@ -230,7 +230,7 @@ Item {
               width: 220; height: 140; radius: 14
               // The accent frame and the lighter fill come from the gliding
               // frame behind the row.
-              color: Qt.rgba(1, 1, 1, 0.05)
+              color: Qt.alpha(Color.foreground, 0.05)
               clip: true
               ScreencopyView {
                 anchors.fill: parent; anchors.margins: 6
@@ -245,7 +245,7 @@ Item {
               horizontalAlignment: Text.AlignHCenter
               text: cell.modelData.title || (cell.modelData.lastIpcObject ? cell.modelData.lastIpcObject.class : "")
               elide: Text.ElideRight
-              color: cell.current ? "white" : Qt.rgba(1, 1, 1, 0.6)
+              color: cell.current ? Color.foreground : Qt.alpha(Color.foreground, 0.6)
               font.family: Nasaq.Theme.textFont
               font.pixelSize: 13
               font.weight: cell.current ? Font.DemiBold : Font.Normal

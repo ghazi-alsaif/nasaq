@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "nasaq.overview",
   "name": "Overview",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "author": "NASAQ (GHS)",
   "description": "Overview of windows and workspaces with live previews",
   "kinds": [

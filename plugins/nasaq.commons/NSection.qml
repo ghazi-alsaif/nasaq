@@ -9,7 +9,7 @@ Column {
   spacing: 6
   Text {
     text: Tr.s(sec.title); visible: text.length > 0
-    color: Qt.rgba(1, 1, 1, 0.5)
+    color: Qt.alpha(Theme.text, 0.5)
     font.family: Theme.textFont; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.DemiBold
     leftPadding: 4; rightPadding: 4
     width: parent.width
