@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "nasaq.spotlight",
   "name": "Search",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "author": "NASAQ (GHS)",
   "description": "Search: apps, windows, files, calculator, currency, units, web",
   "kinds": [

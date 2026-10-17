@@ -1,19 +1,27 @@
 #!/usr/bin/env python3
-"""NASAQ: report Caps Lock straight from the kernel (the keyboard LED), so the
-island can say when it goes on or off. Hyprland has no event for it.
+"""NASAQ: two things Hyprland never reports, read straight from the kernel:
+  - Caps Lock (the keyboard LED), so the island can say when it goes on or off.
+  - A lone tap on SUPER (down and up, nothing else pressed in between, under
+    0.4 s), so Search can open on it like a launcher key.
 
-Prints "caps on" / "caps off" once at start and then on every change. Needs read
-access to /dev/input/event* (udev rule 69-nasaq-input.rules), like nasaq-altwatch.
+Prints "caps on" / "caps off" once at start and on every change, and
+"super tap" on each tap. Needs read access to /dev/input/event* (udev rule
+69-nasaq-input.rules: keyboards, mice and touchpads, so a SUPER + click or
+drag is not mistaken for a tap).
 """
 import glob, os, select, struct, sys, time
 from fcntl import ioctl
 
-EV_LED, LED_CAPSL, LED_MAX = 0x11, 0x01, 0x0f
+EV_KEY, EV_LED, LED_CAPSL, LED_MAX, KEY_MAX = 0x01, 0x11, 0x01, 0x0f, 0x2ff
+KEY_LEFTMETA, KEY_RIGHTMETA = 125, 126
+TAP_MAX = 0.4
 EVENT = struct.Struct("llHHi")
 EVIOCGLED = 0x80000000 | ((LED_MAX // 8 + 1) << 16) | (ord("E") << 8) | 0x19
 EVIOCGBIT_LED = 0x80000000 | ((LED_MAX // 8 + 1) << 16) | (ord("E") << 8) | (0x20 + EV_LED)
+EVIOCGKEY = 0x80000000 | ((KEY_MAX // 8 + 1) << 16) | (ord("E") << 8) | 0x18
 
-def keyboards():
+def devices():
+    """fd -> (path, has_caps_led) for every readable key device (keyboards, mice, touchpads)."""
     fds = {}
     for dev in glob.glob("/dev/input/event*"):
         try:
@@ -21,18 +29,21 @@ def keyboards():
         except OSError:
             continue
         try:
-            bits = bytearray(LED_MAX // 8 + 1)
-            ioctl(fd, EVIOCGBIT_LED, bits)
-            if bits[0] >> LED_CAPSL & 1:
-                fds[fd] = dev
-                continue
+            ioctl(fd, EVIOCGKEY, bytearray(KEY_MAX // 8 + 1))   # proves it is a key device
+        except OSError:
+            os.close(fd); continue
+        led = False
+        try:
+            bits = bytearray(LED_MAX // 8 + 1); ioctl(fd, EVIOCGBIT_LED, bits)
+            led = bool(bits[0] >> LED_CAPSL & 1)
         except OSError:
             pass
-        os.close(fd)
+        fds[fd] = (dev, led)
     return fds
 
 def caps_on(fds):
-    for fd in fds:
+    for fd, (_, led) in fds.items():
+        if not led: continue
         try:
             st = bytearray(LED_MAX // 8 + 1); ioctl(fd, EVIOCGLED, st)
             if st[0] >> LED_CAPSL & 1:
@@ -42,12 +53,14 @@ def caps_on(fds):
     return False
 
 def main():
-    fds = keyboards()
-    if not fds:
+    fds = devices()
+    if not any(led for _, led in fds.values()):
         print("unavailable", flush=True); return 1
     state = caps_on(fds)
     print("caps on" if state else "caps off", flush=True)
     last_scan = time.time()
+    super_down_at = None      # when SUPER went down, None when it is up
+    super_alone = False       # nothing else pressed since it went down
     while True:
         r, _, _ = select.select(list(fds), [], [], 5.0)
         changed = False
@@ -57,23 +70,33 @@ def main():
             except OSError:
                 os.close(fd); fds.pop(fd, None); continue
             for off in range(0, len(data) - EVENT.size + 1, EVENT.size):
-                _, _, etype, code, _ = EVENT.unpack_from(data, off)
+                _, _, etype, code, value = EVENT.unpack_from(data, off)
                 if etype == EV_LED and code == LED_CAPSL:
                     changed = True
+                elif etype == EV_KEY:
+                    if code in (KEY_LEFTMETA, KEY_RIGHTMETA):
+                        if value == 1:
+                            super_down_at, super_alone = time.time(), True
+                        elif value == 0 and super_down_at is not None:
+                            if super_alone and time.time() - super_down_at <= TAP_MAX:
+                                print("super tap", flush=True)
+                            super_down_at = None
+                    elif value == 1 and super_down_at is not None:
+                        super_alone = False       # a key or a mouse button: a shortcut, not a tap
         # Every keyboard echoes the LED, so read the state once after the burst.
         if changed:
             new = caps_on(fds)
             if new != state:
                 state = new
                 print("caps on" if state else "caps off", flush=True)
-        # Keyboards come and go (a USB or Bluetooth one): rescan now and then.
+        # Devices come and go (a USB or Bluetooth one): rescan now and then.
         if time.time() - last_scan > 10:
             last_scan = time.time()
-            known = set(fds.values())
-            for fd, dev in keyboards().items():
+            known = {dev for dev, _ in fds.values()}
+            for fd, (dev, led) in devices().items():
                 if dev in known: os.close(fd)
-                else: fds[fd] = dev
-            if not fds:
+                else: fds[fd] = (dev, led)
+            if not any(led for _, led in fds.values()):
                 print("unavailable", flush=True); return 1
 
 if __name__ == "__main__":

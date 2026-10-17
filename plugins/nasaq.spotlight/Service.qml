@@ -88,19 +88,65 @@ Item {
   }
 
   // ── Results ──────────────────────────────────────────────────────
+  // Favourites come first with an empty query and rank higher with one;
+  // hidden apps never appear (Ctrl+D / Ctrl+H on a row; Settings › Launcher).
+  readonly property var favourites: { void Nasaq.Settings.revision; return Nasaq.Settings.get("launcher.favorites", []) || [] }
+  readonly property var hiddenApps: { void Nasaq.Settings.revision; return Nasaq.Settings.get("launcher.hidden", []) || [] }
+  function isFavourite(id) { return favourites.indexOf(String(id)) !== -1 }
+  function toggleFavourite(id) {
+    id = String(id)
+    var f = favourites.filter(function(x) { return x !== id })
+    var added = f.length === favourites.length
+    if (added) f.push(id)
+    Nasaq.Settings.set("launcher.favorites", f)
+    toast = added ? "Added to favourites" : "Removed from favourites"; toastTimer.restart()
+  }
+  function hideApp(id) {
+    id = String(id)
+    var h = hiddenApps.filter(function(x) { return x !== id }); h.push(id)
+    Nasaq.Settings.set("launcher.hidden", h)
+    Nasaq.Settings.set("launcher.favorites", favourites.filter(function(x) { return x !== id }))
+    toast = "Hidden · Settings › Launcher brings it back"; toastTimer.restart()
+  }
   readonly property var apps: {
     var q = query.trim().toLowerCase()
     var all = DesktopEntries.applications ? DesktopEntries.applications.values : []
     var scored = []
     for (var i = 0; i < all.length; i++) {
       var e = all[i]
-      if (!e || e.noDisplay) continue
+      if (!e || e.noDisplay || hiddenApps.indexOf(String(e.id)) !== -1) continue
+      var fav = isFavourite(e.id)
       var f = usageScore(e.id)
-      var s = q ? Spot.appScore(e, q) : f
-      if (s > 0) scored.push({ e: e, s: s + (q ? Math.min(20, f) : 0) })
+      var s = q ? Spot.appScore(e, q) : (fav ? 1000 - favourites.indexOf(String(e.id)) : f)
+      if (s > 0) scored.push({ e: e, s: s + (q ? Math.min(20, f) + (fav ? 15 : 0) : 0) })
     }
     scored.sort(function(a, b) { return b.s - a.s })
     return scored.slice(0, q ? 6 : 8).map(function(x) { return x.e })
+  }
+
+  // "> command": run a shell command. Names from PATH complete the first word.
+  readonly property bool commandsOn: Nasaq.Settings.get("launcher.commands", true)
+  readonly property bool cmdMode: commandsOn && /^>/.test(query)
+  readonly property string cmdText: cmdMode ? query.replace(/^>\s*/, "") : ""
+  property var cmdHits: []
+  Process {
+    id: cmdProc
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: { root.cmdHits = text.split("\n").filter(function(x) { return x.length > 0 }).slice(0, 7) }
+    }
+  }
+  Timer {
+    id: cmdTimer
+    interval: 120
+    onTriggered: {
+      var w = root.cmdText.trim()
+      // One word of plain characters: it goes into a grep anchor as-is.
+      if (!w || !/^[\w.+-]+$/.test(w)) { root.cmdHits = []; return }
+      cmdProc.running = false
+      cmdProc.command = ["bash", "-c", 'compgen -c | grep -- "^$1" | grep -v "^[_.]" | sort -u | head -n 8', "nasaq", w]
+      cmdProc.running = true
+    }
   }
 
   // Frecency: launches weighted by how recent they are (a week halves them).
@@ -241,6 +287,13 @@ Item {
 
   readonly property var results: {
     var out = []
+    if (cmdMode) {
+      var c = cmdText.trim()
+      if (c) out.push({ kind: "cmd", title: "Run: " + c, subtitle: "↵ runs it in the background · ⇧↵ in a terminal", glyph: "󰆍", data: c })
+      for (var h = 0; h < cmdHits.length; h++) if (cmdHits[h] !== c)
+        out.push({ kind: "cmd", title: cmdHits[h], subtitle: "Command", glyph: "󰆍", data: cmdHits[h] })
+      return out
+    }
     if (pathMode) {
       if (pathDir) out.push({ kind: "file", isDir: true, title: "Open “" + (pathDir.replace(/\/$/, "").split("/").pop() || "/") + "”",
                               subtitle: pathDir.replace(home, "~"), glyph: "󰝰", data: pathDir.replace(/\/$/, "") || "/" })
@@ -275,6 +328,8 @@ Item {
     selected = 0
     fileHits = []
     pathDir = ""
+    if (cmdMode) { cmdTimer.restart(); return }
+    cmdHits = []
     if (query.trim().length >= 2 || pathMode) fileTimer.restart()
   }
 
@@ -288,6 +343,10 @@ Item {
 
   // Shift+Enter: show the file in its folder instead of opening it.
   function reveal(item) {
+    if (item && item.kind === "cmd") {
+      Quickshell.execDetached(["omarchy-launch-floating-terminal-with-presentation", "bash", "-c", item.data + '; echo; read -r -n1 -p "Done. Press any key to close."'])
+      close(); return
+    }
     if (!item || item.kind !== "file") return activate(item)
     Quickshell.execDetached(["xdg-open", item.data.slice(0, item.data.lastIndexOf("/")) || "/"])
     close()
@@ -300,6 +359,7 @@ Item {
       Quickshell.execDetached(["wl-copy", item.data]); toast = "Copied"; toastTimer.restart(); return
     }
     if (item.kind === "aicmd") { Quickshell.execDetached(["bash", "-c", item.data]); close(); return }
+    if (item.kind === "cmd") { Quickshell.execDetached(["bash", "-c", item.data]); close(); return }
     if (item.kind === "instant") {
       Quickshell.execDetached(["wl-copy", item.data.copy])
       toast = "Copied " + item.data.copy
@@ -500,6 +560,8 @@ Item {
             else if ((e.modifiers & Qt.ControlModifier) && (e.key === Qt.Key_K || e.key === Qt.Key_P)) { root.selected = n ? (root.selected - 1 + n) % n : 0; e.accepted = true }
             else if (e.key === Qt.Key_Down || (e.key === Qt.Key_Tab)) { root.selected = n ? (root.selected + 1) % n : 0; e.accepted = true }
             else if (e.key === Qt.Key_Up || e.key === Qt.Key_Backtab) { root.selected = n ? (root.selected - 1 + n) % n : 0; e.accepted = true }
+            else if ((e.modifiers & Qt.ControlModifier) && e.key === Qt.Key_D && root.currentItem && root.currentItem.kind === "app") { root.toggleFavourite(root.currentItem.data.id); e.accepted = true }
+            else if ((e.modifiers & Qt.ControlModifier) && e.key === Qt.Key_H && root.currentItem && root.currentItem.kind === "app") { root.hideApp(root.currentItem.data.id); e.accepted = true }
             else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
               if (e.modifiers & Qt.ShiftModifier) root.reveal(root.results[root.selected])
               else root.activate(root.results[root.selected])
@@ -608,7 +670,7 @@ Item {
             anchors.leftMargin: 12
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 3
-            text: section === "app" ? (root.query.trim() ? "Applications" : "Frequently Used") : section === "ai" || section === "aicmd" ? root.agentName : section === "window" ? "Open Windows" : section === "file" ? "Files" : section === "web" ? "Web" : ""
+            text: section === "cmd" ? "Commands" : section === "app" ? (root.query.trim() ? "Applications" : (root.favourites.length ? "Favourites and Frequently Used" : "Frequently Used")) : section === "ai" || section === "aicmd" ? root.agentName : section === "window" ? "Open Windows" : section === "file" ? "Files" : section === "web" ? "Web" : ""
             color: Qt.alpha(Color.foreground, 0.45)
             font.family: root.textFont
             font.weight: Font.DemiBold
@@ -692,6 +754,8 @@ Item {
               anchors.verticalCenter: parent.verticalCenter
               text: row.modelData.kind === "instant" ? (root.toast || "↵ Copy")
                   : row.modelData.kind === "file" ? (root.pathMode && row.modelData.isDir ? "⇥ Enter folder · ↵ Open" : "↵ Open · ⇧↵ Show in folder")
+                  : row.modelData.kind === "app" ? (root.toast || ("↵ Open · ^D " + (root.isFavourite(row.modelData.data.id) ? "Unfavourite" : "Favourite") + " · ^H Hide"))
+                  : row.modelData.kind === "cmd" ? "↵ Run · ⇧↵ Terminal"
                   : "↵"
               color: Qt.alpha(Color.foreground, 0.85)
               font.family: root.textFont

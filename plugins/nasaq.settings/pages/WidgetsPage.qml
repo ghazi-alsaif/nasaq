@@ -238,7 +238,9 @@ NPage {
 
   NSection {
     title: "PRAYER TIMES"
-    note: "City: " + (page.island.city || "not set") + ". Change the city from the island's settings."
+    note: "City: " + (page.island.city || "not set") + ". Change the city from the island (Prayer times › Change), or:"
+    NRow { title: "Use my location"; subtitle: "Finds the city from your connection's address; good enough for weather and prayer times."
+      NButton { text: "Locate"; onClicked: Sys.ipc("nasaq.island", "locate") } }
     NRow {
       title: "Prayer times in the island"
       subtitle: "The countdown in the bar and the prayer row in the island card. The desktop prayer card has its own switch above."

@@ -33,7 +33,7 @@ NASAQ is an Arabic word for *order, harmony, a consistent pattern*: things arran
 <p align="center"><img src="docs/screenshots/bar-left.png" alt="Bar, left" width="760"><br>
 <img src="docs/screenshots/bar-center.png" alt="Bar, centre" width="420">&nbsp;&nbsp;<img src="docs/screenshots/bar-right.png" alt="Bar, right" width="400"></p>
 
-Left: the Omarchy menu, pinned app launchers, and the **workspace numbers**. The active workspace is highlighted, workspaces that hold windows are shown in full, empty ones are dimmed. Centre: the island with the clock and the next prayer countdown. Right: tray, keyboard layout, Wi-Fi and power state. Scroll over the workspace numbers to change workspace, or over the island to change the volume. The bar is Omarchy's bar. NASAQ adds its widgets to it through `shell.json`, so `omarchy bar` commands still work.
+Left: the Omarchy menu, pinned app launchers, and the **workspace numbers**, each followed by the icons of up to three apps open on it (Settings › Workspaces & Windows). The active workspace is highlighted, workspaces that hold windows are shown in full, empty ones are dimmed. Centre: the island with the clock and the next prayer countdown. Right: tray, keyboard layout, Wi-Fi and power state. Scroll over the workspace numbers to change workspace, or over the island to change the volume. The bar is Omarchy's bar. NASAQ adds its widgets to it through `shell.json`, so `omarchy bar` commands still work.
 
 ### The island
 
@@ -73,7 +73,7 @@ Make the column yours, in Settings > Widgets:
 
 ![Search](docs/screenshots/spotlight.png)
 
-`ALT + SPACE` opens Search. Type to find apps (ranked by how often and how recently you open them), open windows, and files, with a preview pane on the right that previews images, text and documents and shows size and date. Search also does arithmetic, currency and unit conversion, and web search. Start a line with `?` and the rest is a question for your default Omarchy agent (Claude, Codex, OpenCode, Copilot or Gemini, whichever `omarchy default agent` points at). The answer appears inline. `CTRL + J / K` (or `N / P`) move through the results. With `libqalculate` installed, Search also answers what its own calculator can't, such as square roots, factorials and dates (`today + 40 days`).
+`ALT + SPACE` opens Search. Type to find apps (ranked by how often and how recently you open them), open windows, and files, with a preview pane on the right that previews images, text and documents and shows size and date. Search also does arithmetic, currency and unit conversion, and web search. Start a line with `?` and the rest is a question for your default Omarchy agent (Claude, Codex, OpenCode, Copilot or Gemini, whichever `omarchy default agent` points at). The answer appears inline. `CTRL + J / K` (or `N / P`) move through the results. With `libqalculate` installed, Search also answers what its own calculator can't, such as square roots, factorials and dates (`today + 40 days`). Start with `>` to run a command (`> htop`): Enter runs it in the background, `SHIFT + ENTER` in a terminal, and the first word completes from your PATH. `CTRL + D` on an app makes it a favourite (favourites lead the list and rank higher), `CTRL + H` hides it; both lists are in Settings › Launcher. A lone tap on `SUPER` (press and release, nothing else) opens Search too.
 
 ### Overview
 
