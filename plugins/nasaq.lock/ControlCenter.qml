@@ -19,6 +19,11 @@ Item {
   id: root
 
   property string textFont: ""
+  // Interface strings: handed in (the lock imports no sibling plugin). The bar's
+  // copy passes Nasaq.Tr.s; the lock's Service reads the Arabic file itself.
+  property var tr: function(s) { return s }
+  property int trRev: 0
+  function t(s) { void trRev; return tr(s) }
   property string iconFont: ""
   // Nasaq.Theme.radiusPanel, handed in by the bar copy; this file stays free
   // of sibling imports because the lock loads it.
@@ -848,7 +853,7 @@ Item {
       spacing: 6
       Sub {
         anchors.verticalCenter: parent.verticalCenter
-        text: lr.busy ? "Connecting…" : lr.trailing
+        text: lr.busy ? root.t("Connecting…") : lr.trailing
         visible: text.length > 0
       }
       Glyph {
@@ -1020,7 +1025,7 @@ Item {
     }
     Sub {
       anchors.horizontalCenter: parent.horizontalCenter
-      text: pb.armed ? "Click again" : pb.title
+      text: pb.armed ? root.t("Click again") : pb.title
       color: pb.armed ? Color.foreground : Util.alpha(Color.foreground, 0.7)
     }
   }
@@ -1080,7 +1085,7 @@ Item {
               height: (parent.height - parent.spacing) / 2
               icon: root.wifiOn ? "󰖩" : "󰖪"
               title: "Wi-Fi"
-              subtitle: !root.wifiOn ? "Off" : (root.ssid.length > 0 ? root.ssid : "Not connected")
+              subtitle: !root.wifiOn ? root.t("Off") : (root.ssid.length > 0 ? root.ssid : root.t("Not connected"))
               on: root.wifiOn
               onToggled: { Networking.wifiEnabled = !Networking.wifiEnabled; root.interacted() }
               onExpand: root.openPage("wifi")
@@ -1089,8 +1094,8 @@ Item {
               width: parent.width
               height: (parent.height - parent.spacing) / 2
               icon: root.bluetoothOn ? "󰂯" : "󰂲"
-              title: "Bluetooth"
-              subtitle: !root.adapter ? "Unavailable"
+              title: root.t("Bluetooth")
+              subtitle: !root.adapter ? root.t("Unavailable")
                 : !root.bluetoothOn ? "Off"
                 : root.connectedBtCount > 0 ? root.connectedBtCount + " connected" : "On"
               on: root.bluetoothOn
@@ -1118,7 +1123,7 @@ Item {
                 Glyph { anchors.verticalCenter: parent.verticalCenter; text: "󰌌"; font.pixelSize: 14 }
                 Label { anchors.verticalCenter: parent.verticalCenter; text: root.layoutShort || "—" }
               }
-              Sub { width: parent.width; text: root.layoutFull || "Keyboard" }
+              Sub { width: parent.width; text: root.layoutFull || root.t("Keyboard") }
             }
             MouseArea {
               id: kbMouse
@@ -1142,7 +1147,7 @@ Item {
                 Glyph { anchors.verticalCenter: parent.verticalCenter; text: root.batteryPercent >= 0 ? root.batteryIcon : "󰚥"; font.pixelSize: 14 }
                 Label { anchors.verticalCenter: parent.verticalCenter; text: root.batteryPercent >= 0 ? root.batteryPercent + "%" : "AC" }
               }
-              Sub { width: parent.width; text: root.batteryPercent < 0 ? "Power" : (root.charging ? "Charging" : "Battery") }
+              Sub { width: parent.width; text: root.batteryPercent < 0 ? root.t("Power") : (root.charging ? root.t("Charging") : root.t("Battery")) }
             }
           }
 
@@ -1162,9 +1167,9 @@ Item {
               Row {
                 spacing: 7
                 Glyph { anchors.verticalCenter: parent.verticalCenter; text: root.dnd ? "󰂛" : "󰂚"; font.pixelSize: 14; color: root.dnd ? root.onAccent : Color.foreground }
-                Label { anchors.verticalCenter: parent.verticalCenter; text: "Do not disturb"; color: root.dnd ? root.onAccent : Color.foreground }
+                Label { anchors.verticalCenter: parent.verticalCenter; text: root.t("Do not disturb"); color: root.dnd ? root.onAccent : Color.foreground }
               }
-              Sub { width: parent.width; color: root.dnd ? root.onAccent : Util.alpha(Color.foreground, 0.6); text: root.dnd ? "On" : "Off" }
+              Sub { width: parent.width; color: root.dnd ? root.onAccent : Util.alpha(Color.foreground, 0.6); text: root.dnd ? root.t("On") : root.t("Off") }
             }
             MouseArea {
               id: dndMouse
@@ -1199,7 +1204,7 @@ Item {
           anchors.verticalCenter: parent.verticalCenter
           spacing: 9
           Glyph { anchors.verticalCenter: parent.verticalCenter; text: root.dnd ? "󰂛" : "󰂚"; font.pixelSize: 15; color: root.dnd ? root.accent : Color.foreground }
-          Label { anchors.verticalCenter: parent.verticalCenter; text: "Do not disturb" }
+          Label { anchors.verticalCenter: parent.verticalCenter; text: root.t("Do not disturb") }
         }
         Switch {
           anchors.right: parent.right
@@ -1229,14 +1234,14 @@ Item {
           anchors.verticalCenter: parent.verticalCenter
           spacing: 9
           Glyph { anchors.verticalCenter: parent.verticalCenter; text: "󰊴"; font.pixelSize: 15; color: game.active ? root.onAccent : Color.foreground }
-          Label { anchors.verticalCenter: parent.verticalCenter; text: "Game mode"; color: game.active ? root.onAccent : Color.foreground }
+          Label { anchors.verticalCenter: parent.verticalCenter; text: root.t("Game mode"); color: game.active ? root.onAccent : Color.foreground }
         }
         Sub {
           anchors.right: parent.right
           anchors.rightMargin: 12
           anchors.verticalCenter: parent.verticalCenter
           color: game.active ? root.onAccent : Util.alpha(Color.foreground, 0.6)
-          text: game.active ? "On" : "SUPER + ALT + G"
+          text: game.active ? root.t("On") : root.t("SUPER + ALT + G")
         }
       }
 
@@ -1271,14 +1276,14 @@ Item {
           anchors.verticalCenter: parent.verticalCenter
           spacing: 9
           Glyph { anchors.verticalCenter: parent.verticalCenter; text: rec.active ? "󰻃" : "󰑊"; font.pixelSize: 15; color: rec.active ? Color.urgent : Color.foreground }
-          Label { anchors.verticalCenter: parent.verticalCenter; text: rec.active ? "Recording" : "Screen recording" }
+          Label { anchors.verticalCenter: parent.verticalCenter; text: rec.active ? root.t("Recording") : root.t("Screen recording") }
         }
         Sub {
           anchors.right: parent.right
           anchors.rightMargin: 12
           anchors.verticalCenter: parent.verticalCenter
           color: rec.active ? Color.urgent : Util.alpha(Color.foreground, 0.6)
-          text: rec.active ? rec.clock() + "  ·  Stop" : "Pick an area"
+          text: rec.active ? rec.clock() + "  ·  Stop" : root.t("Pick an area")
         }
       }
 
@@ -1324,7 +1329,7 @@ Item {
           Item {
             width: parent.width
             height: displayLabel.implicitHeight
-            Label { id: displayLabel; text: "Display" }
+            Label { id: displayLabel; text: root.t("Display") }
             // Auto brightness from the ambient light sensor (bar copy, and
             // only on a machine that has the sensor and the helper script).
             Row {
@@ -1332,7 +1337,7 @@ Item {
               anchors.right: parent.right
               anchors.verticalCenter: parent.verticalCenter
               spacing: 7
-              Sub { anchors.verticalCenter: parent.verticalCenter; text: "Auto" }
+              Sub { anchors.verticalCenter: parent.verticalCenter; text: root.t("Auto") }
               Switch {
                 anchors.verticalCenter: parent.verticalCenter
                 width: 34
@@ -1373,7 +1378,7 @@ Item {
           Item {
             width: parent.width
             height: soundLabel.implicitHeight
-            Label { id: soundLabel; text: "Sound" + (root.sink ? "" : " — no output") }
+            Label { id: soundLabel; text: root.t("Sound") + (root.sink ? "" : " — no output") }
             Glyph {
               visible: root.showLock
               anchors.right: parent.right
@@ -1430,8 +1435,8 @@ Item {
           anchors.leftMargin: 9
           anchors.right: winChevron.left
           anchors.verticalCenter: parent.verticalCenter
-          Label { width: parent.width; text: "Windows" }
-          Sub { width: parent.width; text: "Transparency, blur, shadows, shape" }
+          Label { width: parent.width; text: root.t("Windows") }
+          Sub { width: parent.width; text: root.t("Transparency, blur, shadows, shape") }
         }
         Glyph {
           id: winChevron
@@ -1463,11 +1468,11 @@ Item {
           Item {
             width: parent.width
             height: 16
-            Label { anchors.left: parent.left; text: "Power mode" }
+            Label { anchors.left: parent.left; text: root.t("Power mode") }
             Sub {
               anchors.right: parent.right
               anchors.verticalCenter: parent.verticalCenter
-              text: root.charging || root.batteryPercent < 0 ? "Saved for: plugged in" : "Saved for: battery"
+              text: root.charging || root.batteryPercent < 0 ? root.t("Saved for: plugged in") : root.t("Saved for: battery")
             }
           }
           Row {
@@ -1475,9 +1480,9 @@ Item {
             spacing: 6
             Repeater {
               model: [
-                { key: "power-saver", icon: "󰌪", title: "Saver" },
-                { key: "balanced", icon: "󰾅", title: "Balanced" },
-                { key: "performance", icon: "󰓅", title: "Performance" }
+                { key: "power-saver", icon: "󰌪", title: root.t("Saver") },
+                { key: "balanced", icon: "󰾅", title: root.t("Balanced") },
+                { key: "performance", icon: "󰓅", title: root.t("Performance") }
               ]
               delegate: Rectangle {
                 id: modeBtn
@@ -1522,18 +1527,18 @@ Item {
         PowerButton {
           visible: root.showLock
           icon: "󰌾"
-          title: "Lock"
+          title: root.t("Lock")
           onActivated: { root.closeRequested(); root.run("omarchy-system-lock") }
         }
-        PowerButton { icon: "󰒲"; title: "Sleep"; onActivated: { root.closeRequested(); root.run("systemctl suspend") } }
-        PowerButton { icon: "󰜉"; title: "Restart"; confirm: true; onActivated: root.run("omarchy-system-reboot") }
-        PowerButton { icon: "󰐥"; title: "Shut down"; confirm: true; onActivated: root.run("omarchy-system-shutdown") }
+        PowerButton { icon: "󰒲"; title: root.t("Sleep"); onActivated: { root.closeRequested(); root.run("systemctl suspend") } }
+        PowerButton { icon: "󰜉"; title: root.t("Restart"); confirm: true; onActivated: root.run("omarchy-system-reboot") }
+        PowerButton { icon: "󰐥"; title: root.t("Shut down"); confirm: true; onActivated: root.run("omarchy-system-shutdown") }
       }
 
       // Bar copy only (never on the lock screen): the full NASAQ Settings window.
       FooterLink {
         visible: root.showLock
-        title: "NASAQ Settings…"
+        title: root.t("NASAQ Settings…")
         onClicked: { root.closeRequested(); Quickshell.execDetached(["omarchy-shell", "shell", "toggle", "nasaq.settings", "{}"]) }
       }
     }
@@ -1573,9 +1578,9 @@ Item {
             width: parent.width
             Repeater {
               model: [
-                { icon: "󰇚", label: "Download", value: root.formatRate(root.downRate) },
-                { icon: "󰕒", label: "Upload", value: root.formatRate(root.upRate) },
-                { icon: "󰓅", label: "Ping", value: root.netInfo.internet_ping_ms ? Math.round(parseFloat(root.netInfo.internet_ping_ms)) + " ms" : "—" }
+                { icon: "󰇚", label: root.t("Download"), value: root.formatRate(root.downRate) },
+                { icon: "󰕒", label: root.t("Upload"), value: root.formatRate(root.upRate) },
+                { icon: "󰓅", label: root.t("Ping"), value: root.netInfo.internet_ping_ms ? Math.round(parseFloat(root.netInfo.internet_ping_ms)) + " ms" : "—" }
               ]
               delegate: Column {
                 required property var modelData
@@ -1673,7 +1678,7 @@ Item {
       Sub {
         width: parent.width
         visible: !root.wifiOn
-        text: "Wi-Fi is turned off."
+        text: root.t("Wi-Fi is turned off.")
         leftPadding: 4
         topPadding: 4
         bottomPadding: 4
@@ -1702,13 +1707,13 @@ Item {
             onClicked: root.joinNetwork(root.currentNetwork)
           }
 
-          SectionTitle { visible: root.knownNetworks.length > 0; text: "Known networks" }
+          SectionTitle { visible: root.knownNetworks.length > 0; text: root.t("Known networks") }
           Repeater {
             model: root.knownNetworks
             delegate: NetworkRow { required property var modelData; net: modelData }
           }
 
-          SectionTitle { visible: root.otherNetworks.length > 0; text: "Other networks" }
+          SectionTitle { visible: root.otherNetworks.length > 0; text: root.t("Other networks") }
           Repeater {
             model: root.otherNetworks
             delegate: NetworkRow { required property var modelData; net: modelData }
@@ -1716,7 +1721,7 @@ Item {
 
           Sub {
             visible: root.networks.length === 0
-            text: "Searching for networks…"
+            text: root.t("Searching for networks…")
             leftPadding: 4
             topPadding: 6
             bottomPadding: 6
@@ -1727,7 +1732,7 @@ Item {
       Divider { width: parent.width; visible: root.showLock }
       FooterLink {
         visible: root.showLock
-        title: "Wi-Fi settings…"
+        title: root.t("Wi-Fi settings…")
         onClicked: { root.closeRequested(); Quickshell.execDetached(["omarchy-shell", "omarchy.network", "open"]) }
       }
     }
@@ -1745,7 +1750,7 @@ Item {
       Behavior on opacity { NumberAnimation { duration: root.mBase; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cStandard } }
 
       PageHeader {
-        title: "Bluetooth"
+        title: root.t("Bluetooth")
         checked: root.bluetoothOn
         onToggled: root.run("omarchy-bluetooth-power " + (root.bluetoothOn ? "off" : "on"))
       }
@@ -1754,7 +1759,7 @@ Item {
       Sub {
         width: parent.width
         visible: !root.bluetoothOn
-        text: "Bluetooth is turned off."
+        text: root.t("Bluetooth is turned off.")
         leftPadding: 4
         topPadding: 4
         bottomPadding: 4
@@ -1773,7 +1778,7 @@ Item {
           width: parent.width
           spacing: 2
 
-          SectionTitle { visible: root.pairedDevices.length > 0; text: "Devices" }
+          SectionTitle { visible: root.pairedDevices.length > 0; text: root.t("Devices") }
           Repeater {
             model: root.pairedDevices
             delegate: ListRow {
@@ -1788,7 +1793,7 @@ Item {
             }
           }
 
-          SectionTitle { text: "Nearby devices" }
+          SectionTitle { text: root.t("Nearby devices") }
           Repeater {
             model: root.nearbyDevices
             delegate: ListRow {
@@ -1796,13 +1801,13 @@ Item {
               icon: root.deviceIcon(modelData)
               title: root.deviceName(modelData)
               busy: root.pendingAddress === modelData.address || modelData.pairing === true
-              trailing: "Connect"
+              trailing: root.t("Connect")
               onClicked: root.toggleDevice(modelData)
             }
           }
           Sub {
             visible: root.nearbyDevices.length === 0
-            text: "Searching…"
+            text: root.t("Searching…")
             leftPadding: 4
             topPadding: 2
             bottomPadding: 6
@@ -1813,7 +1818,7 @@ Item {
       Divider { width: parent.width; visible: root.showLock }
       FooterLink {
         visible: root.showLock
-        title: "Bluetooth settings…"
+        title: root.t("Bluetooth settings…")
         onClicked: { root.closeRequested(); Quickshell.execDetached(["omarchy-shell", "omarchy.bluetooth", "open"]) }
       }
     }
@@ -1867,7 +1872,7 @@ Item {
       Behavior on opacity { NumberAnimation { duration: root.mBase; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cStandard } }
 
       PageHeader {
-        title: "Sound"
+        title: root.t("Sound")
         checked: !root.muted
         onToggled: { if (root.sink && root.sink.audio) root.sink.audio.muted = !root.sink.audio.muted; root.interacted() }
       }
@@ -1885,7 +1890,7 @@ Item {
           width: parent.width
           spacing: 2
 
-          SectionTitle { text: "Output" }
+          SectionTitle { text: root.t("Output") }
           PillSlider {
             width: parent.width
             icon: root.volumeIcon(root.volume, root.muted)
@@ -1911,7 +1916,7 @@ Item {
             }
           }
 
-          SectionTitle { visible: root.shownSources.length > 0; text: "Input" }
+          SectionTitle { visible: root.shownSources.length > 0; text: root.t("Input") }
           PillSlider {
             visible: !!root.source
             width: parent.width
@@ -1938,7 +1943,7 @@ Item {
             }
           }
 
-          SectionTitle { visible: root.shownStreams.length > 0; text: "Apps" }
+          SectionTitle { visible: root.shownStreams.length > 0; text: root.t("Apps") }
           Repeater {
             model: root.shownStreams
             delegate: Column {
@@ -1950,7 +1955,7 @@ Item {
               Sub {
                 width: parent.width
                 leftPadding: 4
-                text: AudioModel.friendlyStreamLabel(AudioModel.rawStreamLabel(modelData)) || "App"
+                text: AudioModel.friendlyStreamLabel(AudioModel.rawStreamLabel(modelData)) || root.t("App")
               }
               PillSlider {
                 width: parent.width
@@ -1984,7 +1989,7 @@ Item {
           anchors.centerIn: parent
           spacing: 8
           Glyph { anchors.verticalCenter: parent.verticalCenter; text: "󰖷"; font.pixelSize: 14 }
-          Label { anchors.verticalCenter: parent.verticalCenter; text: "Fix sound" }
+          Label { anchors.verticalCenter: parent.verticalCenter; text: root.t("Fix sound") }
         }
         MouseArea {
           id: fixMouse
@@ -2000,7 +2005,7 @@ Item {
         horizontalAlignment: Text.AlignHCenter
         wrapMode: Text.WordWrap
         elide: Text.ElideNone
-        text: "Use when the speakers go silent."
+        text: root.t("Use when the speakers go silent.")
       }
     }
   }
@@ -2021,7 +2026,7 @@ Item {
       icon: root.signalIcon(Math.round((nr.net ? nr.net.signalStrength : 0) * 100))
       title: nr.net ? nr.net.name : ""
       busy: !!nr.net && (root.pendingSsid === nr.net.name || nr.net.stateChanging)
-      trailing: !!nr.net && root.failedSsid === nr.net.name ? "Failed" : ""
+      trailing: !!nr.net && root.failedSsid === nr.net.name ? root.t("Failed") : ""
       trailingIcon: root.isSecured(nr.net) ? "󰌾" : ""
       onClicked: root.joinNetwork(nr.net)
     }
@@ -2055,7 +2060,7 @@ Item {
         anchors.fill: pwInput
         verticalAlignment: Text.AlignVCenter
         visible: pwInput.text.length === 0
-        text: "Password"
+        text: root.t("Password")
         color: Util.alpha(Color.foreground, 0.45)
         font.family: root.textFont
         font.pixelSize: 13

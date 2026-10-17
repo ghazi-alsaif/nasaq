@@ -524,7 +524,7 @@ Item {
               anchors.left: dndIcon.right
               anchors.leftMargin: 10
               anchors.verticalCenter: parent.verticalCenter
-              text: "Do Not Disturb"
+              text: Nasaq.Tr.s("Do Not Disturb")
               color: Color.foreground
               font.family: root.textFont
               font.weight: Font.DemiBold
@@ -566,7 +566,7 @@ Item {
             Text {
               anchors.left: parent.left
               anchors.verticalCenter: parent.verticalCenter
-              text: "Notifications"
+              text: Nasaq.Tr.s("Notifications")
               color: Color.foreground
               font.family: root.textFont
               font.weight: Font.Bold
@@ -576,7 +576,7 @@ Item {
               anchors.right: parent.right
               anchors.verticalCenter: parent.verticalCenter
               visible: root.entries.length > 0
-              text: "Clear All"
+              text: Nasaq.Tr.s("Clear All")
               color: clearAllMouse.containsMouse ? Color.foreground : root.accent
               font.family: root.textFont
               font.weight: Font.DemiBold
@@ -598,7 +598,7 @@ Item {
             horizontalAlignment: Text.AlignHCenter
             topPadding: 10
             bottomPadding: 14
-            text: "No Notifications"
+            text: Nasaq.Tr.s("No Notifications")
             color: Qt.alpha(Color.foreground, 0.4)
             font.family: root.textFont
             font.pixelSize: 13
@@ -772,7 +772,7 @@ Item {
                 Text {
                   readonly property bool isOpen: !!root.expandedGroups[groupTile.modelData.key]
                   visible: groupTile.modelData.items.length > 4
-                  text: isOpen ? "Show less" : "+" + (groupTile.modelData.items.length - 4) + " more"
+                  text: isOpen ? Nasaq.Tr.s("Show less") : "+" + (groupTile.modelData.items.length - 4) + " more"
                   color: moreMouse.containsMouse ? Color.foreground : Qt.alpha(Color.foreground, 0.45)
                   font.family: root.textFont
                   font.pixelSize: 11

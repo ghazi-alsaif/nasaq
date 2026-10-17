@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.6.0 — 2026-10-17
+- Arabic on every surface. Settings › General › Interface language now reaches the lock screen (clock names, power row, display-off menu, password hints), Quick Settings on the bar and on the lock (Wi-Fi, Bluetooth, sound, display, power mode, VPN, recording, game mode, fix sound), the notification centre, Search (sections, hints, command and web rows), the Overview (workspace names, window menu), the desktop cards (weather conditions, forecast days, prayer, system, player, tasks and notes), the island (prayer, weather, stopwatch, pomodoro alerts, notifications), Window Look, and the audio and monitor panels. About 150 strings were added to `ar-ui.json`; the lock screen, which imports no other plugin, reads the same file through its own service. Day and month names follow the language everywhere; digits stay Western. Layout direction on these surfaces stays as it is (the Settings window keeps its RTL mode); a later release can mirror them.
+
 ## 1.5.1 — 2026-10-17
 - Fix: Search's command completions (`> ls`) never appeared; the mode was read from a property that had not updated yet.
 

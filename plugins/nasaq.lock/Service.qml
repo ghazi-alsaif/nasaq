@@ -47,6 +47,18 @@ Item {
   property real motionSetting: 1
   property bool nowPlayingSetting: true
   property string textFontSetting: "IBM Plex Sans Arabic"
+  // Interface language and the Arabic strings (the same file nasaq.commons uses).
+  property string languageSetting: "en"
+  property var arStrings: ({})
+  property int trRev: 0
+  function tr(s) { if (root.languageSetting !== "ar" || s === undefined || s === null) return s; var v = root.arStrings[String(s)]; return v !== undefined ? v : s }
+  FileView {
+    path: (Quickshell.env("HOME") || "") + "/.config/omarchy/plugins/nasaq.commons/i18n/ar-ui.json"
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoaded: { try { root.arStrings = JSON.parse(text()) } catch (e) { root.arStrings = {} } root.trRev++ }
+  }
   readonly property real motionScale: powerProfile === "power-saver" ? 0 : Math.max(0, Math.min(1.5, motionSetting))
   FileView {
     path: (Quickshell.env("HOME") || "") + "/.config/omarchy/nasaq/settings.json"
@@ -60,6 +72,7 @@ Item {
         root.motionSetting = m && m.scale !== undefined ? Number(m.scale) : 1
         root.nowPlayingSetting = !(all.lock && all.lock.nowPlaying === false)
         root.textFontSetting = (all.appearance && all.appearance.textFont) || "IBM Plex Sans Arabic"
+        root.languageSetting = (all.general && all.general.language) || "en"; root.trRev++
       } catch (e) {}
     }
   }
@@ -410,7 +423,7 @@ Item {
         // would load (and fail) at once, since the load is synchronous.
         capturePath: lockSurface.screen ? root.captureDir + "/" + lockSurface.screen.name + ".ppm" : ""
         motionScale: root.motionScale
-        textFont: root.textFontSetting
+        textFont: root.textFontSetting; tr: root.tr; trRev: root.trRev; language: root.languageSetting
         showNowPlaying: root.nowPlayingSetting
         leaving: root.leaving
         surfaceShown: sessionLock.secure
@@ -451,7 +464,7 @@ Item {
       backgroundVersion: root.backgroundVersion
       capturePath: previewWindow.screen ? root.captureDir + "/" + previewWindow.screen.name + ".ppm" : ""
       motionScale: root.motionScale
-      textFont: root.textFontSetting
+      textFont: root.textFontSetting; tr: root.tr; trRev: root.trRev; language: root.languageSetting
       showNowPlaying: root.nowPlayingSetting
       blankTimeoutMs: root.blankTimeoutMs
       captureVersion: root.captureVersion

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "nasaq.launchers",
   "name": "Launchers",
-  "version": "1.5.1",
+  "version": "1.6.0",
   "author": "NASAQ (GHS)",
   "description": "Pinned app launchers in the bar (edit the list in NASAQ settings: bars.launchers)",
   "kinds": [

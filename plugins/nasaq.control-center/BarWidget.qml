@@ -220,6 +220,8 @@ BarWidget {
         textFont: Nasaq.Theme.textFont
         iconFont: Style.font.family
         panelRadius: Nasaq.Theme.radiusPanel
+        tr: Nasaq.Tr.s
+        trRev: Nasaq.Tr.revision
         active: true
         interactive: true
         opened: root.opened

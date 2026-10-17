@@ -410,7 +410,7 @@ Item {
 
           Text {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: wsDelegate.isNew ? "New" : "Workspace " + wsDelegate.modelData
+            text: wsDelegate.isNew ? Nasaq.Tr.s("New") : Nasaq.Tr.s("Workspace ") + wsDelegate.modelData
             color: wsDelegate.isActive ? Color.foreground : Qt.alpha(Color.foreground, 0.6)
             font.family: root.textFont
             font.pixelSize: 12
@@ -674,12 +674,12 @@ Item {
         width: parent.width - 12
         Repeater {
           model: [
-            { label: "Float or tile", expr: "hl.dsp.window.float({ action = \"toggle\" })" },
-            { label: "Fullscreen", expr: "hl.dsp.window.fullscreen({ mode = \"fullscreen\" })" },
-            { label: "Move to workspace 1", ws: 1 }, { label: "Move to workspace 2", ws: 2 },
-            { label: "Move to workspace 3", ws: 3 }, { label: "Move to workspace 4", ws: 4 },
-            { label: "Move to workspace 5", ws: 5 },
-            { label: "Close", close: true }
+            { label: Nasaq.Tr.s("Float or tile"), expr: "hl.dsp.window.float({ action = \"toggle\" })" },
+            { label: Nasaq.Tr.s("Fullscreen"), expr: "hl.dsp.window.fullscreen({ mode = \"fullscreen\" })" },
+            { label: Nasaq.Tr.s("Move to workspace 1"), ws: 1 }, { label: Nasaq.Tr.s("Move to workspace 2"), ws: 2 },
+            { label: Nasaq.Tr.s("Move to workspace 3"), ws: 3 }, { label: Nasaq.Tr.s("Move to workspace 4"), ws: 4 },
+            { label: Nasaq.Tr.s("Move to workspace 5"), ws: 5 },
+            { label: Nasaq.Tr.s("Close"), close: true }
           ]
           delegate: Rectangle {
             required property var modelData
@@ -717,7 +717,7 @@ Item {
     Text {
       anchors.centerIn: parent
       visible: root.open && root.currentWindows.length === 0
-      text: "No windows on this workspace"
+      text: Nasaq.Tr.s("No windows on this workspace")
       color: Qt.alpha(Color.foreground, 0.5)
       font.family: root.textFont
       font.pixelSize: 16

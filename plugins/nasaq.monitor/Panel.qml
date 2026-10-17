@@ -3,6 +3,7 @@ import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
 import qs.Ui
+import "../nasaq.commons" as Nasaq
 import qs.Commons
 import "Model.js" as Model
 
@@ -560,7 +561,7 @@ Panel {
               spacing: Style.space(2)
 
               Text {
-                text: "Display"
+                text: Nasaq.Tr.s("Display")
                 color: root.bar.foreground
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.title
@@ -606,7 +607,7 @@ Panel {
 
               PanelSectionHeader {
                 id: brightnessHeader
-                text: "BRIGHTNESS"
+                text: Nasaq.Tr.s("BRIGHTNESS")
                 foreground: root.bar.foreground
                 fontFamily: root.bar.fontFamily
                 anchors.left: parent.left
@@ -679,7 +680,7 @@ Panel {
 
               PanelSectionHeader {
                 id: textSizeHeader
-                text: "TEXT SIZE"
+                text: Nasaq.Tr.s("TEXT SIZE")
                 foreground: root.bar.foreground
                 fontFamily: root.bar.fontFamily
                 anchors.left: parent.left
@@ -751,7 +752,7 @@ Panel {
 
               PanelSectionHeader {
                 id: scaleHeader
-                text: "SCALE"
+                text: Nasaq.Tr.s("SCALE")
                 foreground: root.bar.foreground
                 fontFamily: root.bar.fontFamily
                 anchors.left: parent.left
@@ -813,7 +814,7 @@ Panel {
             visible: root.displays.length > 1
 
             PanelSectionHeader {
-              text: "DISPLAYS"
+              text: Nasaq.Tr.s("DISPLAYS")
               foreground: root.bar.foreground
               fontFamily: root.bar.fontFamily
             }
@@ -844,7 +845,7 @@ Panel {
             visible: root.canMirror
 
             PanelSectionHeader {
-              text: "MIRROR"
+              text: Nasaq.Tr.s("MIRROR")
               foreground: root.bar.foreground
               fontFamily: root.bar.fontFamily
             }

@@ -279,18 +279,18 @@ Item {
   function pct(v) { return Math.round(v * 100) + "%" }
   // Section list: icon, title, one-line summary of the current values.
   readonly property var sections: [
-    { key: "transparency", icon: "󰂵", title: "Transparency",
-      summary: "Active " + pct(s.activeOpacity) + " · Inactive " + pct(s.inactiveOpacity) },
-    { key: "blur", icon: "󰂷", title: "Blur", on: s.blur === true,
-      summary: s.blur ? "On · size " + Math.round(s.blurSize) + " · " + Math.round(s.blurPasses) + " passes" : "Off" },
-    { key: "colours", icon: "󰏘", title: "Colours",
-      summary: "Saturation " + pct(s.vibrancy) + " · Brightness " + pct(s.brightness) },
-    { key: "dim", icon: "󰃝", title: "Dim", on: s.dim === true,
-      summary: s.dim ? "On · " + pct(s.dimStrength) : "Off" },
-    { key: "shadows", icon: "󰘷", title: "Shadows", on: s.shadow === true,
-      summary: s.shadow ? "On · " + Math.round(s.shadowAngle) + "° · " + Math.round(s.shadowDistance) + " px · size " + Math.round(s.shadowRange) : "Off" },
-    { key: "shape", icon: "󰗆", title: "Shape",
-      summary: "Corners " + Math.round(s.rounding) + " · Border " + Math.round(s.border) + " · Gaps " + Math.round(s.gapsIn) }
+    { key: "transparency", icon: "󰂵", title: Nasaq.Tr.s("Transparency"),
+      summary: Nasaq.Tr.s("Active ") + pct(s.activeOpacity) + " · Inactive " + pct(s.inactiveOpacity) },
+    { key: "blur", icon: "󰂷", title: Nasaq.Tr.s("Blur"), on: s.blur === true,
+      summary: s.blur ? Nasaq.Tr.s("On · size ") + Math.round(s.blurSize) + " · " + Math.round(s.blurPasses) + " passes" : Nasaq.Tr.s("Off") },
+    { key: "colours", icon: "󰏘", title: Nasaq.Tr.s("Colours"),
+      summary: Nasaq.Tr.s("Saturation ") + pct(s.vibrancy) + " · Brightness " + pct(s.brightness) },
+    { key: "dim", icon: "󰃝", title: Nasaq.Tr.s("Dim"), on: s.dim === true,
+      summary: s.dim ? Nasaq.Tr.s("On · ") + pct(s.dimStrength) : Nasaq.Tr.s("Off") },
+    { key: "shadows", icon: "󰘷", title: Nasaq.Tr.s("Shadows"), on: s.shadow === true,
+      summary: s.shadow ? Nasaq.Tr.s("On · ") + Math.round(s.shadowAngle) + "° · " + Math.round(s.shadowDistance) + " px · size " + Math.round(s.shadowRange) : Nasaq.Tr.s("Off") },
+    { key: "shape", icon: "󰗆", title: Nasaq.Tr.s("Shape"),
+      summary: Nasaq.Tr.s("Corners ") + Math.round(s.rounding) + " · Border " + Math.round(s.border) + " · Gaps " + Math.round(s.gapsIn) }
   ]
   function sectionTitle(k) {
     for (var i = 0; i < sections.length; i++) if (sections[i].key === k) return sections[i].title
@@ -514,7 +514,7 @@ Item {
         anchors.left: listBack.right
         anchors.leftMargin: root.showBack ? 6 : 4
         anchors.verticalCenter: parent.verticalCenter
-        text: "Windows"
+        text: Nasaq.Tr.s("Windows")
         font.pixelSize: 15
         font.weight: Font.Bold
       }
@@ -776,7 +776,7 @@ Item {
       width: parent.width
       horizontalAlignment: Text.AlignHCenter
       wrapMode: Text.WordWrap
-      text: "Double-click a slider to reset it. Click a number to type."
+      text: Nasaq.Tr.s("Double-click a slider to reset it. Click a number to type.")
     }
   }
 }
