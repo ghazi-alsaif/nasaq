@@ -181,8 +181,8 @@ Item {
   function calWhen(e) {
     var d = new Date(e.startMs), today = new Date()
     var tomorrow = new Date(); tomorrow.setDate(today.getDate() + 1)
-    var day = d.toDateString() === today.toDateString() ? "" : d.toDateString() === tomorrow.toDateString() ? "Tomorrow " : Qt.formatDate(d, "ddd ")
-    return e.allDay ? (day || "Today") + " · all day" : day + Nasaq.Clock.timeAP(d)
+    var day = d.toDateString() === today.toDateString() ? "" : d.toDateString() === tomorrow.toDateString() ? Nasaq.Tr.s("Tomorrow") + " " : Nasaq.Clock.weekdayShort(d) + " "
+    return e.allDay ? (day || Nasaq.Tr.s("Today")) + " · " + Nasaq.Tr.s("all day") : day + Nasaq.Clock.timeAP(d)
   }
   FileView {
     path: root.home + "/.cache/nasaq/calendar.json"
@@ -552,7 +552,7 @@ Item {
                 width: parent.width - 36
                 horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.WordWrap
-                text: "Prayer times unavailable. Check the internet connection."
+                text: Nasaq.Tr.s("Prayer times unavailable. Check the internet connection.")
                 color: Qt.alpha(Color.foreground, 0.7)
                 font.family: root.textFont
                 font.pixelSize: 13
@@ -580,7 +580,7 @@ Item {
                   }
                   Text {
                     anchors.right: parent.right
-                    text: root.nextPrayer ? "in " + Island.formatCountdown(root.msToNext) + " · " + Island.formatTime(root.nextPrayer.time) : ""
+                    text: root.nextPrayer ? Nasaq.Tr.s("in ") + Island.formatCountdown(root.msToNext) + " · " + Island.formatTime(root.nextPrayer.time) : ""
                     color: Qt.alpha(Color.foreground, 0.7)
                     font.family: root.textFont
                     font.pixelSize: 13
@@ -608,7 +608,7 @@ Item {
                       width: parent.width / 5
                       Text {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        text: modelData.name
+                        text: Nasaq.Tr.s(modelData.name)
                         color: isNext ? Color.accent : Qt.alpha(Color.foreground, 0.55)
                         font.family: root.textFont
                         font.pixelSize: 11
@@ -665,7 +665,7 @@ Item {
                   }
                   Text {
                     anchors.right: parent.right
-                    text: root.weather ? root.weather.label : ""
+                    text: root.weather ? Nasaq.Tr.s(root.weather.label) : ""
                     color: Qt.alpha(Color.foreground, 0.75)
                     font.family: root.textFont
                     font.pixelSize: 13
@@ -716,9 +716,9 @@ Item {
                 Repeater {
                   model: root.sys ? [
                     { label: "CPU", value: root.sys.cpu + "%", color: Qt.alpha(Color.foreground, 0.9) },
-                    { label: "Memory", value: root.sys.mem + "%", color: Qt.alpha(Color.foreground, 0.9) },
-                    { label: "CPU °C", value: root.sys.cpuTemp > 0 ? root.sys.cpuTemp + "°" : "—", color: root.tempColor(root.sys.cpuTemp) },
-                    { label: "GPU °C", value: root.sys.gpuTemp > 0 ? root.sys.gpuTemp + "°" : "—", color: root.tempColor(root.sys.gpuTemp) }
+                    { label: Nasaq.Tr.s("Memory"), value: root.sys.mem + "%", color: Qt.alpha(Color.foreground, 0.9) },
+                    { label: Nasaq.Tr.s("CPU °C"), value: root.sys.cpuTemp > 0 ? root.sys.cpuTemp + "°" : "—", color: root.tempColor(root.sys.cpuTemp) },
+                    { label: Nasaq.Tr.s("GPU °C"), value: root.sys.gpuTemp > 0 ? root.sys.gpuTemp + "°" : "—", color: root.tempColor(root.sys.gpuTemp) }
                   ] : []
                   delegate: Column {
                     required property var modelData
@@ -769,7 +769,7 @@ Item {
                 spacing: 2
                 Text {
                   width: parent.width
-                  text: root.player ? (root.player.trackTitle || "") : "Not Playing"
+                  text: root.player ? (root.player.trackTitle || "") : Nasaq.Tr.s("Not Playing")
                   color: root.player ? Color.foreground : Qt.alpha(Color.foreground, 0.75)
                   elide: Text.ElideRight
                   font.family: root.textFont
@@ -778,7 +778,7 @@ Item {
                 }
                 Text {
                   width: parent.width
-                  text: root.player ? (root.player.trackArtist || root.player.identity || "") : "Music & video show up here"
+                  text: root.player ? (root.player.trackArtist || root.player.identity || "") : Nasaq.Tr.s("Music & video show up here")
                   color: Qt.rgba(1, 1, 1, root.player ? 0.6 : 0.45)
                   elide: Text.ElideRight
                   font.family: root.textFont
@@ -906,7 +906,7 @@ Item {
                 y: 14
                 spacing: 6
                 Repeater {
-                  model: [{ key: "tasks", icon: "󰄲", title: "Tasks" }, { key: "notes", icon: "󰎚", title: "Notes" }]
+                  model: [{ key: "tasks", icon: "󰄲", title: Nasaq.Tr.s("Tasks") }, { key: "notes", icon: "󰎚", title: Nasaq.Tr.s("Notes") }]
                   delegate: Rectangle {
                     required property var modelData
                     readonly property bool active: root.notesTab === modelData.key
@@ -972,7 +972,7 @@ Item {
                 }
                 Text {
                   visible: noteEdit.text.length === 0 && !noteEdit.activeFocus
-                  text: "Write a note…"
+                  text: Nasaq.Tr.s("Write a note…")
                   color: Qt.alpha(Color.foreground, 0.35)
                   font.family: root.textFont
                   font.pixelSize: 14
@@ -1033,7 +1033,7 @@ Item {
                       anchors.fill: parent
                       verticalAlignment: Text.AlignVCenter
                       visible: taskInput.text.length === 0
-                      text: "Add a task…"
+                      text: Nasaq.Tr.s("Add a task…")
                       color: Qt.alpha(Color.foreground, 0.35)
                       font: taskInput.font
                     }
@@ -1162,7 +1162,7 @@ Item {
                 }
                 Text {
                   visible: root.tasks.some(function(t) { return t.done })
-                  text: "Clear completed"
+                  text: Nasaq.Tr.s("Clear completed")
                   color: clearMouse.containsMouse ? Color.foreground : Color.accent
                   font.family: root.textFont
                   font.weight: Font.DemiBold

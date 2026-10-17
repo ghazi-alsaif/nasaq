@@ -114,6 +114,15 @@ Item {
   }
 
   property string textFont: "IBM Plex Sans Arabic"   // set by Service from settings.json appearance.textFont
+  // Interface strings: handed in (the lock imports no sibling plugin). The bar's
+  // copy passes Nasaq.Tr.s; the lock's Service reads the Arabic file itself.
+  property var tr: function(s) { return s }
+  property int trRev: 0
+  function t(s) { void trRev; return tr(s) }
+  property string language: "en"
+  readonly property var names: Qt.locale(language === "ar" ? "ar_SA" : "en_US")
+  // Same shape as Clock.dateLong in nasaq.commons: "Saturday, 17 October".
+  function dateLong(d) { return names.dayName(d.getDay() === 0 ? 7 : d.getDay(), Locale.LongFormat) + (language === "ar" ? "، " : ", ") + d.getDate() + " " + names.monthName(d.getMonth(), Locale.LongFormat) }
   readonly property string monoFont: "JetBrains Mono"
 
   // Colours follow the active Omarchy theme, mapped exactly like the NASAQ
@@ -280,7 +289,7 @@ Item {
         // Same order and font as the desktop clock, so the fade between them
         // changes nothing but the blur. English names: this file imports no
         // sibling plugin, so Clock (nasaq.commons) is not available here.
-        text: Qt.locale("en_US").toString(clockColumn.now, "dddd, d MMMM")
+        text: root.dateLong(clockColumn.now)
         color: root.tint(root.fg, 0.9)
         font.family: root.textFont
         font.weight: Font.DemiBold
@@ -394,6 +403,8 @@ Item {
       anchors.topMargin: 8
       textFont: root.textFont
       iconFont: root.iconFont
+      tr: root.tr
+      trRev: root.trRev
       monitor: root.screenName
       active: root.loadBackground
       interactive: root.inputEnabled
@@ -469,7 +480,7 @@ Item {
           Text {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
-            text: "Turn display off after"
+            text: root.t("Turn display off after")
             color: root.tint(root.fg, 0.75)
             font.family: root.textFont
             font.pixelSize: 13
@@ -563,7 +574,7 @@ Item {
           }
           Text {
             anchors.right: parent.right
-            text: "Never"
+            text: root.t("Never")
             color: root.tint(root.fg, 0.45)
             font.family: root.textFont
             font.pixelSize: 10
@@ -588,7 +599,7 @@ Item {
             }
             Text {
               anchors.verticalCenter: parent.verticalCenter
-              text: "Turn off display now"
+              text: root.t("Turn off display now")
               color: root.fg
               font.family: root.textFont
               font.weight: Font.DemiBold
@@ -753,9 +764,9 @@ Item {
         spacing: 34
         Repeater {
           model: [
-            { key: "off", icon: "󰐥", label: "Shut down", cmd: "omarchy-system-shutdown", confirm: true },
-            { key: "restart", icon: "󰜉", label: "Restart", cmd: "omarchy-system-reboot", confirm: true },
-            { key: "sleep", icon: "󰽥", label: "Sleep", cmd: "systemctl suspend", confirm: false }
+            { key: "off", icon: "󰐥", label: root.t("Shut down"), cmd: "omarchy-system-shutdown", confirm: true },
+            { key: "restart", icon: "󰜉", label: root.t("Restart"), cmd: "omarchy-system-reboot", confirm: true },
+            { key: "sleep", icon: "󰽥", label: root.t("Sleep"), cmd: "systemctl suspend", confirm: false }
           ]
           delegate: Text {
             required property var modelData
@@ -960,7 +971,7 @@ Item {
           Text {
             anchors.fill: passwordInput
             textFormat: Text.PlainText
-            text: root.authenticatingPassword ? "Checking…" : "Password"
+            text: root.authenticatingPassword ? root.t("Checking…") : root.t("Password")
             visible: passwordInput.text.length === 0
             color: root.tint(root.fg, 0.85)
             font.family: root.monoFont
@@ -1015,7 +1026,7 @@ Item {
       Text {
         anchors.horizontalCenter: parent.horizontalCenter
         height: 16
-        text: root.errorState ? "Incorrect password, try again"
+        text: root.errorState ? root.t("Incorrect password, try again")
             : (root.fingerprintConfigured ? "Touch the sensor or enter password" : "")
         color: root.errorState ? Qt.lighter(root.urgent, 1.3) : root.tint(root.fg, 0.6)
         font.family: root.textFont

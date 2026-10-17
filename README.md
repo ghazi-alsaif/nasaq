@@ -20,7 +20,7 @@ Also available in <a href="README.ar.md">Arabic</a>.</p>
 - **Reversible.** The installer backs up every file it changes, and `uninstall.sh` takes NASAQ out of them again: Omarchy's own bar, lock, notifications and OSD come back.
 - **One settings window.** `SUPER + ALT + N` opens NASAQ Settings: 12 pages with real controls for every feature, including a Plugins page that turns any shell plugin on or off, whether NASAQ's, Omarchy's or a community one.
 - **One look from power-on to power-off.** Boot, login, lock and shutdown screens share the lock screen's design and take their colours and wallpaper from the active Omarchy theme. Every NASAQ surface draws from the same glass, radius, text tints, font and date line, and follows the theme whether it is dark or light.
-- **Built for more than one language.** The interface ships in English, with Arabic as the first additional language, including right-to-left layout: today the Settings window is fully translated, and the other surfaces (lock, Quick Settings, notifications, Search) follow in 1.6.0. Translations are plain JSON files, so another language is one file away. Shortcuts keep working under non-Latin keyboard layouts, and OCR reads whichever languages you install.
+- **Built for more than one language.** The interface ships in English, with Arabic as the first additional language, including right-to-left layout: every surface is translated (Settings, lock, Quick Settings, notifications, Search, Overview, desktop cards, island, Window Look), with right-to-left layout in the Settings window. Translations are plain JSON files, so another language is one file away. Shortcuts keep working under non-Latin keyboard layouts, and OCR reads whichever languages you install.
 
 ## The name
 

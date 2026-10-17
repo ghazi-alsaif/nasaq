@@ -5,6 +5,7 @@ import Quickshell.Io
 import Quickshell.Services.Mpris
 import Quickshell.Services.Pipewire
 import qs.Ui
+import "../nasaq.commons" as Nasaq
 import qs.Commons
 import "Model.js" as Model
 
@@ -745,7 +746,7 @@ Panel {
             PanelActionButton {
               id: fixSoundButton
               iconText: "󰑐"
-              tooltipText: "Fix sound"
+              tooltipText: Nasaq.Tr.s("Fix sound")
               foreground: root.bar.foreground
               fontFamily: root.bar.fontFamily
               anchors.right: powerSwitch.left
@@ -764,7 +765,7 @@ Panel {
               spacing: Style.space(2)
 
               Text {
-                text: "Audio"
+                text: Nasaq.Tr.s("Audio")
                 color: root.bar.foreground
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.title
@@ -806,7 +807,7 @@ Panel {
 
               PanelSectionHeader {
                 id: outputHeader
-                text: "OUTPUT"
+                text: Nasaq.Tr.s("OUTPUT")
                 foreground: root.bar.foreground
                 fontFamily: root.bar.fontFamily
                 anchors.left: parent.left
@@ -893,7 +894,7 @@ Panel {
 
               PanelSectionHeader {
                 id: microphoneHeader
-                text: "INPUT"
+                text: Nasaq.Tr.s("INPUT")
                 foreground: root.bar.foreground
                 fontFamily: root.bar.fontFamily
                 anchors.left: parent.left
@@ -996,7 +997,7 @@ Panel {
             visible: root.displayAudioStreams.length > 0
 
             PanelSectionHeader {
-              text: "SOURCES"
+              text: Nasaq.Tr.s("SOURCES")
               foreground: root.bar.foreground
               fontFamily: root.bar.fontFamily
             }

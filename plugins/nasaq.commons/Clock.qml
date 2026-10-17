@@ -13,6 +13,7 @@ Singleton {
   readonly property var en: Qt.locale("en_US")
 
   function weekday(d) { return names.dayName(d.getDay() === 0 ? 7 : d.getDay(), Locale.LongFormat) }
+  function weekdayShort(d) { return names.dayName(d.getDay() === 0 ? 7 : d.getDay(), Locale.ShortFormat) }
   function month(d) { return names.monthName(d.getMonth(), Locale.LongFormat) }   // QML Locale months are 0-based (days are 1-7)
   function monthShort(d) { return names.monthName(d.getMonth(), Locale.ShortFormat) }
   // "Saturday, 17 October" / "السبت، 17 أكتوبر"

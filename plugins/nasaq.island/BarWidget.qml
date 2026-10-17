@@ -1063,7 +1063,7 @@ BarWidget {
             anchors.verticalCenter: parent.verticalCenter
             spacing: 6
             Repeater {
-              model: [{ t: root.swRunning ? "Pause" : "Resume", a: "toggle" }, { t: "Lap", a: "lap" }, { t: "Reset", a: "reset" }]
+              model: [{ t: root.swRunning ? Nasaq.Tr.s("Pause") : Nasaq.Tr.s("Resume"), a: "toggle" }, { t: Nasaq.Tr.s("Lap"), a: "lap" }, { t: Nasaq.Tr.s("Reset"), a: "reset" }]
               delegate: Rectangle {
                 required property var modelData
                 width: swBtn.implicitWidth + 18; height: 24; radius: 12
@@ -1140,7 +1140,7 @@ BarWidget {
                   spacing: 2
                   Text {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: modelData.name
+                    text: Nasaq.Tr.s(modelData.name)
                     color: isNext ? root.accent : Qt.alpha(Color.foreground, 0.65)
                     font.family: root.textFont
                     font.weight: Font.DemiBold
@@ -1157,7 +1157,7 @@ BarWidget {
                   Text {
                     anchors.horizontalCenter: parent.horizontalCenter
                     visible: isNext
-                    text: "in " + Island.formatCountdown(root.msToNext)
+                    text: Nasaq.Tr.s("in ") + Island.formatCountdown(root.msToNext)
                     color: root.accent
                     font.family: root.textFont
                     font.pixelSize: 10
@@ -1186,14 +1186,14 @@ BarWidget {
             }
             Text {
               anchors.verticalCenter: parent.verticalCenter
-              text: "Prayer times · " + (root.config.city || "")
+              text: Nasaq.Tr.s("Prayer times · ") + (root.config.city || "")
               color: Qt.alpha(Color.foreground, 0.6)
               font.family: root.textFont
               font.pixelSize: 12
             }
             Text {
               anchors.verticalCenter: parent.verticalCenter
-              text: root.locating ? "· Locating…" : "· Locate"
+              text: "· " + Nasaq.Tr.s(root.locating ? "Locating…" : "Locate")
               color: locateMouse.containsMouse ? Color.foreground : root.accent
               font.family: root.textFont
               font.weight: Font.DemiBold
@@ -1202,7 +1202,7 @@ BarWidget {
             }
             Text {
               anchors.verticalCenter: parent.verticalCenter
-              text: "· Change"
+              text: "· " + Nasaq.Tr.s("Change")
               color: changeMouse.containsMouse ? Color.foreground : root.accent
               font.family: root.textFont
               font.weight: Font.DemiBold
@@ -1254,7 +1254,7 @@ BarWidget {
                 verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignRight
                 visible: cityInput.text.length === 0
-                text: "Search for a city…"
+                text: Nasaq.Tr.s("Search for a city…")
                 color: Qt.alpha(Color.foreground, 0.4)
                 font.family: root.textFont
                 font.pixelSize: 13
@@ -1275,7 +1275,7 @@ BarWidget {
                   anchors.verticalCenter: parent.verticalCenter
                   Text {
                     anchors.right: parent.right
-                    text: modelData.name
+                    text: Nasaq.Tr.s(modelData.name)
                     color: Color.foreground
                     font.family: root.textFont
                     font.pixelSize: 13
@@ -1467,7 +1467,7 @@ BarWidget {
 
         Text {
           visible: !root.hasMedia && (root.prayerDay === null || !root.prayerEnabled)
-          text: "Nothing playing"
+          text: Nasaq.Tr.s("Nothing playing")
           color: Qt.alpha(Color.foreground, 0.5)
           font.family: root.textFont
           font.pixelSize: 13
@@ -1480,7 +1480,7 @@ BarWidget {
           Text {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
-            text: "Quiet for 20 min at prayer time"
+            text: Nasaq.Tr.s("Quiet for 20 min at prayer time")
             color: Qt.alpha(Color.foreground, 0.7)
             font.family: root.textFont
             font.pixelSize: 12
@@ -1546,7 +1546,7 @@ BarWidget {
                 Text {
                   anchors.bottom: parent.bottom
                   anchors.bottomMargin: 5
-                  text: root.weather ? root.weather.label : ""
+                  text: root.weather ? Nasaq.Tr.s(root.weather.label) : ""
                   color: Qt.alpha(Color.foreground, 0.75)
                   font.family: root.textFont
                   font.pixelSize: 13
@@ -1572,7 +1572,7 @@ BarWidget {
                 spacing: 1
                 Text {
                   anchors.horizontalCenter: parent.horizontalCenter
-                  text: modelData.name
+                  text: Nasaq.Tr.s(modelData.name)
                   color: Qt.alpha(Color.foreground, 0.5)
                   font.family: root.textFont
                   font.pixelSize: 10
@@ -1609,7 +1609,7 @@ BarWidget {
             spacing: 8
             Text {
               anchors.verticalCenter: parent.verticalCenter
-              text: "Notifications"
+              text: Nasaq.Tr.s("Notifications")
               color: Color.foreground
               font.family: root.textFont
               font.weight: Font.Bold
@@ -1639,8 +1639,8 @@ BarWidget {
             spacing: 6
             Repeater {
               model: [
-                { label: root.clearPending ? "Undo" : "Clear", act: "clear", show: root.history.length > 0 },
-                { label: "All", act: "all", show: true }
+                { label: root.clearPending ? Nasaq.Tr.s("Undo") : Nasaq.Tr.s("Clear"), act: "clear", show: root.history.length > 0 },
+                { label: Nasaq.Tr.s("All"), act: "all", show: true }
               ]
               delegate: Rectangle {
                 required property var modelData
@@ -1680,7 +1680,7 @@ BarWidget {
 
         Text {
           visible: root.history.length === 0 || root.clearPending
-          text: root.clearPending ? "Cleared. Undo is there for five seconds." : "No notifications"
+          text: root.clearPending ? Nasaq.Tr.s("Cleared. Undo is there for five seconds.") : Nasaq.Tr.s("No notifications")
           color: Qt.alpha(Color.foreground, 0.5)
           font.family: root.textFont
           font.pixelSize: 12

@@ -281,7 +281,7 @@ Item {
     var isDir = p.slice(-1) === "/"
     var clean = isDir ? p.slice(0, -1) : p
     var parent = clean.slice(0, clean.lastIndexOf("/")).replace(home, "~")
-    return { kind: "file", isDir: isDir, title: clean.split("/").pop(), subtitle: (isDir ? "Folder · " : "") + (parent || "/"),
+    return { kind: "file", isDir: isDir, title: clean.split("/").pop(), subtitle: (isDir ? Nasaq.Tr.s("Folder · ") : "") + (parent || "/"),
              glyph: isDir ? "󰉋" : Spot.fileGlyph(clean), data: clean }
   }
 
@@ -289,9 +289,9 @@ Item {
     var out = []
     if (cmdMode) {
       var c = cmdText.trim()
-      if (c) out.push({ kind: "cmd", title: "Run: " + c, subtitle: "↵ runs it in the background · ⇧↵ in a terminal", glyph: "󰆍", data: c })
+      if (c) out.push({ kind: "cmd", title: Nasaq.Tr.s("Run: ") + c, subtitle: "↵ runs it in the background · ⇧↵ in a terminal", glyph: "󰆍", data: c })
       for (var h = 0; h < cmdHits.length; h++) if (cmdHits[h] !== c)
-        out.push({ kind: "cmd", title: cmdHits[h], subtitle: "Command", glyph: "󰆍", data: cmdHits[h] })
+        out.push({ kind: "cmd", title: cmdHits[h], subtitle: Nasaq.Tr.s("Command"), glyph: "󰆍", data: cmdHits[h] })
       return out
     }
     if (pathMode) {
@@ -303,9 +303,9 @@ Item {
     if (aiMode) {
       if (aiReply && aiAsked === aiQuestion) {
         out.push({ kind: "ai", title: aiReply.answer || "(no answer)", subtitle: root.agentName + " · Enter copies the answer", glyph: "󰚩", data: aiReply.answer })
-        if (aiReply.command) out.push({ kind: "aicmd", title: "Run: " + aiReply.command, subtitle: "Runs only when you press Enter", glyph: "󰆍", data: aiReply.command })
+        if (aiReply.command) out.push({ kind: "aicmd", title: Nasaq.Tr.s("Run: ") + aiReply.command, subtitle: Nasaq.Tr.s("Runs only when you press Enter"), glyph: "󰆍", data: aiReply.command })
       } else {
-        out.push({ kind: "ai", title: aiBusy ? "Thinking…" : "Ask " + agentName + ": " + aiQuestion, subtitle: aiBusy ? agentName + " · this takes a few seconds" : "Enter to ask", glyph: "󰚩", data: null })
+        out.push({ kind: "ai", title: aiBusy ? Nasaq.Tr.s("Thinking…") : Nasaq.Tr.s("Ask ") + agentName + ": " + aiQuestion, subtitle: aiBusy ? agentName + " · this takes a few seconds" : Nasaq.Tr.s("Enter to ask"), glyph: "󰚩", data: null })
       }
       return out
     }
@@ -315,11 +315,11 @@ Item {
     for (var w = 0; w < windowHits.length; w++) {
       var tl = windowHits[w]
       var de = DesktopEntries.heuristicLookup(String(tl.appId || ""))
-      out.push({ kind: "window", title: tl.title || tl.appId, subtitle: "Open window · " + (de && de.name ? de.name : tl.appId), icon: de ? de.icon : "", glyph: "󰖯", data: tl })
+      out.push({ kind: "window", title: tl.title || tl.appId, subtitle: Nasaq.Tr.s("Open window · ") + (de && de.name ? de.name : tl.appId), icon: de ? de.icon : "", glyph: "󰖯", data: tl })
     }
     if (filesOn) for (var j = 0; j < fileHits.length; j++) out.push(fileItem(fileHits[j]))
     if (webOn && query.trim().length > 0)
-      out.push({ kind: "web", title: "Search the web for “" + query.trim() + "”", subtitle: "Google", glyph: "󰖟", data: query.trim() })
+      out.push({ kind: "web", title: Nasaq.Tr.s("Search the web for “") + query.trim() + "”", subtitle: "Google", glyph: "󰖟", data: query.trim() })
     return out
   }
 
@@ -573,7 +573,7 @@ Item {
             anchors.fill: parent
             verticalAlignment: Text.AlignVCenter
             visible: input.text.length === 0
-            text: "Search"
+            text: Nasaq.Tr.s("Search")
             color: Qt.alpha(Color.foreground, 0.35)
             font: input.font
           }
