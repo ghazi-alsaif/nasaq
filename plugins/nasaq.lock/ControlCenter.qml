@@ -507,14 +507,9 @@ Item {
     onLoaded: { try { root.dnd = JSON.parse(text()).dnd === true } catch (e) {} }
   }
 
-  // Fix Sound only exists on the iMac (~/.local/bin/fix-sound rebinds its
-  // CS4206 card); elsewhere the button is hidden.
-  property bool hasFixSound: false
-  Process {
-    command: ["test", "-x", Quickshell.env("HOME") + "/.local/bin/fix-sound"]
-    running: true
-    onExited: function(code) { root.hasFixSound = code === 0 }
-  }
+  // Fix sound: nasaq-fix-sound restarts the audio stack (or runs a machine's
+  // own ~/.local/bin/fix-sound when there is one).
+  readonly property bool hasFixSound: true
 
   Timer { id: soundListTimer; interval: 75; onTriggered: root.refreshSoundLists() }
 
@@ -1974,8 +1969,7 @@ Item {
       }
 
       Divider { width: parent.width; visible: root.hasFixSound }
-      // iMac speakers sometimes go silent; ~/.local/bin/fix-sound rebinds the
-      // card (it stops and restarts the shell around it).
+      // Speakers silent while everything looks fine: restart the audio stack.
       Rectangle {
         visible: root.hasFixSound
         width: parent.width
@@ -1987,14 +1981,14 @@ Item {
           anchors.centerIn: parent
           spacing: 8
           Glyph { anchors.verticalCenter: parent.verticalCenter; text: "󰖷"; font.pixelSize: 14 }
-          Label { anchors.verticalCenter: parent.verticalCenter; text: "Fix speakers" }
+          Label { anchors.verticalCenter: parent.verticalCenter; text: "Fix sound" }
         }
         MouseArea {
           id: fixMouse
           anchors.fill: parent
           hoverEnabled: true
           cursorShape: Qt.PointingHandCursor
-          onClicked: { root.closeRequested(); Quickshell.execDetached([Quickshell.env("HOME") + "/.local/bin/fix-sound"]) }
+          onClicked: { root.closeRequested(); Quickshell.execDetached([Quickshell.env("HOME") + "/.local/bin/nasaq-fix-sound"]) }
         }
       }
       Sub {

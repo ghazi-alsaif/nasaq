@@ -36,6 +36,11 @@ NPage {
       return
     }
     busy = id
+    // Omarchy keeps an external plugin's "off" by dropping it from shell.json, so
+    // the doctor would read it as missing and put it back; the choice is noted here too.
+    var off = (Settings.get("plugins.off", []) || []).filter(function(x) { return x !== id })
+    if (!on && id.indexOf("nasaq.") === 0) off.push(id)
+    Settings.set("plugins.off", off)
     act.script = "omarchy plugin " + (on ? "enable " : "disable ") + id + " 2>&1"
     act.refresh()
   }

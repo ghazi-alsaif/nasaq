@@ -143,7 +143,7 @@ do
   local f = io.open(atmosphere, "r")
   if f then
     f:close()
-    dofile(atmosphere)
+    pcall(dofile, atmosphere)  -- a broken theme file must not stop the window look below
   end
 end
 

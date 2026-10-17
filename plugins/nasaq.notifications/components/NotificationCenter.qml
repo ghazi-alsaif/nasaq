@@ -143,24 +143,29 @@ Item {
   function dismissGroup(group, dir) {
     if (!Nasaq.Motion.enabled || leaving[group.key]) { clearGroup(group); return }
     markLeaving(group.key, dir || "r")
-    removeTimer.pending.push(group)
-    removeTimer.restart()
+    // Each group gets its own deadline: a second dismiss must not postpone the first.
+    removeTimer.pending.push({ group: group, due: Date.now() + removeTimer.delay })
+    if (!removeTimer.running) { removeTimer.interval = removeTimer.delay; removeTimer.start() }
   }
   Timer {
     id: removeTimer
-    interval: Math.max(Nasaq.Motion.close, Nasaq.Motion.base) + 10
+    readonly property int delay: Nasaq.Motion.close + 10
     property var pending: []
     onTriggered: {
-      var p = pending; pending = []
-      p.forEach(function(g) { root.clearGroup(g) })
+      var now = Date.now(), ready = [], rest = []
+      pending.forEach(function(e) { (e.due <= now + 5 ? ready : rest).push(e) })
+      pending = rest
+      ready.forEach(function(e) { root.clearGroup(e.group) })
       var l = Object.assign({}, root.leaving)
-      p.forEach(function(g) { delete l[g.key] })
+      ready.forEach(function(e) { delete l[e.group.key] })
       root.leaving = l
+      if (rest.length) { interval = Math.max(1, rest[0].due - now); start() }
     }
   }
   function clearAllCascade() {
     if (!Nasaq.Motion.enabled || groups.length === 0) { clearAll(); return }
     cascade.queue = groups.slice()
+    cascadeEnd.keys = groups.map(function(g) { return g.key })
     cascade.restart()
   }
   Timer {
@@ -177,8 +182,15 @@ Item {
   }
   Timer {
     id: cascadeEnd
-    interval: Math.max(Nasaq.Motion.close, Nasaq.Motion.base) + 10
-    onTriggered: { root.clearAll(); root.leaving = ({}) }
+    interval: Nasaq.Motion.close + 10
+    property var keys: []
+    onTriggered: {
+      root.clearAll()
+      // Only this cascade's keys: a single dismiss still in flight keeps its own.
+      var l = Object.assign({}, root.leaving)
+      keys.forEach(function(k) { delete l[k] })
+      root.leaving = l
+    }
   }
 
   Timer { id: reloadTimer; interval: 400; onTriggered: root.reload() }
@@ -607,26 +619,32 @@ Item {
               readonly property string out: root.leaving[modelData.key] || ""
               property real dragX: 0
               property real fade: 0
+              // A new arrival grows into its place (0 → 1) while it slides in, so
+              // the groups below it glide down instead of jumping.
+              property real grow: 1
               x: dragX
               opacity: (1 - fade) * (1 - Math.min(0.5, Math.abs(dragX) / Math.max(1, width)))
-              height: out ? 0 : groupCol.implicitHeight + 20
+              height: out ? 0 : (groupCol.implicitHeight + 20) * grow
               clip: true
               // The height animates only once the tile is settled: the tiles
               // are rebuilt after a clear, and a new one must not grow in from
               // 0. (Gating on `out` itself raced the height binding.)
               property bool settled: false
-              Behavior on height { enabled: groupTile.settled; Nasaq.NAnim { kind: "move" } }
+              // Leaving folds on the same length and curve as the slide out, so the
+              // tile arrives at nothing in one motion; other height changes move in place.
+              Behavior on height { enabled: groupTile.settled; Nasaq.NAnim { kind: groupTile.out ? "close" : "move" } }
               onOutChanged: if (out === "r" || out === "l") leave(out === "r")
               // Arrived while the panel was open: slide in from the right.
               Component.onCompleted: {
                 Qt.callLater(function() { groupTile.settled = true })
                 var ts = modelData.items.length ? Number(modelData.items[0].timestamp) || 0 : 0
-                if (Nasaq.Motion.enabled && !out && ts > root.listedAt) { dragX = 28; fade = 1; enterAnim.start() }
+                if (Nasaq.Motion.enabled && !out && ts > root.listedAt) { dragX = 28; fade = 1; grow = 0; enterAnim.start() }
               }
               ParallelAnimation {
                 id: enterAnim
                 NumberAnimation { target: groupTile; property: "dragX"; to: 0; duration: Nasaq.Motion.open; easing.type: Easing.BezierSpline; easing.bezierCurve: Nasaq.Motion.enter }
                 NumberAnimation { target: groupTile; property: "fade"; to: 0; duration: Nasaq.Motion.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: Nasaq.Motion.decel }
+                NumberAnimation { target: groupTile; property: "grow"; to: 1; duration: Nasaq.Motion.base; easing.type: Easing.BezierSpline; easing.bezierCurve: Nasaq.Motion.standard }
               }
               function leave(right) {
                 backAnim.stop(); exitAnim.stop()

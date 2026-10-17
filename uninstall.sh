@@ -1,64 +1,112 @@
 #!/bin/bash
-# Remove NASAQ and restore the files it changed.   ./uninstall.sh [--purge]
-#   --purge also deletes your NASAQ settings (~/.config/omarchy/nasaq).
-set -euo pipefail
+# Remove NASAQ and give Omarchy its own shell back.   ./uninstall.sh [--purge] [--from-backup]
+#   --purge         also delete your NASAQ settings (~/.config/omarchy/nasaq, ~/.local/state/nasaq)
+#   --from-backup   instead of taking NASAQ out of shell.json and the Hyprland files
+#                   surgically, put back the copies taken before NASAQ was first installed
+#                   (this also undoes every change Omarchy's own migrations made since).
+# What stays on purpose: ~/.config/fastfetch (it may be yours), ~/.local/share/nasaq-data
+# (your tasks and notes) and the packages NASAQ installed (pacman -Rs them if unwanted).
+set -uo pipefail
 C="${HOME:?}/.config"; B="${HOME:?}/.local/bin"; S="${HOME:?}/.local/share"
+PURGE=false FROM_BACKUP=false
+for a in "$@"; do case $a in --purge) PURGE=true ;; --from-backup) FROM_BACKUP=true ;; esac; done
+STOCK="${OMARCHY_PATH:-/usr/share/omarchy}/config/omarchy/shell.json"
 
-backup=$(cat "$HOME/.local/state/nasaq/last-install-backup" 2>/dev/null || true)
-if [[ -n $backup && -d $backup ]]; then
-  (cd "$backup" && find . -type f) | while read -r f; do cp "$backup/$f" "$C/${f#./}"; done
-  echo " ✓ restored your files from ${backup/#$HOME/\~}"
-else
-  echo " ! no backup found: removing NASAQ's lines from your files"
+# 1. shell.json: NASAQ's plugins out, the bar back to Omarchy's own, the Omarchy
+#    plugins NASAQ replaced back on. Everything else in the file (idle times,
+#    your own plugins) is left as it is.
+if $FROM_BACKUP; then
+  backup=$(cat "$HOME/.local/state/nasaq/last-install-backup" 2>/dev/null || true)
+  if [[ -n $backup && -d $backup ]]; then
+    (cd "$backup" && find . -type f) | while read -r f; do cp "$backup/$f" "$C/${f#./}"; done
+    echo " ✓ restored your files from ${backup/#$HOME/\~}"
+  else
+    echo " ! no backup found: taking NASAQ out of your files instead"; FROM_BACKUP=false
+  fi
+fi
+if ! $FROM_BACKUP && [[ -f $C/omarchy/shell.json ]]; then
+  cp "$C/omarchy/shell.json" "$C/omarchy/shell.json.before-nasaq-uninstall"
+  python3 - "$C/omarchy/shell.json" "$STOCK" <<'PY'
+import json, sys, os
+p, stock_p = sys.argv[1], sys.argv[2]
+d = json.load(open(p))
+stock = json.load(open(stock_p)) if os.path.exists(stock_p) else {}
+nasaq = lambda x: str(x.get("id") if isinstance(x, dict) else x).startswith("nasaq.")
+d["plugins"] = [x for x in d.get("plugins", []) if not nasaq(x)]
+d["disabledPlugins"] = [x for x in d.get("disabledPlugins", []) if x not in ("omarchy.lock", "omarchy.osd", "omarchy.notifications") and not str(x).startswith("nasaq.")]
+if not d["disabledPlugins"]: del d["disabledPlugins"]
+d.pop("cloneSourceRestores", None)
+bar = d.get("bar", {})
+if str(bar.get("id", "")).startswith("nasaq."):
+    # NASAQ replaced the whole layout at install, so the whole layout goes back.
+    keep = {k: bar[k] for k in ("position", "transparent") if k in bar}
+    d["bar"] = dict(stock.get("bar", {})); d["bar"].update(keep)
+else:
+    lay = bar.get("layout", {})
+    for sec in list(lay):
+        if isinstance(lay[sec], list): lay[sec] = [w for w in lay[sec] if not nasaq(w)]
+    if str(bar.get("centerAnchor", "")).startswith("nasaq."): bar.pop("centerAnchor", None)
+open(p, "w").write(json.dumps(d, indent=2) + "\n")
+PY
+  echo " ✓ shell.json: Omarchy's bar, lock, notifications and OSD are back (copy kept as shell.json.before-nasaq-uninstall)"
 fi
 rm -f "$HOME/.local/state/nasaq/last-install-backup"
 
-# Strip what NASAQ added even after a restore: an older backup (taken by a
-# reinstall) may already contain it.
+# 2. Hyprland: the lines that load NASAQ's layers, by content (with or without a marker).
 for f in "$C/hypr/hyprland.lua" "$C/hypr/looknfeel.lua" "$C/hypr/bindings.lua"; do
-  [[ -f $f ]] && sed -i '/-- NASAQ$/d' "$f"
+  [[ -f $f ]] && sed -i -E '/nasaq-(pre|post|looknfeel|bindings)\.lua/d; /^-- .*NASAQ$/d' "$f"
 done
-# The menu block: NASAQ's rows, the hidden stock About/System rows and their links.
+find "${C:?}/hypr" -maxdepth 1 -name 'nasaq-*.lua' -delete
+echo " ✓ Hyprland: NASAQ's lines and layers removed"
+
+# 3. The menu block: NASAQ's rows, the hidden stock About/System rows and their links.
 menu="$C/omarchy/extensions/omarchy-menu.jsonc"
 if [[ -f $menu ]] && grep -q '// NASAQ (added by' "$menu"; then
   sed -i '\#// NASAQ (added by#,\#^[[:space:]]*// /NASAQ[[:space:]]*$#d' "$menu"
   echo " ✓ NASAQ removed from the Omarchy menu"
 fi
 
-# System parts: the boot screens and the login screen (back to the previous ones) and the
-# terminal greeting block. ~/.config/fastfetch is left alone: it may be yours.
+# 4. System parts: boot screens, login screen, the udev rule (each needs sudo) and
+#    the terminal greeting block.
+here="$(dirname "$(readlink -f "$0")")"
 if [[ -d /usr/share/plymouth/themes/nasaq ]]; then
-  "$(dirname "$(readlink -f "$0")")/login/install-plymouth.sh" --remove || echo " ! could not remove the boot screens (needs sudo)"
+  "$here/login/install-plymouth.sh" --remove || echo " ! could not remove the boot screens (needs sudo)"
 fi
 if [[ -f /etc/sddm.conf.d/zz-nasaq-login.conf || -d /usr/share/sddm/themes/nasaq-login ]]; then
-  "$(dirname "$(readlink -f "$0")")/login/install-login.sh" --remove || echo " ! could not remove the login screen (needs sudo)"
+  "$here/login/install-login.sh" --remove || echo " ! could not remove the login screen (needs sudo)"
+fi
+if [[ -f /etc/udev/rules.d/69-nasaq-input.rules ]]; then
+  sudo rm -f /etc/udev/rules.d/69-nasaq-input.rules && sudo udevadm control --reload 2>/dev/null && echo " ✓ udev rule removed" || echo " ! could not remove /etc/udev/rules.d/69-nasaq-input.rules (needs sudo)"
 fi
 if grep -qs '# >>> NASAQ fastfetch >>>' "$HOME/.bashrc"; then
   sed -i '/^# >>> NASAQ fastfetch >>>$/,/^# <<< NASAQ fastfetch <<<$/d' "$HOME/.bashrc"
   echo " ✓ terminal greeting removed from ~/.bashrc"
 fi
 
+# 5. Everything install.sh copied into your home.
 find "${C:?}/omarchy/plugins" -maxdepth 1 -name 'nasaq.*' -exec rm -rf {} +
-find "${C:?}/hypr" -maxdepth 1 -name 'nasaq-*.lua' -delete
-for s in nasaq-settings nasaq-sound nasaq-clone-check nasaq-auto-brightness nasaq-display-check nasaq-arabic-binds nasaq-keys \
-         nasaq-scratch nasaq-display nasaq-translate nasaq-ask nasaq-agent-ask nasaq-calendar nasaq-rules nasaq-auto nasaq-altwatch nasaq-keywatch nasaq-login-sync nasaq-doctor \
-         hypr-quit-app screensaver-mode; do
-  rm -f "${B:?}/${s:?}"
-done
+for f in "$B"/nasaq-* "$B/hypr-quit-app" "$B/screensaver-mode"; do rm -f "$f"; done
 rm -f "${S:?}/omarchy-overrides/omarchy-launch-screensaver" "${S:?}/omarchy-overrides/omarchy-screensaver"
-find "${C:?}/omarchy/hooks/post-update.d" "${C:?}/omarchy/hooks/theme-set.d" -maxdepth 1 -name 'nasaq-*.sh' -delete 2>/dev/null || true
-systemctl --user disable --now nasaq-auto-brightness.service >/dev/null 2>&1 || true
-systemctl --user disable --now nasaq-doctor.path >/dev/null 2>&1 || true
-rm -f "${C:?}/systemd/user/nasaq-doctor.path" "${C:?}/systemd/user/nasaq-doctor.service"
+rm -rf "${S:?}/screensaver-matrix" "${S:?}/sounds/nasaq" "${S:?}/nasaq-login" "${S:?}/nasaq-plymouth"
+find "${C:?}/omarchy/hooks/post-update.d" "${C:?}/omarchy/hooks/theme-set.d" -maxdepth 1 \
+  \( -name 'nasaq-*.sh' -o -name 'ptyxis-theme.sh' -o -name 'mlterm-theme.sh' \) -delete 2>/dev/null || true
+rm -rf "${C:?}/omarchy/nasaq/help" "${C:?}/omarchy/nasaq/defaults"
+# systemd: the doctor watcher, the brightness follower, the automation timers.
+for u in nasaq-doctor.path nasaq-auto-brightness.service "$C"/systemd/user/nasaq-auto-*.timer; do
+  u=${u##*/}; [[ $u == *\** ]] && continue
+  systemctl --user disable --now "$u" >/dev/null 2>&1 || true
+done
+rm -f "$C"/systemd/user/nasaq-doctor.{path,service} "$C/systemd/user/nasaq-auto-brightness.service" "$C"/systemd/user/nasaq-auto-*.{timer,service}
 systemctl --user daemon-reload >/dev/null 2>&1 || true
-for t in "$C"/systemd/user/nasaq-auto-*.timer; do [[ -e $t ]] && systemctl --user disable --now "$(basename "$t")" >/dev/null 2>&1; done || true
+echo " ✓ NASAQ's files, hooks and services removed"
 
-if [[ ${1:-} == --purge ]]; then
+if $PURGE; then
   rm -rf "${C:?}/omarchy/nasaq" "${HOME:?}/.local/state/nasaq"
   echo " ✓ NASAQ settings removed"
+else
+  echo " • kept: ~/.config/omarchy/nasaq (settings) and ~/.local/state/nasaq (backups); --purge removes them"
 fi
-[[ -f /etc/udev/rules.d/69-nasaq-input.rules ]] && sudo rm -f /etc/udev/rules.d/69-nasaq-input.rules 2>/dev/null && echo " ✓ udev rule removed"
-omarchy-shell -q shell rescanPlugins || true
+echo " • kept: ~/.local/share/nasaq-data (tasks and notes), ~/.config/fastfetch, installed packages"
 hyprctl reload >/dev/null 2>&1 || true
 omarchy restart shell >/dev/null 2>&1 || true
 echo " ✓ NASAQ removed. Omarchy is back to its own shell."

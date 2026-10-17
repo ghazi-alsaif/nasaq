@@ -17,10 +17,10 @@ Also available in <a href="README.ar.md">Arabic</a>.</p>
 
 - **A layer, not a fork.** NASAQ is a set of plugins that run inside Omarchy's own Quickshell process. There is no second shell, no second notification daemon, no second lock screen. Omarchy keeps updating normally.
 - **Nothing under `/usr/share/omarchy` is touched.** NASAQ lives in `~/.config/omarchy/plugins`, `~/.config/hypr/nasaq-*.lua`, `~/.local/bin` and `~/.config/omarchy/nasaq`. A post-update check warns you if an Omarchy update changed something NASAQ builds on.
-- **Reversible.** The installer backs up every file it changes. `uninstall.sh` puts them back.
+- **Reversible.** The installer backs up every file it changes, and `uninstall.sh` takes NASAQ out of them again: Omarchy's own bar, lock, notifications and OSD come back.
 - **One settings window.** `SUPER + ALT + N` opens NASAQ Settings: 12 pages with real controls for every feature, including a Plugins page that turns any shell plugin on or off, whether NASAQ's, Omarchy's or a community one.
 - **One look from power-on to power-off.** Boot, login, lock and shutdown screens share the lock screen's design and take their colours and wallpaper from the active Omarchy theme.
-- **Built for more than one language.** The interface ships in English, with Arabic as the first additional language, including right-to-left layout. Translations are plain JSON files, so another language is one file away. Shortcuts keep working under non-Latin keyboard layouts, and OCR reads whichever languages you install.
+- **Built for more than one language.** The interface ships in English, with Arabic as the first additional language, including right-to-left layout: today the Settings window is fully translated, and the other surfaces (lock, Quick Settings, notifications, Search) follow in 1.6.0. Translations are plain JSON files, so another language is one file away. Shortcuts keep working under non-Latin keyboard layouts, and OCR reads whichever languages you install.
 
 ## The name
 
@@ -85,7 +85,7 @@ Make the column yours, in Settings > Widgets:
 
 <p align="center"><img src="docs/screenshots/app-switcher.png" alt="App Switcher" width="720"></p>
 
-`ALT + TAB` cycles windows in most-recently-used order with live previews: hold ALT, press TAB to move, release ALT to switch instantly. This needs one udev rule, which the installer offers; without it the switcher falls back to a short timer. A single frame glides from window to window as you press TAB.
+`ALT + TAB` cycles windows in most-recently-used order with live previews: hold ALT, press TAB to move, release ALT to switch instantly. This needs one udev rule, which the installer puts in `/etc/udev/rules.d/69-nasaq-input.rules`: it gives your user read access to the keyboard input devices (keyboards only, not mice or touchpads), so the switcher and the Caps Lock watcher can see key state; without it the switcher falls back to a short timer. A single frame glides from window to window as you press TAB.
 
 ### Motion
 
@@ -122,8 +122,8 @@ The Shortcuts page lists all shortcuts, Omarchy's and NASAQ's. Each can be chang
 
 From the moment the machine starts until it shuts down, every screen has the same design: your wallpaper blurred, a large clock or greeting, the Matrix rain in the theme's accent, and glass pills for the name and password. All of them take their colours from the active Omarchy theme and change with it.
 
-- **Lock screen** (`SUPER + CTRL + SPACE`): part of NASAQ's shell, with separate password and fingerprint flows. It sits on your own desktop, blurred: the sharp desktop fades into the lock, and on unlock it fades back before the windows return. Whatever is playing shows above the power row with previous, play/pause and next, so music can be paused without unlocking (Settings › System). Theme changes repaint it live, even while it is up.
-- **Login screen**: an SDDM theme. A small root-owned helper rewrites its colours and wallpaper on every theme change; it is the only thing NASAQ installs outside your home directory, together with one sudoers rule that allows that helper alone. With autologin it only shows after logging out.
+- **Lock screen** (`SUPER + CTRL + L`): part of NASAQ's shell, with separate password and fingerprint flows. It sits on your own desktop, blurred: the sharp desktop fades into the lock, and on unlock it fades back before the windows return. Whatever is playing shows above the power row with previous, play/pause and next, so music can be paused without unlocking (Settings › System). Theme changes repaint it live, even while it is up.
+- **Login screen**: an SDDM theme. A small root-owned helper rewrites its colours and wallpaper on every theme change; it is one of the few things NASAQ installs outside your home directory (with the boot screens, the udev rule above and one sudoers rule that allows that helper alone; the full list is under "Where things live"). With autologin it only shows after logging out.
 - **Boot and shutdown screens**: a Plymouth theme with the disk-unlock pill and a greeting per mode: Hello on boot, See you soon on restart, Goodbye on shutdown. The same helper renders the images in the theme's colours and rebuilds the boot image once, only when they changed (up to a minute, in the background).
 
 ### More
@@ -138,7 +138,7 @@ From the moment the machine starts until it shuts down, every screen has the sam
 - **Translation**: `SUPER + CTRL + ALT + L` translates the selected text; add SHIFT to OCR and translate a region of the screen. Both use your default Omarchy agent.
 - **Universal clipboard**: `SUPER + C / V / X` copy, paste and cut in every app, including terminals.
 - **Quit app**: `SUPER + Q` closes the whole application, not just one window.
-- **Fix speakers**: `SUPER + ALT + A` rebinds the audio card when the speakers go silent (iMac and some laptops).
+- **Fix sound**: `SUPER + ALT + A` (and a row in Quick Settings › Sound) restarts the audio stack when the speakers go silent while everything looks fine. A machine that needs more can put its own script at `~/.local/bin/fix-sound`, which then runs instead.
 - **Automations** (time- or event-triggered commands), editable from Settings.
 - **Screensaver modes**: Matrix, image, or Omarchy's stock ASCII.
 - **Themes**: every NASAQ surface follows the active Omarchy theme and updates when you change it.
@@ -161,7 +161,7 @@ From the moment the machine starts until it shuts down, every screen has the sam
 | `SUPER + C / V / X` | Universal copy / paste / cut |
 | `SUPER + CTRL + ALT + L` | Translate selection |
 | `SUPER + CTRL + ALT + SHIFT + L` | Translate a screen region (OCR) |
-| `SUPER + ALT + A` | Fix speakers |
+| `SUPER + ALT + A` | Fix sound |
 | `?` in Search | Ask the default agent |
 
 All of Omarchy's own shortcuts stay as they are, and any of them can be changed from the Shortcuts page.
@@ -187,8 +187,8 @@ The installer:
 1. checks the Omarchy version and backs up `shell.json`, your three Hyprland Lua files and the menu extension into `~/.local/state/nasaq/`;
 2. copies the plugins, scripts, hooks, sounds and defaults into your home directory;
 3. adds one `pcall(dofile, ...)` line to each of `hyprland.lua`, `looknfeel.lua` and `bindings.lua`, so NASAQ's layers load with yours;
-4. adds NASAQ's widgets to the bar and NASAQ's entries to the Omarchy menu;
-5. installs the missing packages and the udev rule for the App Switcher;
+4. sets up NASAQ's bar (the layout is replaced on a first install; `--update` and a re-install over a NASAQ bar keep yours) and adds NASAQ's entries to the Omarchy menu;
+5. installs the missing packages and the udev rule (keyboards only) for the App Switcher and the Caps Lock watcher;
 6. installs the NASAQ login screen (`sudo`; installs the theme to `/usr/share/sddm/themes/nasaq-login` and selects it in `/etc/sddm.conf.d/zz-nasaq-login.conf`; to follow theme changes it adds one sudoers rule, `/etc/sudoers.d/nasaq-login`, that lets you run a single root-owned helper, `/usr/local/bin/nasaq-login-sync`, and nothing else) and the terminal greeting (a marked block in `~/.bashrc`; an existing `~/.config/fastfetch` is never overwritten). `--update` installs them too while they are missing;
 7. installs the NASAQ boot and shutdown screens (`sudo`; installs the Plymouth theme `nasaq`, selects it, remembers the previous one, and rebuilds the boot image once; it uses the same single helper and sudoers rule as the login screen);
 8. restarts the shell.
@@ -207,16 +207,17 @@ cd ~/.local/share/nasaq && ./update.sh
 
 ### Omarchy updates
 
-NASAQ keeps itself in place when Omarchy changes things under it. `nasaq-doctor` runs after every `omarchy update`, and a watcher runs it whenever `~/.config/hypr/hyprland.lua` is rewritten (Omarchy's Update › Config › Hyprland resets that folder without running the update hooks). It puts back what NASAQ added: its lines in your Hyprland files, its bar widgets and anchor in `shell.json`, the Omarchy plugins it replaces staying off, its menu entries and the login screen selection. It merges into your files (a copy goes to `~/.local/state/nasaq/doctor-backup/` first) and never re-enables a NASAQ plugin you turned off. You get one notification saying what it did. When Omarchy reset your whole Hyprland folder, `nasaq-doctor --restore-hypr` brings back your own lines from before the reset too. Run `nasaq-doctor` any time to check, or use Settings › Advanced.
+NASAQ keeps itself in place when Omarchy changes things under it. `nasaq-doctor` runs after every `omarchy update`, and a watcher runs it whenever `shell.json` or your Hyprland files are rewritten (Omarchy's Update › Config › Hyprland and › Shell reset them without running the update hooks). It puts back what NASAQ added: its lines in your Hyprland files, its bar widgets and anchor in `shell.json`, the Omarchy plugins it replaces staying off, its menu entries and the login screen selection. It merges into your files (a copy goes to `~/.local/state/nasaq/doctor-backup/` first) and never re-enables a NASAQ plugin you turned off (the Plugins page notes your choice in NASAQ's settings, since Omarchy itself records an external plugin's "off" by dropping it from the list). You get one notification saying what it did. When Omarchy reset your whole Hyprland folder, `nasaq-doctor --restore-hypr` brings back your own lines from before the reset too. Run `nasaq-doctor` any time to check, or use Settings › Advanced.
 
 ## Uninstall
 
 ```bash
-cd ~/.local/share/nasaq && ./uninstall.sh          # restores the backed-up files
-cd ~/.local/share/nasaq && ./uninstall.sh --purge  # also removes NASAQ's settings
+cd ~/.local/share/nasaq && ./uninstall.sh                # NASAQ out, Omarchy's shell back
+cd ~/.local/share/nasaq && ./uninstall.sh --purge        # also removes NASAQ's settings
+cd ~/.local/share/nasaq && ./uninstall.sh --from-backup  # put back the copies taken before the first install
 ```
 
-The boot screens and the login screen go back to the ones you had before (the boot image is rebuilt once), and the terminal greeting block comes out of `~/.bashrc`. `~/.config/fastfetch` stays, since it may be your own.
+By default the uninstaller takes NASAQ out of your files surgically: NASAQ's plugins and bar leave `shell.json` (Omarchy's own bar layout, lock, notifications and OSD come back; a copy is kept next to it), NASAQ's lines leave your Hyprland files and the menu, and everything it copied into your home goes (plugins, scripts, hooks, sounds, the screensaver, systemd units). The boot screens, the login screen and the udev rule go back to how they were (`sudo`; the boot image is rebuilt once), and the terminal greeting block comes out of `~/.bashrc`. `--from-backup` instead restores the copies taken before NASAQ was first installed, which also undoes every change Omarchy's own migrations made since. Kept on purpose: `~/.config/fastfetch` (it may be yours), `~/.local/share/nasaq-data` (your tasks and notes) and the packages that were installed.
 
 ## Where things live
 
@@ -225,7 +226,7 @@ The boot screens and the login screen go back to the ones you had before (the bo
 | `~/.config/omarchy/plugins/nasaq.*` | the 21 plugins |
 | `~/.config/omarchy/nasaq/` | settings.json, island.json, windows.json, help |
 | `~/.config/omarchy/nasaq/secrets.json` | private calendar links (never exported or snapshotted) |
-| `~/.config/hypr/nasaq-*.lua` | generated Hyprland layers (binds, rules, corners, scratchpads, layout binds, remaps) |
+| `~/.config/hypr/nasaq-*.lua` | generated Hyprland layers (binds, corners, scratchpads, layout binds, window look, desktop gap) |
 | `~/.local/bin/nasaq-*` | helper scripts (settings snapshots, display, translation, scratchpads, ...) |
 | `~/.local/share/nasaq-data/` | tasks and notes |
 | `~/.local/share/nasaq-login/`, `~/.local/share/nasaq-plymouth/` | your copies of the login and boot themes |

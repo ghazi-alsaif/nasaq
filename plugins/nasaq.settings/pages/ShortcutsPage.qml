@@ -44,7 +44,7 @@ NPage {
         spacing: 10
         NButton { text: "Regenerate"; visible: arabic.out === "on"; onClicked: { Sys.run("nasaq-arabic-binds on") } }
         NSwitch { anchors.verticalCenter: parent.verticalCenter; checked: arabic.out === "on"
-          onToggled: function(c) { Sys.run("nasaq-arabic-binds " + (c ? "on" : "off")); arabic.out = c ? "on" : "off"; Settings.set("shortcuts.arabicSafe", c) } }
+          onToggled: function(c) { Sys.run("nasaq-arabic-binds " + (c ? "on" : "off")); arabic.out = c ? "on" : "off" } }
       }
     }
   }

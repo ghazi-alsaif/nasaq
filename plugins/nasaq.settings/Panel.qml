@@ -152,21 +152,49 @@ Item {
       }
 
       // ── Page ──
-      Loader {
-        id: pageLoader
+      // Two layers so the two motions never fight over one property: the box
+      // fades out and slips left when the page changes, then (on a short
+      // timer) the loader swaps the page and fades it in from the right.
+      Item {
+        id: pageBox
         anchors.left: side.right
         anchors.right: parent.right
         anchors.top: parent.top
         anchors.bottom: parent.bottom
-        active: window.visible
-        source: "pages/" + root.fileFor(root.page)
-        // A new page fades in and slides a few pixels into place.
-        transform: Translate { id: pageShift }
-        onLoaded: { pageLoader.opacity = 0; pageShift.x = 12; pageIn.restart() }
+        transform: Translate { id: boxShift }
+        Connections {
+          target: root
+          function onPageChanged() {
+            if (!Nasaq.Motion.enabled || pageLoader.status !== Loader.Ready || !window.visible) { swap.stop(); pageLoader.shownPage = root.page; return }
+            pageOut.restart(); swap.restart()
+          }
+        }
+        Timer { id: swap; interval: Nasaq.Motion.fast + 10; onTriggered: pageLoader.shownPage = root.page }
         ParallelAnimation {
-          id: pageIn
-          Nasaq.NFade { target: pageLoader; property: "opacity"; to: 1 }
-          Nasaq.NAnim { target: pageShift; property: "x"; to: 0; kind: "fast" }
+          id: pageOut
+          Nasaq.NFade { target: pageBox; property: "opacity"; to: 0 }
+          Nasaq.NAnim { target: boxShift; property: "x"; to: -8; kind: "fast" }
+        }
+        Loader {
+          id: pageLoader
+          anchors.fill: parent
+          active: window.visible
+          // Starts on the requested page, then only the swap timer moves it (a
+          // live binding would load the new page at once, under the fade-out).
+          property string shownPage: root.page
+          Component.onCompleted: shownPage = String(root.page)
+          source: "pages/" + root.fileFor(shownPage)
+          transform: Translate { id: pageShift }
+          onLoaded: {
+            pageOut.stop(); pageBox.opacity = 1; boxShift.x = 0
+            if (pageLoader.shownPage !== root.page) { swap.stop(); pageLoader.shownPage = root.page; return }
+            pageLoader.opacity = 0; pageShift.x = 12; pageIn.restart()
+          }
+          ParallelAnimation {
+            id: pageIn
+            Nasaq.NFade { target: pageLoader; property: "opacity"; to: 1 }
+            Nasaq.NAnim { target: pageShift; property: "x"; to: 0; kind: "fast" }
+          }
         }
       }
     }

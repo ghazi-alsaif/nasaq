@@ -4,19 +4,19 @@
 set -euo pipefail
 R="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 C="$HOME/.config"; B="$HOME/.local/bin"
+# The scripts and hooks to copy are whatever the repository already ships (a
+# hand-written list once dropped nasaq-altwatch); a new script is added with git add.
+bins=$(ls "$R/bin"); theme_hooks=$(ls "$R/hooks/theme-set.d"); update_hooks=$(ls "$R/hooks/post-update.d")
 rm -rf "$R/plugins" "$R/hypr" "$R/bin" "$R/overrides" "$R/sounds" "$R/hooks" "$R/help"
 mkdir -p "$R"/{plugins,hypr,bin,overrides,sounds,hooks/theme-set.d,hooks/post-update.d,help,defaults}
 for d in "$C"/omarchy/plugins/nasaq.*/; do rsync -a --exclude .git --exclude '*.bak*' "$d" "$R/plugins/$(basename "$d")/"; done
 cp "$C"/hypr/nasaq-{pre,post,looknfeel,bindings}.lua "$R/hypr/"
-for s in nasaq-settings nasaq-sound nasaq-clone-check nasaq-auto-brightness nasaq-display-check nasaq-arabic-binds nasaq-keys \
-         nasaq-scratch nasaq-display nasaq-translate nasaq-ask nasaq-agent-ask nasaq-calendar nasaq-auto nasaq-altwatch nasaq-login-sync nasaq-doctor hypr-quit-app screensaver-mode; do
-  cp -L "$B/$s" "$R/bin/$s"
-done
+for s in $bins; do cp -L "$B/$s" "$R/bin/$s"; done
 cp -L "$HOME/.local/share/omarchy-overrides/omarchy-launch-screensaver" "$R/overrides/"
 rsync -a "$HOME/.local/share/screensaver-matrix/" "$R/overrides/screensaver-matrix/"
 rsync -a "$HOME/.local/share/sounds/nasaq/" "$R/sounds/"
-cp "$C"/omarchy/hooks/theme-set.d/{ptyxis,mlterm}-theme.sh "$C"/omarchy/hooks/theme-set.d/nasaq-login.sh "$R/hooks/theme-set.d/"
-cp "$C"/omarchy/hooks/post-update.d/nasaq-{doctor,arabic-binds}.sh "$R/hooks/post-update.d/"
+for h in $theme_hooks; do cp "$C/omarchy/hooks/theme-set.d/$h" "$R/hooks/theme-set.d/"; done
+for h in $update_hooks; do cp "$C/omarchy/hooks/post-update.d/$h" "$R/hooks/post-update.d/"; done
 rsync -a "$C/omarchy/nasaq/help/" "$R/help/"
 cp "$C/omarchy/nasaq/windows-default.json" "$R/defaults/windows.json"
 cp "$C/omarchy/nasaq/windows-default.json" "$R/defaults/windows-default.json"

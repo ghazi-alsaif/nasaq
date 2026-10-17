@@ -28,7 +28,9 @@ ptr="$HOME/.local/state/nasaq/last-install-backup"
 [[ -d $(cat "$ptr" 2>/dev/null) ]] || echo "$backup" > "$ptr"
 say "backup in ${backup/#$HOME/\~}"
 
-# Files
+# Files. The repository's place is kept so Settings › System can run the
+# login/boot installers from it (they stay in the repository, not in ~/.local/bin).
+mkdir -p "$C/omarchy/nasaq" && printf '%s\n' "$R" > "$C/omarchy/nasaq/source"
 mkdir -p "$C/omarchy/plugins" "$C/hypr" "$B" "$S/omarchy-overrides" "$S/sounds/nasaq" "$C/omarchy/nasaq" \
   "$C/omarchy/hooks/theme-set.d" "$C/omarchy/hooks/post-update.d"
 for d in "$R"/plugins/nasaq.*/; do rsync -a --delete "$d" "$C/omarchy/plugins/$(basename "$d")/"; done
@@ -43,7 +45,11 @@ install -m755 "$R/overrides/omarchy-launch-screensaver" "$S/omarchy-overrides/"
 rsync -a "$R/overrides/screensaver-matrix/" "$S/screensaver-matrix/"
 ln -sf "$S/screensaver-matrix/omarchy-screensaver-matrix" "$S/omarchy-overrides/omarchy-screensaver"
 rsync -a "$R/sounds/" "$S/sounds/nasaq/"
+# The two terminal hooks used to carry no nasaq- prefix (before 1.4.0).
+rm -f "$C/omarchy/hooks/theme-set.d/ptyxis-theme.sh" "$C/omarchy/hooks/theme-set.d/mlterm-theme.sh"
 install -m755 "$R"/hooks/theme-set.d/* "$C/omarchy/hooks/theme-set.d/"
+# Run the terminal hooks once now, so Ptyxis and mlterm follow the theme before its next change.
+for h in nasaq-ptyxis-theme nasaq-mlterm-theme; do "$C/omarchy/hooks/theme-set.d/$h.sh" >/dev/null 2>&1 || true; done
 install -m755 "$R"/hooks/post-update.d/* "$C/omarchy/hooks/post-update.d/"
 rsync -a "$R/help/" "$C/omarchy/nasaq/help/"
 for f in island.json windows.json windows-default.json; do
@@ -56,15 +62,20 @@ mkdir -p "$C/omarchy/nasaq/defaults"
 cp "$R/defaults/shell.json.patch.json" "$R/defaults/menu-entries.jsonc" "$C/omarchy/nasaq/defaults/"
 # nasaq-doctor runs the clone check now; the old separate hook would notify twice.
 rm -f "$C/omarchy/hooks/post-update.d/nasaq-clone-check.sh"
-# Omarchy's Update › Config › Hyprland resets ~/.config/hypr without running the
-# post-update hooks; a watcher on hyprland.lua runs the doctor after any rewrite.
+# Omarchy's Update › Config › Hyprland resets ~/.config/hypr, and Update ›
+# Config › Shell (omarchy refresh shell) resets shell.json, both without running
+# the post-update hooks; a watcher on those files runs the doctor after any rewrite.
+# (The doctor's own repair writes trigger one more run, which then finds nothing to do.)
 mkdir -p "$C/systemd/user"
 cat > "$C/systemd/user/nasaq-doctor.path" <<'EOF'
 [Unit]
-Description=NASAQ: put NASAQ back when ~/.config/hypr/hyprland.lua is rewritten
+Description=NASAQ: put NASAQ back when Omarchy rewrites shell.json or the Hyprland files
 
 [Path]
 PathChanged=%h/.config/hypr/hyprland.lua
+PathChanged=%h/.config/hypr/looknfeel.lua
+PathChanged=%h/.config/hypr/bindings.lua
+PathChanged=%h/.config/omarchy/shell.json
 Unit=nasaq-doctor.service
 
 [Install]
@@ -80,8 +91,13 @@ Type=oneshot
 ExecStartPre=/bin/sleep 3
 ExecStart=%h/.local/bin/nasaq-doctor --fix --notify-changes
 EOF
+# The brightness follower (Settings › System › Auto brightness turns it on; off by default).
+install -m644 "$R/defaults/nasaq-auto-brightness.service" "$C/systemd/user/nasaq-auto-brightness.service"
 systemctl --user daemon-reload >/dev/null 2>&1 || true
-systemctl --user enable --now nasaq-doctor.path >/dev/null 2>&1 || warn "could not enable the Hyprland watcher (nasaq-doctor.path)"
+systemctl --user enable --now nasaq-doctor.path >/dev/null 2>&1 || warn "could not enable the config watcher (nasaq-doctor.path)"
+# Backups pile up (one per install or update): keep the first one (uninstall --from-backup) and the last five.
+first=$(cat "$ptr" 2>/dev/null || true)
+ls -d "$HOME"/.local/state/nasaq/install-backup-* 2>/dev/null | sort | head -n -5 | grep -vxF "$first" | xargs -r rm -rf
 say "files installed"
 
 # Hyprland: one line in each of your own files loads NASAQ's modules.
@@ -106,7 +122,9 @@ if ! $UPDATE; then
 import json, os, sys
 p, patch = sys.argv[1], json.load(open(sys.argv[2]))
 d = json.load(open(p)) if os.path.exists(p) else {"version": 1}
-d["bar"] = patch["bar"]
+# A re-install over a NASAQ bar keeps the layout the user has arranged since.
+if not str(d.get("bar", {}).get("id", "")).startswith("nasaq."):
+    d["bar"] = patch["bar"]
 keep = [x for x in d.get("plugins", []) if (x.get("id") if isinstance(x, dict) else x) not in patch["plugins"]]
 d["plugins"] = keep + [{"id": i} for i in patch["plugins"]]
 d["disabledPlugins"] = sorted(set(d.get("disabledPlugins", [])) | set(patch["disabledPlugins"]))
@@ -134,7 +152,7 @@ say "menu entries in place"
 # so it is asked once at most, and not at all when everything is in place.
 # Packages. NASAQ is one experience, so nothing here is optional: whatever is
 # missing is installed, whatever is already there is left alone.
-pkgs=(tesseract-data-ara cava nwg-displays kitty ptyxis libqalculate fastfetch)
+pkgs=(tesseract-data-ara cava nwg-displays kitty ptyxis libqalculate fastfetch playerctl)
 missing=()
 for p in "${pkgs[@]}"; do pacman -Q "$p" >/dev/null 2>&1 || missing+=("$p"); done
 if ((${#missing[@]})); then
@@ -145,7 +163,7 @@ fi
 
 # The app switcher reads the Alt key from the kernel (Hyprland never reports a
 # modifier's release). That needs read access to /dev/input: one udev rule.
-if [[ ! -f /etc/udev/rules.d/69-nasaq-input.rules ]]; then
+if ! cmp -s "$R/defaults/69-nasaq-input.rules" /etc/udev/rules.d/69-nasaq-input.rules; then
   if sudo install -m644 "$R/defaults/69-nasaq-input.rules" /etc/udev/rules.d/69-nasaq-input.rules &&
      sudo udevadm control --reload && sudo udevadm trigger --subsystem-match=input --action=add; then
     say "udev rule installed"
@@ -169,9 +187,9 @@ fi
 # login screen; see login/install-plymouth.sh). Installed while missing;
 # refreshed when the repository's templates changed.
 if command -v plymouth-set-default-theme >/dev/null; then
-  # "Installed" means selected too: a folder left by an interrupted install, or
-  # another theme chosen since, counts as not installed and is installed again.
-  if [[ ! -d /usr/share/plymouth/themes/nasaq || $(plymouth-set-default-theme 2>/dev/null) != nasaq ]]; then
+  # Installed while missing. A theme the user chose since (Style › Unlock) is
+  # their decision: the doctor mentions it, nothing re-selects NASAQ's.
+  if [[ ! -d /usr/share/plymouth/themes/nasaq ]]; then
     "$R/login/install-plymouth.sh" || warn "boot screens not installed (run ./install.sh --update again)"
   elif ! cmp -s "$R/login/nasaq-plymouth/nasaq.script.in" /usr/share/plymouth/themes/nasaq/templates/nasaq.script.in ||
        ! cmp -s "$R/bin/nasaq-login-sync" /usr/local/bin/nasaq-login-sync; then
@@ -179,28 +197,18 @@ if command -v plymouth-set-default-theme >/dev/null; then
   fi
 fi
 
-# System info (fastfetch) when a terminal opens. Never overwrites an
-# existing ~/.config/fastfetch; the ~/.bashrc block sits between markers so
-# uninstall.sh can take exactly it out again.
-if ! grep -qs '# >>> NASAQ fastfetch >>>' "$HOME/.bashrc"; then
-  if command -v fastfetch >/dev/null; then
-    [[ -e $C/fastfetch ]] || { mkdir -p "$C/fastfetch" && cp "$R"/fastfetch/* "$C/fastfetch/"; }
-    [[ ! -s $HOME/.bashrc || $(tail -c1 "$HOME/.bashrc") == "" ]] || echo >> "$HOME/.bashrc"
-    cat >> "$HOME/.bashrc" <<'EOF'
-# >>> NASAQ fastfetch >>>
-# System info when a terminal opens (added by NASAQ's install.sh, removed by uninstall.sh).
-if [[ $- == *i* && -t 1 ]] && command -v fastfetch >/dev/null; then
-  if [[ -f ~/.config/fastfetch/compact.jsonc ]]; then fastfetch -c ~/.config/fastfetch/compact.jsonc; else fastfetch; fi
-fi
-# <<< NASAQ fastfetch <<<
-EOF
-    say "terminal greeting added to ~/.bashrc"
-  else
-    warn "fastfetch is not installed, so no terminal greeting"
-  fi
+# System info (fastfetch) when a terminal opens: a marked block in ~/.bashrc
+# (bin/nasaq-greeting adds and removes it; Settings › System has the switch).
+# Added at install; afterwards the switch decides. An existing ~/.config/fastfetch
+# is never overwritten.
+if ! $UPDATE || [[ ! -f $HOME/.local/state/nasaq/greeting-offered ]]; then
+  nasaq-greeting on >/dev/null 2>&1 && say "terminal greeting added to ~/.bashrc" || warn "fastfetch is not installed, so no terminal greeting"
+  touch "$HOME/.local/state/nasaq/greeting-offered"
 fi
 
-nasaq-arabic-binds on >/dev/null 2>&1 || true
+# Shortcuts under the Arabic layout: on at install; afterwards the switch in
+# Settings › Shortcuts decides, and an update only regenerates what is already on.
+if ! $UPDATE || [[ $(nasaq-arabic-binds status 2>/dev/null) == on ]]; then nasaq-arabic-binds on >/dev/null 2>&1 || true; fi
 nasaq-scratch apply >/dev/null 2>&1 || true
 omarchy-shell -q shell rescanPlugins || true
 hyprctl reload >/dev/null 2>&1 || true

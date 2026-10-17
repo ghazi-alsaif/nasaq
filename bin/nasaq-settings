@@ -88,7 +88,7 @@ paths+=("$bin_mirror")
 mirror_bin() {
   local f name
   mkdir -p "$tree/$bin_mirror"
-  for f in "$HOME"/.local/bin/nasaq-* "$HOME/.local/bin/fix-sound" "$HOME/.local/bin/hypr-quit-app"; do
+  for f in "$HOME"/.local/bin/nasaq-* "$HOME/.local/bin/hypr-quit-app"; do
     [[ -f $f ]] || continue
     name=${f##*/}
     cmp -s "$f" "$tree/$bin_mirror/$name" || cp -p "$f" "$tree/$bin_mirror/$name"

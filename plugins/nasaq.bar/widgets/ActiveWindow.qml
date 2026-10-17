@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Wayland
 import qs.Commons
 import qs.Ui
+import "../../nasaq.commons" as Nasaq
 
 BarWidget {
   id: root
@@ -17,9 +18,7 @@ BarWidget {
   implicitWidth: visible ? Math.min(maxLabelWidth, labelText.implicitWidth) + Style.spacing.controlPaddingX * 2 : 0
   implicitHeight: barSize
 
-  Behavior on implicitWidth {
-    NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
-  }
+  Behavior on implicitWidth { Nasaq.NAnim { kind: "move" } }
 
   Item {
     anchors.fill: parent

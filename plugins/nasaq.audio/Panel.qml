@@ -741,7 +741,7 @@ Panel {
               }
             }
 
-            // Kicks a stuck sound card (suspend → resume the output) via ~/.local/bin/fix-sound.
+            // Speakers silent while everything looks fine: nasaq-fix-sound restarts the audio stack.
             PanelActionButton {
               id: fixSoundButton
               iconText: "󰑐"
@@ -751,7 +751,7 @@ Panel {
               anchors.right: powerSwitch.left
               anchors.rightMargin: Style.space(10)
               anchors.verticalCenter: parent.verticalCenter
-              onClicked: Quickshell.execDetached([Quickshell.env("HOME") + "/.local/bin/fix-sound"])
+              onClicked: Quickshell.execDetached([Quickshell.env("HOME") + "/.local/bin/nasaq-fix-sound"])
             }
 
             Column {

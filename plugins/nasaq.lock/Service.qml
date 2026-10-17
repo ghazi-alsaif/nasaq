@@ -243,7 +243,7 @@ Item {
   // A good password: the lock fades back to the sharp desktop first
   // (LockView.leaving), then unlocks.
   property bool leaving: false
-  Timer { id: leaveTimer; interval: Math.round(350 * root.motionScale) + 30; onTriggered: root.finishUnlock() }
+  Timer { id: leaveTimer; interval: Math.round(300 * root.motionScale) + 30; onTriggered: root.finishUnlock() }
   function beginUnlock() {
     if (!root.locked && !lockRequested) return
     if (leaving) return

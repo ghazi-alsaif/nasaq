@@ -33,7 +33,7 @@ Item {
   onSurfaceShownChanged: tryReveal()
   Timer { id: revealSettle; interval: 40; onTriggered: root.startReveal() }
   function tryReveal() {
-    if (!loadBackground || reveal > 0 || revealAnim.running) return
+    if (leaving || !loadBackground || reveal > 0 || revealAnim.running) return
     if (!surfaceShown) return
     if (useCapture && shot.status !== Image.Ready) return
     revealSettle.restart()
@@ -43,7 +43,7 @@ Item {
     if (root.motionScale <= 0 || !root.coverReady) { revealAnim.stop(); reveal = 0; return }
     revealAnim.stop()
     revealAnim.to = 0
-    revealAnim.duration = Math.round(350 * root.motionScale)
+    revealAnim.duration = Math.round(300 * root.motionScale)
     revealAnim.easing.bezierCurve = [0.23, 1.00, 0.32, 1.00, 1, 1]
     revealAnim.start()
   }
@@ -83,10 +83,13 @@ Item {
     easing.bezierCurve: [0.23, 1.00, 0.32, 1.00, 1, 1]
   }
   function startReveal() {
+    if (leaving) return
     if (root.motionScale <= 0 || !root.coverReady) { revealAnim.stop(); reveal = 1; return }
     revealAnim.stop()
     revealAnim.to = 1
-    revealAnim.duration = Math.round(400 * root.motionScale)
+    // The same lengths as Motion.open / Motion.close (nasaq.commons); this file
+    // reads motion.scale itself because the lock stays free of sibling imports.
+    revealAnim.duration = Math.round(450 * root.motionScale)
     // Even in and out: a front-loaded curve does most of a full-screen fade
     // in the first frames, which is where a fresh lock surface drops some.
     revealAnim.easing.bezierCurve = [0.40, 0.00, 0.20, 1.00, 1, 1]
@@ -998,8 +1001,8 @@ Item {
         SequentialAnimation {
           id: shake
           loops: 1
-          NumberAnimation { target: field; property: "x"; to: -12; duration: 50 }
-          NumberAnimation { target: field; property: "x"; to: 12; duration: 70 }
+          NumberAnimation { target: field; property: "x"; to: -12; duration: Math.round(50 * root.motionScale) }
+          NumberAnimation { target: field; property: "x"; to: 12; duration: Math.round(70 * root.motionScale) }
           NumberAnimation { target: field; property: "x"; to: -8; duration: 70 }
           NumberAnimation { target: field; property: "x"; to: 8; duration: 70 }
           NumberAnimation { target: field; property: "x"; to: 0; duration: 50 }

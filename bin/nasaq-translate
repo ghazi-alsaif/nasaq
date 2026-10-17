@@ -1,16 +1,16 @@
 #!/bin/bash
-# NASAQ: translate the selected text (or the clipboard) with Claude and show
-# the result in the island; the translation is also copied.
+# NASAQ: translate the selected text (or the clipboard) with the Omarchy agent
+# (nasaq-agent-ask) and show the result in the island; the translation is also copied.
 #   nasaq-translate            Arabic → English, anything else → Arabic
 #   nasaq-translate en|ar      force the target language
 #   nasaq-translate --summary  summarise instead of translating
 #   nasaq-translate --region   pick a screen region, read its text (OCR), translate it
-# Settings: translate.target (auto|en|ar), translate.model (default haiku).
+# Settings: translate.target (auto|en|ar), translate.model (agent tier, default fast).
 set -uo pipefail
 settings="$HOME/.config/omarchy/nasaq/settings.json"
-get() { python3 -c "import json,sys;d=json.load(open('$settings'));v=d
+get() { python3 -c "import json,sys;d=json.load(open(sys.argv[3]));v=d
 for k in sys.argv[1].split('.'): v=v.get(k,{}) if isinstance(v,dict) else {}
-print(v if isinstance(v,str) and v else sys.argv[2])" "$1" "$2" 2>/dev/null || echo "$2"; }
+print(v if isinstance(v,str) and v else sys.argv[2])" "$1" "$2" "$settings" 2>/dev/null || echo "$2"; }
 
 mode=translate target="" region=false
 case "${1:-}" in --summary) mode=summary ;; --region) region=true ;; en|ar) target=$1 ;; esac

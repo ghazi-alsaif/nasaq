@@ -1,0 +1,30 @@
+#!/bin/bash
+# NASAQ: the terminal greeting (fastfetch when a terminal opens). One marked
+# block in ~/.bashrc, added by install.sh and switchable in Settings › System.
+#   nasaq-greeting on | off | status
+set -uo pipefail
+rc="$HOME/.bashrc"; C="$HOME/.config"
+case ${1:-status} in
+  status) grep -qs '# >>> NASAQ fastfetch >>>' "$rc" && echo on || echo off ;;
+  off)
+    grep -qs '# >>> NASAQ fastfetch >>>' "$rc" && sed -i '/^# >>> NASAQ fastfetch >>>$/,/^# <<< NASAQ fastfetch <<<$/d' "$rc"
+    echo off ;;
+  on)
+    command -v fastfetch >/dev/null || { echo "fastfetch is not installed" >&2; exit 1; }
+    if ! grep -qs '# >>> NASAQ fastfetch >>>' "$rc"; then
+      src="$(cat "$C/omarchy/nasaq/source" 2>/dev/null)"
+      # Never overwrites an existing ~/.config/fastfetch: it may be the user's own.
+      [[ -e $C/fastfetch || ! -d $src/fastfetch ]] || { mkdir -p "$C/fastfetch" && cp "$src"/fastfetch/* "$C/fastfetch/"; }
+      [[ ! -s $rc || $(tail -c1 "$rc") == "" ]] || echo >> "$rc"
+      cat >> "$rc" <<'BLOCK'
+# >>> NASAQ fastfetch >>>
+# System info when a terminal opens (added by NASAQ's install.sh, removed by uninstall.sh).
+if [[ $- == *i* && -t 1 ]] && command -v fastfetch >/dev/null; then
+  if [[ -f ~/.config/fastfetch/compact.jsonc ]]; then fastfetch -c ~/.config/fastfetch/compact.jsonc; else fastfetch; fi
+fi
+# <<< NASAQ fastfetch <<<
+BLOCK
+    fi
+    echo on ;;
+  *) sed -n '2,5p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
+esac

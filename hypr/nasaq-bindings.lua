@@ -75,21 +75,14 @@ o.bind("SUPER + N", "Notification Center", "omarchy-shell nasaq.notifcenter togg
 -- code:24 = Q, so it works under the Arabic layout too.
 o.bind("SUPER + code:24", "Quit app", os.getenv("HOME") .. "/.local/bin/hypr-quit-app")
 
--- ── Control center, desktop widgets, speakers fix (added with the 2026-10-06 audit) ──
+-- ── Control center, desktop widgets, sound fix (added with the 2026-10-06 audit) ──
 -- Keycodes rather than letters, so they work under the Arabic layout too:
 -- code:54 = C, code:40 = D, code:38 = A.
 o.bind("SUPER + ALT + code:54", "Quick Settings", "omarchy-shell nasaq.control-center toggle")
 o.bind("SUPER + ALT + code:40", "Show / hide desktop widgets", "omarchy-shell nasaq.desktop toggle")
 o.bind("SUPER + ALT + code:42", "Game mode", "omarchy-shell nasaq.gamemode toggle")
--- Only on a machine that has the fix (the iMac).
-do
-  local fix = (os.getenv("HOME") or "") .. "/.local/bin/fix-sound"
-  local f = io.open(fix, "r")
-  if f then
-    f:close()
-    o.bind("SUPER + ALT + code:38", "Fix speakers", fix)
-  end
-end
+-- Restarts the audio stack (a machine's own ~/.local/bin/fix-sound runs instead if present).
+o.bind("SUPER + ALT + code:38", "Fix sound", (os.getenv("HOME") or "") .. "/.local/bin/nasaq-fix-sound")
 
 -- ── NASAQ generated bindings (written by NASAQ Settings; never edit by hand) ──
 for _, name in ipairs({ "nasaq-binds-arabic", "nasaq-binds", "nasaq-scratchpads" }) do

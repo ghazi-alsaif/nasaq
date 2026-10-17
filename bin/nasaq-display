@@ -50,7 +50,7 @@ elif cmd == "apply" and len(sys.argv) >= 5:
     DB.write_text(json.dumps(db)); write(db); reload()
     token = str(time.time()); PENDING.write_text(token)
     # Detached watchdog: revert unless confirmed within 15 s.
-    subprocess.Popen(["bash", "-c", f'sleep 15; [ "$(cat {PENDING} 2>/dev/null)" = "{token}" ] && {sys.argv[0]} revert'], start_new_session=True)
+    subprocess.Popen(["bash", "-c", 'sleep 15; [ "$(cat "$1" 2>/dev/null)" = "$2" ] && "$3" revert', "nasaq", str(PENDING), token, sys.argv[0]], start_new_session=True)
     print("applied; run `nasaq-display keep` within 15 s")
 elif cmd == "keep":
     PENDING.unlink(missing_ok=True); print("kept")

@@ -85,7 +85,14 @@ Item {
     open = false
     if (t) activate(t)
   }
-  function cancel() { open = false }
+  // Esc: the card fades out, then the switcher closes (a confirm stays instant).
+  function cancel() {
+    if (!open) return
+    if (!Nasaq.Motion.enabled) { open = false; return }
+    cancelling = true; cancelClose.restart()
+  }
+  property bool cancelling: false
+  Timer { id: cancelClose; interval: Nasaq.Motion.fast + 20; onTriggered: { root.open = false; root.cancelling = false } }
   function activate(t) {
     // Hyprland 0.55+ dispatches are Lua expressions.
     Quickshell.execDetached(["hyprctl", "--batch",
@@ -191,6 +198,7 @@ Item {
           card.appeared = false
           if (root.open) Qt.callLater(function() { card.appeared = true })
         }
+        function onCancellingChanged() { if (root.cancelling) card.appeared = false }
       }
       // One frame that glides from window to window on TAB, like the highlight
       // in Search, instead of each thumbnail lighting up on its own. It jumps

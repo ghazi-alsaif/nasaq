@@ -7,7 +7,7 @@ import json, re, subprocess, sys
 ALLOW = re.compile(r"^(omarchy[ -][\w -]+|nasaq-[\w-]+( [\w.:+\"' -]*)?|systemctl --user (start|stop|restart|status) [\w.@-]+|"
                    r"hyprctl dispatch [\w.:\"(){}=, -]+|brightnessctl set \d+%|wpctl set-(volume|mute) @DEFAULT_AUDIO_SINK@ [\w.%+-]+|"
                    r"playerctl (play|pause|play-pause|next|previous)|powerprofilesctl set (performance|balanced|power-saver)|"
-                   r"omarchy-shell [\w.-]+ [\w-]+( [\w\"'{}:,. -]*)?|notify-send .+|sleep \d+ && .+)$")
+                   r"omarchy-shell [\w.-]+ [\w-]+( [\w\"'{}:,. -]*)?|notify-send( -[a-z] [\w-]+)*( \"[^\"$`\\;|&]*\"){1,2})$")
 q = " ".join(sys.argv[1:]).strip()
 if not q:
     print(json.dumps({"answer": "", "command": None})); sys.exit()

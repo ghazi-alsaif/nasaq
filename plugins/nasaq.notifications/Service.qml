@@ -1232,9 +1232,9 @@ Item {
               transformOrigin: Item.Top
               opacity: cardSlot.born ? 1 : 0
               scale: cardSlot.born ? 1 : 0.35
-              transform: Translate { y: cardSlot.born ? 0 : -36 * (cardSlot.index + 1); Behavior on y { SpringAnimation { spring: 3; damping: 0.32 } } }
-              Behavior on opacity { NumberAnimation { duration: 160 } }
-              Behavior on scale { SpringAnimation { spring: 3; damping: 0.30; epsilon: 0.005 } }
+              transform: Translate { y: cardSlot.born ? 0 : -36 * (cardSlot.index + 1); Behavior on y { enabled: Nasaq.Motion.enabled; SpringAnimation { spring: 3; damping: 0.32 } } }
+              Behavior on opacity { Nasaq.NFade {} }
+              Behavior on scale { enabled: Nasaq.Motion.enabled; SpringAnimation { spring: 3; damping: 0.30; epsilon: 0.005 } }
               app: cardSlot.app
               appIcon: cardSlot.appIcon
               summary: cardSlot.summary

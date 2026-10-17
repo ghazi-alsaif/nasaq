@@ -9,7 +9,7 @@ import "../nasaq.commons" as Nasaq
 
 // NASAQ: power behaviour on top of power-profiles-daemon.
 //
-// • Low Power Mode turns itself on when the battery drops to `lowPowerAt`
+// • power saver turns itself on when the battery drops to `lowPowerAt`
 //   (20 %) while unplugged, and off again once the charger is connected
 //   (Omarchy's battery service then restores the plugged-in profile).
 // • Whatever the profile, its "personality" is applied:
@@ -101,7 +101,7 @@ Item {
       }
     }
   }
-  // A battery can drain into Low Power Mode at any moment, so a laptop is
+  // A battery can drain into power saver at any moment, so a laptop is
   // checked every 3 s. A desktop only changes mode when the user picks one.
   Timer {
     interval: root.hasBattery ? 3000 : 30000
@@ -121,7 +121,7 @@ Item {
     Quickshell.execDetached(["omarchy-shell", "nasaq.island", "alert", title, subtitle || ""])
   }
 
-  // ── Low Power Mode on/off ────────────────────────────────────────
+  // ── power saver on/off ────────────────────────────────────────
   function evaluate() {
     if (!loaded || !profile) return
     var lowAt = config.lowPowerAt || 20
@@ -130,14 +130,14 @@ Item {
       autoLowPower = true
       saveState()
       setProfile("power-saver")
-      announce("Low Power Mode", "Battery " + percent + "% — display dimmed, effects off")
+      announce("Power saver", "Battery " + percent + "% — display dimmed, effects off")
     } else if (autoLowPower && !onBattery) {
       // Plugged in: hand back to Omarchy, which restores the plugged-in profile.
       autoLowPower = false
       saveState()
       if (isSaver() && profileBeforeLow) setProfile(profileBeforeLow)
       profileBeforeLow = ""
-      announce("Low Power Mode off", "Charger connected")
+      announce("Power saver off", "Charger connected")
     } else if (autoLowPower && !isSaver()) {
       // the user picked another mode; respect it.
       autoLowPower = false

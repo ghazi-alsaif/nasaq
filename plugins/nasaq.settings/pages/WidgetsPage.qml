@@ -81,7 +81,7 @@ NPage {
           height: orderList.rowH
           y: index * orderList.rowH
           z: handleMouse.drag.active ? 2 : 1
-          Behavior on y { enabled: !handleMouse.drag.active; NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+          Behavior on y { enabled: !handleMouse.drag.active; NAnim { kind: "fast" } }
           Rectangle {
             anchors.fill: parent
             anchors.bottomMargin: 1
@@ -165,7 +165,7 @@ NPage {
         NTextField { id: icalField; width: 260; password: true; placeholder: "https://calendar.google.com/…/basic.ics" }
         NButton { text: "Connect"; primary: true; onClicked: {
           if (!icalField.text.trim()) return
-          Sys.run("python3 -c 'import json,os,sys;p=os.path.expanduser(\"~/.config/omarchy/nasaq/secrets.json\");d=json.load(open(p)) if os.path.exists(p) else {};u=sys.argv[1];c=d.setdefault(\"calendars\",[]);c.append(u) if u not in c else None;open(p,\"w\").write(json.dumps(d,indent=2));os.chmod(p,0o600)' " + JSON.stringify(icalField.text.trim()) + " && nasaq-calendar")
+          Sys.runArgs("python3 -c 'import json,os,sys;p=os.path.expanduser(\"~/.config/omarchy/nasaq/secrets.json\");d=json.load(open(p)) if os.path.exists(p) else {};u=sys.argv[1];c=d.setdefault(\"calendars\",[]);c.append(u) if u not in c else None;open(p,\"w\").write(json.dumps(d,indent=2));os.chmod(p,0o600)' \"$1\" && nasaq-calendar", [icalField.text.trim()])
           icalField.text = ""; refreshLater.restart()
         } }
       }
