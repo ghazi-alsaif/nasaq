@@ -22,11 +22,11 @@ Item {
   property bool open: false
   property bool shown: false
 
-  readonly property string textFont: "IBM Plex Sans Arabic"
+  readonly property string textFont: Nasaq.Theme.textFont
   readonly property string iconFont: Style.font.family
   readonly property color accent: Color.accent
-  readonly property color cardColor: Util.alpha(Color.background, Math.max(0.55, Nasaq.Theme.glassAlpha))
-  readonly property color tileColor: Qt.rgba(1, 1, 1, 0.07)
+  readonly property color cardColor: Nasaq.Theme.glass
+  readonly property color tileColor: Qt.alpha(Color.foreground, 0.07)
   readonly property string home: Quickshell.env("HOME")
 
   property var entries: []
@@ -98,7 +98,7 @@ Item {
     if (diff < 3600) return Math.floor(diff / 60) + "m"
     if (diff < 86400) return Math.floor(diff / 3600) + "h"
     if (diff < 172800) return "Yesterday"
-    return Qt.formatDate(new Date(ts), "d MMM")
+    return Nasaq.Clock.dateShort(new Date(ts))
   }
 
   function iconFor(group) {
@@ -240,7 +240,7 @@ Item {
   component Tile: Rectangle {
     radius: 16
     color: root.tileColor
-    border.color: Qt.rgba(1, 1, 1, 0.05)
+    border.color: Qt.alpha(Color.foreground, 0.05)
     border.width: 1
   }
 
@@ -274,9 +274,9 @@ Item {
         x: root.hideT * (panel.width + Style.gapsOut + 24)
       }
       height: Math.min(content.implicitHeight + 28, win.height - win.topGap - Style.gapsOut - 4)
-      radius: 24
+      radius: Nasaq.Theme.radiusPanel
       color: root.cardColor
-      border.color: Qt.rgba(1, 1, 1, 0.14)
+      border.color: Qt.alpha(Color.foreground, 0.14)
       border.width: 1
       clip: true
       // Solid both ways: the panel slides fully off screen, so it needs no
@@ -306,15 +306,15 @@ Item {
               anchors.left: parent.left
               anchors.verticalCenter: parent.verticalCenter
               Text {
-                text: Qt.locale("en_US").toString(root.now, "dddd")
+                text: Nasaq.Clock.weekday(root.now)
                 color: root.accent
                 font.family: root.textFont
                 font.weight: Font.DemiBold
                 font.pixelSize: 13
               }
               Text {
-                text: Qt.locale("en_US").toString(root.now, "d MMMM")
-                color: "white"
+                text: Nasaq.Clock.dayMonth(root.now)
+                color: Color.foreground
                 font.family: root.textFont
                 font.weight: Font.Bold
                 font.pixelSize: 24
@@ -323,9 +323,9 @@ Item {
             Text {
               anchors.right: parent.right
               anchors.verticalCenter: parent.verticalCenter
-              visible: root.prayerDay !== null
-              text: root.prayerDay ? root.prayerDay.hijri.day + " " + root.prayerDay.hijri.month + " " + root.prayerDay.hijri.year : ""
-              color: Qt.rgba(1, 1, 1, 0.6)
+              visible: root.prayerDay !== null && Nasaq.Settings.get("island.hijri", "both") !== "gregorian"
+              text: root.prayerDay ? Nasaq.Clock.hijri(root.prayerDay.hijri) : ""
+              color: Qt.alpha(Color.foreground, 0.6)
               font.family: root.textFont
               font.pixelSize: 13
             }
@@ -353,8 +353,8 @@ Item {
                 Text {
                   anchors.left: parent.left
                   anchors.verticalCenter: parent.verticalCenter
-                  text: Qt.locale("en_US").toString(root.viewMonth, "MMMM yyyy")
-                  color: "white"
+                  text: Nasaq.Clock.monthYear(root.viewMonth)
+                  color: Color.foreground
                   font.family: root.textFont
                   font.weight: Font.DemiBold
                   font.pixelSize: 14
@@ -368,7 +368,7 @@ Item {
                     delegate: Text {
                       required property var modelData
                       text: modelData.g
-                      color: navMouse.containsMouse ? "white" : Qt.rgba(1, 1, 1, 0.6)
+                      color: navMouse.containsMouse ? Color.foreground : Qt.alpha(Color.foreground, 0.6)
                       font.family: root.iconFont
                       font.pixelSize: 14
                       MouseArea {
@@ -395,7 +395,7 @@ Item {
                     width: parent.cell
                     horizontalAlignment: Text.AlignHCenter
                     text: modelData
-                    color: Qt.rgba(1, 1, 1, 0.45)
+                    color: Qt.alpha(Color.foreground, 0.45)
                     font.family: root.textFont
                     font.weight: Font.DemiBold
                     font.pixelSize: 11
@@ -422,7 +422,7 @@ Item {
                     Text {
                       anchors.centerIn: parent
                       text: parent.inMonth ? parent.day : ""
-                      color: parent.today ? "white" : ((index % 7 === 5 || index % 7 === 6) ? Qt.rgba(1, 1, 1, 0.55) : Qt.rgba(1, 1, 1, 0.9))
+                      color: parent.today ? Color.foreground : ((index % 7 === 5 || index % 7 === 6) ? Qt.alpha(Color.foreground, 0.55) : Qt.alpha(Color.foreground, 0.9))
                       font.family: root.textFont
                       font.weight: parent.today ? Font.Bold : Font.Normal
                       font.pixelSize: 12
@@ -446,14 +446,14 @@ Item {
                 anchors.top: parent.top
                 Text {
                   text: root.config.city || ""
-                  color: "white"
+                  color: Color.foreground
                   font.family: root.textFont
                   font.weight: Font.DemiBold
                   font.pixelSize: 13
                 }
                 Text {
                   text: root.weather ? root.weather.temp + "°" : ""
-                  color: "white"
+                  color: Color.foreground
                   font.family: root.textFont
                   font.weight: Font.Light
                   font.pixelSize: 34
@@ -472,7 +472,7 @@ Item {
                 Text {
                   anchors.right: parent.right
                   text: root.weather ? root.weather.label + " · 󰖎 " + root.weather.humidity + "%" : ""
-                  color: Qt.rgba(1, 1, 1, 0.65)
+                  color: Qt.alpha(Color.foreground, 0.65)
                   font.family: root.textFont
                   font.pixelSize: 11
                 }
@@ -489,14 +489,14 @@ Item {
                     Text {
                       anchors.horizontalCenter: parent.horizontalCenter
                       text: modelData.name
-                      color: Qt.rgba(1, 1, 1, 0.55)
+                      color: Qt.alpha(Color.foreground, 0.55)
                       font.family: root.textFont
                       font.pixelSize: 10
                     }
                     Text {
                       anchors.horizontalCenter: parent.horizontalCenter
                       text: modelData.icon + " " + modelData.max + "°"
-                      color: "white"
+                      color: Color.foreground
                       font.family: root.iconFont
                       font.pixelSize: 12
                     }
@@ -516,7 +516,7 @@ Item {
               anchors.leftMargin: 14
               anchors.verticalCenter: parent.verticalCenter
               text: "󰽥"
-              color: root.service && root.service.doNotDisturb ? Color.accent : Qt.rgba(1, 1, 1, 0.7)
+              color: root.service && root.service.doNotDisturb ? Color.accent : Qt.alpha(Color.foreground, 0.7)
               font.family: root.iconFont
               font.pixelSize: 17
             }
@@ -525,7 +525,7 @@ Item {
               anchors.leftMargin: 10
               anchors.verticalCenter: parent.verticalCenter
               text: "Do Not Disturb"
-              color: "white"
+              color: Color.foreground
               font.family: root.textFont
               font.weight: Font.DemiBold
               font.pixelSize: 13
@@ -539,7 +539,7 @@ Item {
               width: 38
               height: 22
               radius: 11
-              color: checked ? Color.accent : Qt.rgba(1, 1, 1, 0.22)
+              color: checked ? Color.accent : Qt.alpha(Color.foreground, 0.22)
               Behavior on color { Nasaq.NColour { duration: Nasaq.Motion.micro } }
               Rectangle {
                 width: 18
@@ -547,7 +547,7 @@ Item {
                 radius: 9
                 y: 2
                 x: sw.checked ? sw.width - width - 2 : 2
-                color: "white"
+                color: Color.foreground
                 Behavior on x { Nasaq.NAnim { kind: "fast" } }
               }
               MouseArea {
@@ -567,7 +567,7 @@ Item {
               anchors.left: parent.left
               anchors.verticalCenter: parent.verticalCenter
               text: "Notifications"
-              color: "white"
+              color: Color.foreground
               font.family: root.textFont
               font.weight: Font.Bold
               font.pixelSize: 15
@@ -577,7 +577,7 @@ Item {
               anchors.verticalCenter: parent.verticalCenter
               visible: root.entries.length > 0
               text: "Clear All"
-              color: clearAllMouse.containsMouse ? "white" : root.accent
+              color: clearAllMouse.containsMouse ? Color.foreground : root.accent
               font.family: root.textFont
               font.weight: Font.DemiBold
               font.pixelSize: 12
@@ -599,7 +599,7 @@ Item {
             topPadding: 10
             bottomPadding: 14
             text: "No Notifications"
-            color: Qt.rgba(1, 1, 1, 0.4)
+            color: Qt.alpha(Color.foreground, 0.4)
             font.family: root.textFont
             font.pixelSize: 13
           }
@@ -695,7 +695,7 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     visible: !appIconImg.visible
                     text: groupTile.modelData.glyph || "󰂚"
-                    color: Qt.rgba(1, 1, 1, 0.75)
+                    color: Qt.alpha(Color.foreground, 0.75)
                     font.family: root.iconFont
                     font.pixelSize: 15
                   }
@@ -704,7 +704,7 @@ Item {
                     anchors.leftMargin: 26
                     anchors.verticalCenter: parent.verticalCenter
                     text: groupTile.modelData.app + (groupTile.modelData.items.length > 1 ? "  ·  " + groupTile.modelData.items.length : "")
-                    color: Qt.rgba(1, 1, 1, 0.7)
+                    color: Qt.alpha(Color.foreground, 0.7)
                     font.family: root.textFont
                     font.weight: Font.DemiBold
                     font.pixelSize: 12
@@ -713,7 +713,7 @@ Item {
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
                     text: "󰅖"
-                    color: groupClose.containsMouse ? "white" : Qt.rgba(1, 1, 1, 0.45)
+                    color: groupClose.containsMouse ? Color.foreground : Qt.alpha(Color.foreground, 0.45)
                     font.family: root.iconFont
                     font.pixelSize: 13
                     MouseArea {
@@ -740,7 +740,7 @@ Item {
                       Text {
                         width: parent.width
                         text: modelData.summary || ""
-                        color: "white"
+                        color: Color.foreground
                         elide: Text.ElideRight
                         font.family: root.textFont
                         font.weight: Font.DemiBold
@@ -750,7 +750,7 @@ Item {
                         width: parent.width
                         visible: text.length > 0
                         text: String(modelData.body || "").replace(/<[^>]*>/g, "")
-                        color: Qt.rgba(1, 1, 1, 0.65)
+                        color: Qt.alpha(Color.foreground, 0.65)
                         wrapMode: Text.Wrap
                         maximumLineCount: 2
                         elide: Text.ElideRight
@@ -762,7 +762,7 @@ Item {
                       anchors.right: parent.right
                       anchors.top: parent.top
                       text: root.timeAgo(modelData.timestamp || 0)
-                      color: Qt.rgba(1, 1, 1, 0.45)
+                      color: Qt.alpha(Color.foreground, 0.45)
                       font.family: root.textFont
                       font.pixelSize: 11
                     }
@@ -773,7 +773,7 @@ Item {
                   readonly property bool isOpen: !!root.expandedGroups[groupTile.modelData.key]
                   visible: groupTile.modelData.items.length > 4
                   text: isOpen ? "Show less" : "+" + (groupTile.modelData.items.length - 4) + " more"
-                  color: moreMouse.containsMouse ? "white" : Qt.rgba(1, 1, 1, 0.45)
+                  color: moreMouse.containsMouse ? Color.foreground : Qt.alpha(Color.foreground, 0.45)
                   font.family: root.textFont
                   font.pixelSize: 11
                   MouseArea {

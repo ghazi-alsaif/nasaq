@@ -113,7 +113,7 @@ Item {
     return best
   }
 
-  readonly property string textFont: "IBM Plex Sans Arabic"
+  property string textFont: "IBM Plex Sans Arabic"   // set by Service from settings.json appearance.textFont
   readonly property string monoFont: "JetBrains Mono"
 
   // Colours follow the active Omarchy theme, mapped exactly like the NASAQ
@@ -277,10 +277,13 @@ Item {
 
       Text {
         anchors.horizontalCenter: parent.horizontalCenter
-        text: Qt.locale("en_US").toString(clockColumn.now, "dddd, MMMM d")
+        // Same order and font as the desktop clock, so the fade between them
+        // changes nothing but the blur. English names: this file imports no
+        // sibling plugin, so Clock (nasaq.commons) is not available here.
+        text: Qt.locale("en_US").toString(clockColumn.now, "dddd, d MMMM")
         color: root.tint(root.fg, 0.9)
-        font.family: root.monoFont
-        font.weight: Font.Medium
+        font.family: root.textFont
+        font.weight: Font.DemiBold
         font.pixelSize: Math.round(root.height * 0.026)
       }
 
@@ -288,8 +291,8 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         text: Qt.locale("en_US").toString(clockColumn.now, "h:mm AP").replace(/\s*[AP]M$/i, "")
         color: root.tint(root.fg, 0.95)
-        font.family: root.monoFont
-        font.weight: Font.Normal
+        font.family: root.textFont
+        font.weight: Font.Bold
         font.pixelSize: Math.round(root.height * 0.13)
       }
     }

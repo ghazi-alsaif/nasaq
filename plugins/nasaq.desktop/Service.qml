@@ -19,10 +19,10 @@ Item {
   property var shell: null
   property string omarchyPath: ""
 
-  readonly property string textFont: "IBM Plex Sans Arabic"
+  readonly property string textFont: Nasaq.Theme.textFont
   readonly property string iconFont: Style.font.family
   readonly property string home: Quickshell.env("HOME")
-  readonly property color glass: Util.alpha(Color.background, 0.55)
+  readonly property color glass: Nasaq.Theme.glass
 
   property var config: ({ city: "", latitude: 21.4225, longitude: 39.8262, method: 4 })
   property var prayerDay: null
@@ -143,7 +143,7 @@ Item {
   readonly property int tempWarn: Nasaq.Settings.get("temps.warn", 60)
   readonly property int tempHot: Nasaq.Settings.get("temps.hot", 80)
   property var sys: null
-  function tempColor(t) { return t >= tempHot ? "#ff453a" : t >= tempWarn ? "#ffd60a" : Qt.rgba(1, 1, 1, 0.9) }
+  function tempColor(t) { return t >= tempHot ? Nasaq.Theme.danger : t >= tempWarn ? Nasaq.Theme.warn : Qt.alpha(Color.foreground, 0.9) }
   Process {
     id: sysProc
     command: ["bash", "-c",
@@ -182,7 +182,7 @@ Item {
     var d = new Date(e.startMs), today = new Date()
     var tomorrow = new Date(); tomorrow.setDate(today.getDate() + 1)
     var day = d.toDateString() === today.toDateString() ? "" : d.toDateString() === tomorrow.toDateString() ? "Tomorrow " : Qt.formatDate(d, "ddd ")
-    return e.allDay ? (day || "Today") + " · all day" : day + Qt.formatTime(d, "h:mm AP")
+    return e.allDay ? (day || "Today") + " · all day" : day + Nasaq.Clock.timeAP(d)
   }
   FileView {
     path: root.home + "/.cache/nasaq/calendar.json"
@@ -409,9 +409,9 @@ Item {
     // Cards glide to their new place when one is turned on, off or moved.
     Behavior on y { enabled: widgets.ready; Nasaq.NAnim { kind: "move" } }
     width: 320
-    radius: 26
+    radius: Nasaq.Theme.radiusPanel
     color: root.glass
-    border.color: Qt.rgba(1, 1, 1, 0.10)
+    border.color: Qt.alpha(Color.foreground, 0.10)
     border.width: 1
   }
 
@@ -514,16 +514,17 @@ Item {
                 spacing: -6
                 Text {
                   anchors.horizontalCenter: parent.horizontalCenter
-                  text: Qt.locale("en_US").toString(root.now, "h:mm AP").replace(/\s*[AP]M$/i, "")
-                  color: "white"
+                  text: Nasaq.Clock.time(root.now)
+                  color: Color.foreground
                   font.family: root.textFont
                   font.weight: Font.Bold
                   font.pixelSize: 64
                 }
                 Text {
                   anchors.horizontalCenter: parent.horizontalCenter
-                  text: Qt.locale("en_US").toString(root.now, "dddd, d MMMM")
-                  color: Qt.rgba(1, 1, 1, 0.8)
+                  visible: Nasaq.Settings.get("island.hijri", "both") !== "hijri"
+                  text: Nasaq.Clock.dateLong(root.now)
+                  color: Qt.alpha(Color.foreground, 0.8)
                   font.family: root.textFont
                   font.weight: Font.DemiBold
                   font.pixelSize: 15
@@ -531,9 +532,9 @@ Item {
                 Text {
                   anchors.horizontalCenter: parent.horizontalCenter
                   topPadding: 4
-                  visible: root.prayerDay !== null
-                  text: root.prayerDay ? root.prayerDay.hijri.day + " " + root.prayerDay.hijri.month + " " + root.prayerDay.hijri.year + " هـ" : ""
-                  color: Qt.rgba(1, 1, 1, 0.8)
+                  visible: root.prayerDay !== null && Nasaq.Settings.get("island.hijri", "both") !== "gregorian"
+                  text: root.prayerDay ? Nasaq.Clock.hijri(root.prayerDay.hijri) : ""
+                  color: Qt.alpha(Color.foreground, 0.8)
                   font.family: root.textFont
                   font.weight: Font.DemiBold
                   font.pixelSize: 15
@@ -552,7 +553,7 @@ Item {
                 horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.WordWrap
                 text: "Prayer times unavailable. Check the internet connection."
-                color: Qt.rgba(1, 1, 1, 0.7)
+                color: Qt.alpha(Color.foreground, 0.7)
                 font.family: root.textFont
                 font.pixelSize: 13
               }
@@ -580,7 +581,7 @@ Item {
                   Text {
                     anchors.right: parent.right
                     text: root.nextPrayer ? "in " + Island.formatCountdown(root.msToNext) + " · " + Island.formatTime(root.nextPrayer.time) : ""
-                    color: Qt.rgba(1, 1, 1, 0.7)
+                    color: Qt.alpha(Color.foreground, 0.7)
                     font.family: root.textFont
                     font.pixelSize: 13
                   }
@@ -608,14 +609,14 @@ Item {
                       Text {
                         anchors.horizontalCenter: parent.horizontalCenter
                         text: modelData.name
-                        color: isNext ? Color.accent : Qt.rgba(1, 1, 1, 0.55)
+                        color: isNext ? Color.accent : Qt.alpha(Color.foreground, 0.55)
                         font.family: root.textFont
                         font.pixelSize: 11
                       }
                       Text {
                         anchors.horizontalCenter: parent.horizontalCenter
                         text: Island.formatTime(modelData.time)
-                        color: "white"
+                        color: Color.foreground
                         font.family: root.textFont
                         font.weight: isNext ? Font.Bold : Font.Normal
                         font.pixelSize: 13
@@ -639,14 +640,14 @@ Item {
                   anchors.top: parent.top
                   Text {
                     text: root.config.city || ""
-                    color: "white"
+                    color: Color.foreground
                     font.family: root.textFont
                     font.weight: Font.DemiBold
                     font.pixelSize: 15
                   }
                   Text {
                     text: root.weather ? root.weather.temp + "°" : ""
-                    color: "white"
+                    color: Color.foreground
                     font.family: root.textFont
                     font.weight: Font.Light
                     font.pixelSize: 44
@@ -665,14 +666,14 @@ Item {
                   Text {
                     anchors.right: parent.right
                     text: root.weather ? root.weather.label : ""
-                    color: Qt.rgba(1, 1, 1, 0.75)
+                    color: Qt.alpha(Color.foreground, 0.75)
                     font.family: root.textFont
                     font.pixelSize: 13
                   }
                   Text {
                     anchors.right: parent.right
                     text: root.weather && root.weather.days.length > 0 ? "↑" + root.weather.days[0].max + "°  ↓" + root.weather.days[0].min + "°" : ""
-                    color: Qt.rgba(1, 1, 1, 0.6)
+                    color: Qt.alpha(Color.foreground, 0.6)
                     font.family: root.textFont
                     font.pixelSize: 12
                   }
@@ -697,8 +698,8 @@ Item {
                     required property var modelData
                     width: calCol.width
                     spacing: 1
-                    Text { width: parent.width; text: modelData.title; color: "white"; elide: Text.ElideRight; font.family: root.textFont; font.weight: Font.DemiBold; font.pixelSize: 15 }
-                    Text { width: parent.width; text: root.calWhen(modelData) + (modelData.location ? "  ·  " + modelData.location : ""); color: Qt.rgba(1, 1, 1, 0.6); elide: Text.ElideRight; font.family: root.textFont; font.pixelSize: 12 }
+                    Text { width: parent.width; text: modelData.title; color: Color.foreground; elide: Text.ElideRight; font.family: root.textFont; font.weight: Font.DemiBold; font.pixelSize: 15 }
+                    Text { width: parent.width; text: root.calWhen(modelData) + (modelData.location ? "  ·  " + modelData.location : ""); color: Qt.alpha(Color.foreground, 0.6); elide: Text.ElideRight; font.family: root.textFont; font.pixelSize: 12 }
                   }
                 }
               }
@@ -714,8 +715,8 @@ Item {
                 spacing: 26
                 Repeater {
                   model: root.sys ? [
-                    { label: "CPU", value: root.sys.cpu + "%", color: Qt.rgba(1, 1, 1, 0.9) },
-                    { label: "Memory", value: root.sys.mem + "%", color: Qt.rgba(1, 1, 1, 0.9) },
+                    { label: "CPU", value: root.sys.cpu + "%", color: Qt.alpha(Color.foreground, 0.9) },
+                    { label: "Memory", value: root.sys.mem + "%", color: Qt.alpha(Color.foreground, 0.9) },
                     { label: "CPU °C", value: root.sys.cpuTemp > 0 ? root.sys.cpuTemp + "°" : "—", color: root.tempColor(root.sys.cpuTemp) },
                     { label: "GPU °C", value: root.sys.gpuTemp > 0 ? root.sys.gpuTemp + "°" : "—", color: root.tempColor(root.sys.gpuTemp) }
                   ] : []
@@ -723,7 +724,7 @@ Item {
                     required property var modelData
                     spacing: 2
                     Text { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.value; color: modelData.color; font.family: root.textFont; font.pixelSize: 22; font.weight: Font.DemiBold; font.features: ({ "tnum": 1 }) }
-                    Text { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.label; color: Qt.rgba(1, 1, 1, 0.55); font.family: root.textFont; font.pixelSize: 11 }
+                    Text { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.label; color: Qt.alpha(Color.foreground, 0.55); font.family: root.textFont; font.pixelSize: 11 }
                   }
                 }
               }
@@ -742,7 +743,7 @@ Item {
                 width: 64
                 height: 64
                 radius: 14
-                color: "#1c1c1e"
+                color: Nasaq.Theme.glassSolid
                 clip: true
                 Image {
                   anchors.fill: parent
@@ -769,7 +770,7 @@ Item {
                 Text {
                   width: parent.width
                   text: root.player ? (root.player.trackTitle || "") : "Not Playing"
-                  color: root.player ? "white" : Qt.rgba(1, 1, 1, 0.75)
+                  color: root.player ? Color.foreground : Qt.alpha(Color.foreground, 0.75)
                   elide: Text.ElideRight
                   font.family: root.textFont
                   font.weight: Font.Bold
@@ -797,7 +798,7 @@ Item {
                     delegate: Text {
                       required property var modelData
                       text: modelData.icon
-                      color: ctl.containsMouse ? "white" : Qt.rgba(1, 1, 1, 0.8)
+                      color: ctl.containsMouse ? Color.foreground : Qt.alpha(Color.foreground, 0.8)
                       font.family: root.iconFont
                       font.pixelSize: 18
                       MouseArea {
@@ -833,7 +834,7 @@ Item {
                   anchors.verticalCenter: parent.verticalCenter
                   width: 34
                   text: root.player && root.player.length > 0 ? Island.formatMediaTime(root.player.position) : "0:00"
-                  color: Qt.rgba(1, 1, 1, 0.55)
+                  color: Qt.alpha(Color.foreground, 0.55)
                   font.family: root.textFont
                   font.pixelSize: 10
                 }
@@ -844,8 +845,8 @@ Item {
                   anchors.verticalCenter: parent.verticalCenter
                   height: 4
                   radius: 2
-                  color: Qt.rgba(1, 1, 1, 0.2)
-                  Rectangle { width: parent.width * progress.frac; height: parent.height; radius: 2; color: "white" }
+                  color: Qt.alpha(Color.foreground, 0.2)
+                  Rectangle { width: parent.width * progress.frac; height: parent.height; radius: 2; color: Color.foreground }
                   MouseArea {
                     anchors.fill: parent
                     anchors.margins: -6
@@ -859,7 +860,7 @@ Item {
                   anchors.right: parent.right
                   anchors.verticalCenter: parent.verticalCenter
                   text: root.player && root.player.length > 0 ? "-" + Island.formatMediaTime(root.player.length - root.player.position) : "--:--"
-                  color: Qt.rgba(1, 1, 1, 0.55)
+                  color: Qt.alpha(Color.foreground, 0.55)
                   font.family: root.textFont
                   font.pixelSize: 10
                 }
@@ -918,8 +919,8 @@ Item {
                       id: tabRow
                       anchors.centerIn: parent
                       spacing: 6
-                      Text { anchors.verticalCenter: parent.verticalCenter; text: modelData.icon; color: "white"; font.family: root.iconFont; font.pixelSize: 13 }
-                      Text { anchors.verticalCenter: parent.verticalCenter; text: modelData.title; color: "white"; font.family: root.textFont; font.weight: Font.DemiBold; font.pixelSize: 12 }
+                      Text { anchors.verticalCenter: parent.verticalCenter; text: modelData.icon; color: Color.foreground; font.family: root.iconFont; font.pixelSize: 13 }
+                      Text { anchors.verticalCenter: parent.verticalCenter; text: modelData.title; color: Color.foreground; font.family: root.textFont; font.weight: Font.DemiBold; font.pixelSize: 12 }
                     }
                     MouseArea {
                       id: tabMouse
@@ -937,7 +938,7 @@ Item {
                 anchors.verticalCenter: tabs.verticalCenter
                 visible: root.notesTab === "tasks" && root.tasks.length > 0
                 text: root.tasks.filter(function(t) { return t.done }).length + "/" + root.tasks.length
-                color: Qt.rgba(1, 1, 1, 0.5)
+                color: Qt.alpha(Color.foreground, 0.5)
                 font.family: root.textFont
                 font.pixelSize: 12
               }
@@ -957,8 +958,8 @@ Item {
                   id: noteEdit
                   width: noteFlick.width
                   text: root.noteText
-                  color: "white"
-                  selectionColor: Qt.rgba(1, 1, 1, 0.3)
+                  color: Color.foreground
+                  selectionColor: Qt.alpha(Color.foreground, 0.3)
                   wrapMode: TextEdit.Wrap
                   font.family: root.textFont
                   font.pixelSize: 14
@@ -972,7 +973,7 @@ Item {
                 Text {
                   visible: noteEdit.text.length === 0 && !noteEdit.activeFocus
                   text: "Write a note…"
-                  color: Qt.rgba(1, 1, 1, 0.35)
+                  color: Qt.alpha(Color.foreground, 0.35)
                   font.family: root.textFont
                   font.pixelSize: 14
                 }
@@ -996,7 +997,7 @@ Item {
                   width: parent.width
                   height: 32
                   radius: 10
-                  color: Qt.rgba(1, 1, 1, 0.08)
+                  color: Qt.alpha(Color.foreground, 0.08)
                   Text {
                     id: plus
                     anchors.left: parent.left
@@ -1014,7 +1015,7 @@ Item {
                     anchors.right: parent.right
                     anchors.rightMargin: 10
                     anchors.verticalCenter: parent.verticalCenter
-                    color: "white"
+                    color: Color.foreground
                     font.family: root.textFont
                     font.pixelSize: 13
                     clip: true
@@ -1033,7 +1034,7 @@ Item {
                       verticalAlignment: Text.AlignVCenter
                       visible: taskInput.text.length === 0
                       text: "Add a task…"
-                      color: Qt.rgba(1, 1, 1, 0.35)
+                      color: Qt.alpha(Color.foreground, 0.35)
                       font: taskInput.font
                     }
                   }
@@ -1060,7 +1061,7 @@ Item {
                         width: taskCol.width
                         height: Math.max(30, (editing ? 22 : taskText.implicitHeight) + 10)
                         radius: 8
-                        color: hot || editing ? Qt.rgba(1, 1, 1, 0.06) : "transparent"
+                        color: hot || editing ? Qt.alpha(Color.foreground, 0.06) : "transparent"
 
                         // Click anywhere on the row (circle or text) to tick it.
                         MouseArea {
@@ -1081,8 +1082,8 @@ Item {
                           radius: 9
                           color: taskRow.modelData.done ? Color.accent : "transparent"
                           border.width: taskRow.modelData.done ? 0 : 1.5
-                          border.color: Qt.rgba(1, 1, 1, 0.5)
-                          Text { anchors.centerIn: parent; visible: taskRow.modelData.done; text: "󰄬"; color: "white"; font.family: root.iconFont; font.pixelSize: 11 }
+                          border.color: Qt.alpha(Color.foreground, 0.5)
+                          Text { anchors.centerIn: parent; visible: taskRow.modelData.done; text: "󰄬"; color: Color.foreground; font.family: root.iconFont; font.pixelSize: 11 }
                         }
                         Text {
                           id: taskText
@@ -1094,7 +1095,7 @@ Item {
                           anchors.verticalCenter: parent.verticalCenter
                           text: taskRow.modelData.text
                           wrapMode: Text.Wrap
-                          color: taskRow.modelData.done ? Qt.rgba(1, 1, 1, 0.4) : "white"
+                          color: taskRow.modelData.done ? Qt.alpha(Color.foreground, 0.4) : Color.foreground
                           font.strikeout: taskRow.modelData.done
                           font.family: root.textFont
                           font.pixelSize: 13
@@ -1107,8 +1108,8 @@ Item {
                           anchors.right: parent.right
                           anchors.rightMargin: 8
                           anchors.verticalCenter: parent.verticalCenter
-                          color: "white"
-                          selectionColor: Qt.rgba(1, 1, 1, 0.3)
+                          color: Color.foreground
+                          selectionColor: Qt.alpha(Color.foreground, 0.3)
                           font.family: root.textFont
                           font.pixelSize: 13
                           clip: true
@@ -1128,7 +1129,7 @@ Item {
                           visible: taskRow.hot && !taskRow.editing
                           Text {
                             text: "󰏫"
-                            color: editMouse.containsMouse ? "white" : Qt.rgba(1, 1, 1, 0.6)
+                            color: editMouse.containsMouse ? Color.foreground : Qt.alpha(Color.foreground, 0.6)
                             font.family: root.iconFont
                             font.pixelSize: 13
                             MouseArea {
@@ -1142,7 +1143,7 @@ Item {
                           }
                           Text {
                             text: "󰅖"
-                            color: delMouse.containsMouse ? "#ff6b5e" : "#ff453a"
+                            color: delMouse.containsMouse ? Qt.lighter(Color.urgent, 1.15) : Color.urgent
                             font.family: root.iconFont
                             font.pixelSize: 14
                             MouseArea {
@@ -1162,7 +1163,7 @@ Item {
                 Text {
                   visible: root.tasks.some(function(t) { return t.done })
                   text: "Clear completed"
-                  color: clearMouse.containsMouse ? "white" : Color.accent
+                  color: clearMouse.containsMouse ? Color.foreground : Color.accent
                   font.family: root.textFont
                   font.weight: Font.DemiBold
                   font.pixelSize: 11

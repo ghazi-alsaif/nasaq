@@ -8,6 +8,7 @@ import Quickshell
 import qs.Commons
 import qs.Ui
 import "../NotificationLogic.js" as NotificationLogic
+import "../../nasaq.commons" as Nasaq
 
 BorderSurface {
   id: root
@@ -167,7 +168,7 @@ BorderSurface {
           Layout.fillWidth: true
           visible: root.summary.length > 0
           text: root.summary
-          font.family: "Liberation Sans"
+          font.family: Nasaq.Theme.textFont
           color: Color.notifications.text
           font.pixelSize: Style.font.title
           font.bold: true
@@ -182,7 +183,7 @@ BorderSurface {
           visible: root.sanitizedBody.length > 0
           text: root.styledBody
           textFormat: Text.StyledText
-          font.family: "Liberation Sans"
+          font.family: Nasaq.Theme.textFont
           color: root.bodyColor
           font.pixelSize: Style.font.title
           wrapMode: Text.WordWrap

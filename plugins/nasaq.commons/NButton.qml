@@ -16,8 +16,8 @@ Rectangle {
     id: row
     anchors.centerIn: parent
     spacing: 6
-    NGlyph { text: b.icon; visible: text.length > 0; font.pixelSize: 13; color: b.primary ? Theme.onAccent : "white"; anchors.verticalCenter: parent.verticalCenter }
-    NLabel { text: Tr.s(b.text); font.weight: Font.Medium; color: b.primary ? Theme.onAccent : "white"; anchors.verticalCenter: parent.verticalCenter }
+    NGlyph { text: b.icon; visible: text.length > 0; font.pixelSize: 13; color: b.primary ? Theme.onAccent : Theme.text; anchors.verticalCenter: parent.verticalCenter }
+    NLabel { text: Tr.s(b.text); font.weight: Font.Medium; color: b.primary ? Theme.onAccent : Theme.text; anchors.verticalCenter: parent.verticalCenter }
   }
   MouseArea { id: mouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: b.clicked() }
 }

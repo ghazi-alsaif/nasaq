@@ -1283,7 +1283,7 @@ Item {
       radius: height / 2
       color: root.transparent ? "transparent" : root.background
       border.width: 1
-      border.color: Qt.rgba(1, 1, 1, 0.08)
+      border.color: Qt.alpha(Color.foreground, 0.08)
     }
     WlrLayershell.layer: WlrLayer.Top
 

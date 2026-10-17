@@ -26,7 +26,7 @@ BarWidget {
   readonly property string clockFormat: setting("format", "ddd d MMM h:mm AP")
   property var config: ({ latitude: 21.4225, longitude: 39.8262, city: "", method: 4, reminderMinutes: 5, prayerQuiet: false })
 
-  readonly property string textFont: "IBM Plex Sans Arabic"
+  readonly property string textFont: Nasaq.Theme.textFont
   readonly property string iconFont: Style.font.family
   readonly property color accent: Color.accent
   readonly property color barForeground: bar ? bar.barForeground : Color.foreground
@@ -47,7 +47,7 @@ BarWidget {
   }
   // Theme colours throughout, so a theme change carries over: the card is the
   // theme background, highlights are the theme accent.
-  readonly property color cardColor: Util.alpha(Color.background, glassAlpha)
+  readonly property color cardColor: Nasaq.Theme.glass
   // Text or icon drawn on an accent fill: dark on a light accent, white on a dark one.
   readonly property color onAccent: (0.299 * accent.r + 0.587 * accent.g + 0.114 * accent.b) > 0.6 ? "#16181d" : "white"
   readonly property real pillHeight: Math.max(20, Math.min(root.barSize - 4, Style.bar.iconSlot))
@@ -248,7 +248,7 @@ BarWidget {
     if (diff < 3600) return Math.floor(diff / 60) + "m"
     if (diff < 86400) return Math.floor(diff / 3600) + "h"
     if (diff < 172800) return "Yesterday"
-    return Qt.formatDate(new Date(ts), "d MMM")
+    return Nasaq.Clock.dateShort(new Date(ts))
   }
   // A history entry has no live actions left: run its command if it carried
   // one (Omarchy toasts, the crash notice), otherwise jump to the app's window.
@@ -541,7 +541,7 @@ BarWidget {
         anchors.fill: parent
         radius: height / 2
         clip: true
-        color: "#1c1c1e"
+        color: Nasaq.Theme.glassSolid
         visible: root.playing
         Image {
           anchors.fill: parent
@@ -718,7 +718,7 @@ BarWidget {
         : overlay.mode === "osd" ? root.pillHeight + 16
         : overlay.mode === "notif" ? Math.max(72, notifRow.implicitHeight + 28)
         : root.pillHeight
-      radius: overlay.mode === "expanded" ? 32 : overlay.mode === "alert" || overlay.mode === "notif" ? 30 : height / 2
+      radius: overlay.mode === "expanded" || overlay.mode === "alert" || overlay.mode === "notif" ? Nasaq.Theme.radiusPanel : height / 2
       clip: true
       // One curve and one length for width, height and corners, so the shape
       // arrives as one piece. Opening grows a hair past and settles; closing
@@ -794,7 +794,7 @@ BarWidget {
         Text {
           anchors.verticalCenter: parent.verticalCenter
           text: root.osd.icon
-          color: "white"
+          color: Color.foreground
           font.family: root.iconFont
           font.pixelSize: 18
         }
@@ -804,19 +804,19 @@ BarWidget {
           width: 200
           height: 6
           radius: 3
-          color: Qt.rgba(1, 1, 1, 0.2)
+          color: Qt.alpha(Color.foreground, 0.2)
           Rectangle {
             height: parent.height
             radius: 3
             width: parent.width * root.osd.fraction
-            color: "white"
+            color: Color.foreground
             Behavior on width { Nasaq.NAnim { kind: "fast" } }
           }
         }
         Text {
           anchors.verticalCenter: parent.verticalCenter
           text: root.osd.message
-          color: "white"
+          color: Color.foreground
           font.family: root.textFont
           font.weight: Font.DemiBold
           font.pixelSize: 13
@@ -848,7 +848,7 @@ BarWidget {
           width: 44
           height: 44
           radius: 12
-          color: Qt.rgba(1, 1, 1, 0.10)
+          color: Qt.alpha(Color.foreground, 0.10)
           clip: true
           Image {
             id: notifImg
@@ -865,7 +865,7 @@ BarWidget {
             anchors.centerIn: parent
             visible: notifImg.status !== Image.Ready
             text: String(root.notifShown.glyph || "").length > 0 ? root.notifShown.glyph : "󰂚"
-            color: "white"
+            color: Color.foreground
             font.family: root.iconFont
             font.pixelSize: 20
           }
@@ -888,7 +888,7 @@ BarWidget {
               anchors.right: notifMore.left
               anchors.rightMargin: 6
               text: String(root.notifShown.app || "")
-              color: Qt.rgba(1, 1, 1, 0.55)
+              color: Qt.alpha(Color.foreground, 0.55)
               font.family: root.textFont
               font.pixelSize: 11
               horizontalAlignment: Text.AlignLeft
@@ -899,7 +899,7 @@ BarWidget {
               anchors.right: parent.right
               visible: (root.notif.count || 0) > 1
               text: "+" + ((root.notif.count || 1) - 1)
-              color: Qt.rgba(1, 1, 1, 0.55)
+              color: Qt.alpha(Color.foreground, 0.55)
               font.family: root.textFont
               font.pixelSize: 11
               font.weight: Font.DemiBold
@@ -916,7 +916,7 @@ BarWidget {
             width: parent.width - parent.closeGap
             x: parent.rtl ? parent.closeGap : 0
             text: String(root.notifShown.summary || "")
-            color: "white"
+            color: Color.foreground
             font.family: root.textFont
             font.weight: Font.Bold
             font.pixelSize: 14
@@ -927,7 +927,7 @@ BarWidget {
             width: parent.width
             visible: text.length > 0
             text: String(root.notifShown.body || "").replace(/<[^>]*>/g, "")
-            color: Qt.rgba(1, 1, 1, 0.75)
+            color: Qt.alpha(Color.foreground, 0.75)
             font.family: root.textFont
             font.pixelSize: 12
             horizontalAlignment: Text.AlignLeft
@@ -950,7 +950,7 @@ BarWidget {
         Text {
           anchors.centerIn: parent
           text: "󰅖"
-          color: "white"
+          color: Color.foreground
           font.family: root.iconFont
           font.pixelSize: 11
         }
@@ -993,7 +993,7 @@ BarWidget {
           spacing: 1
           Text {
             text: root.alertTitle
-            color: "white"
+            color: Color.foreground
             font.family: root.textFont
             font.weight: Font.Bold
             font.pixelSize: 16
@@ -1001,7 +1001,7 @@ BarWidget {
           Text {
             text: root.alertSubtitle
             visible: text.length > 0
-            color: Qt.rgba(1, 1, 1, 0.6)
+            color: Qt.alpha(Color.foreground, 0.6)
             font.family: root.textFont
             font.pixelSize: 12
           }
@@ -1030,7 +1030,7 @@ BarWidget {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
             text: "󱎫  " + root.swFormat(root.swElapsed) + (root.swLaps.length ? "   ·   lap " + root.swFormat(root.swLaps[0]) : "")
-            color: "white"
+            color: Color.foreground
             font.family: root.textFont
             font.features: ({ "tnum": 1 })
             font.pixelSize: 15
@@ -1046,7 +1046,7 @@ BarWidget {
                 required property var modelData
                 width: swBtn.implicitWidth + 18; height: 24; radius: 12
                 color: Qt.rgba(1, 1, 1, swMouse.containsMouse ? 0.22 : 0.12)
-                Text { id: swBtn; anchors.centerIn: parent; text: modelData.t; color: "white"; font.family: root.textFont; font.pixelSize: 12 }
+                Text { id: swBtn; anchors.centerIn: parent; text: modelData.t; color: Color.foreground; font.family: root.textFont; font.pixelSize: 12 }
                 MouseArea {
                   id: swMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                   onClicked: modelData.a === "toggle" ? root.swToggle() : modelData.a === "lap" ? root.swLap() : root.swReset()
@@ -1064,18 +1064,18 @@ BarWidget {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
             Text {
-              readonly property string hijriText: root.prayerDay ? root.prayerDay.hijri.day + " " + root.prayerDay.hijri.month + " " + root.prayerDay.hijri.year + " هـ" : ""
+              readonly property string hijriText: root.prayerDay ? Nasaq.Clock.hijri(root.prayerDay.hijri) : ""
               // NASAQ Settings > Widgets > Date: both | hijri | gregorian
-              text: root.hijriMode === "hijri" && hijriText ? hijriText : Qt.locale("en_US").toString(root.now, "dddd, d MMMM")
-              color: "white"
+              text: root.hijriMode === "hijri" && hijriText ? hijriText : Nasaq.Clock.dateLong(root.now)
+              color: Color.foreground
               font.family: root.textFont
               font.weight: Font.Bold
               font.pixelSize: 16
             }
             Text {
               visible: root.prayerDay !== null && root.hijriMode === "both"
-              text: root.prayerDay ? root.prayerDay.hijri.day + " " + root.prayerDay.hijri.month + " " + root.prayerDay.hijri.year + " هـ" : ""
-              color: Qt.rgba(1, 1, 1, 0.6)
+              text: root.prayerDay ? Nasaq.Clock.hijri(root.prayerDay.hijri) : ""
+              color: Qt.alpha(Color.foreground, 0.6)
               font.family: root.textFont
               font.pixelSize: 12
             }
@@ -1083,8 +1083,8 @@ BarWidget {
           Text {
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
-            text: Qt.locale("en_US").toString(root.now, "h:mm AP").replace(/\s*[AP]M$/i, "")
-            color: "white"
+            text: Nasaq.Clock.time(root.now)
+            color: Color.foreground
             font.family: root.textFont
             font.weight: Font.Bold
             font.pixelSize: 28
@@ -1096,7 +1096,7 @@ BarWidget {
           width: parent.width
           height: 70
           radius: 18
-          color: Qt.rgba(1, 1, 1, 0.07)
+          color: Qt.alpha(Color.foreground, 0.07)
           visible: root.prayerEnabled && root.prayerDay !== null
 
           Row {
@@ -1119,7 +1119,7 @@ BarWidget {
                   Text {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: modelData.name
-                    color: isNext ? root.accent : Qt.rgba(1, 1, 1, 0.65)
+                    color: isNext ? root.accent : Qt.alpha(Color.foreground, 0.65)
                     font.family: root.textFont
                     font.weight: Font.DemiBold
                     font.pixelSize: 12
@@ -1127,7 +1127,7 @@ BarWidget {
                   Text {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: Island.formatTime(modelData.time)
-                    color: "white"
+                    color: Color.foreground
                     font.family: root.textFont
                     font.weight: isNext ? Font.Bold : Font.Normal
                     font.pixelSize: 15
@@ -1158,21 +1158,21 @@ BarWidget {
             Text {
               anchors.verticalCenter: parent.verticalCenter
               text: String.fromCodePoint(0xf034e)
-              color: Qt.rgba(1, 1, 1, 0.55)
+              color: Qt.alpha(Color.foreground, 0.55)
               font.family: root.iconFont
               font.pixelSize: 13
             }
             Text {
               anchors.verticalCenter: parent.verticalCenter
               text: "Prayer times · " + (root.config.city || "")
-              color: Qt.rgba(1, 1, 1, 0.6)
+              color: Qt.alpha(Color.foreground, 0.6)
               font.family: root.textFont
               font.pixelSize: 12
             }
             Text {
               anchors.verticalCenter: parent.verticalCenter
               text: "· Change"
-              color: changeMouse.containsMouse ? "white" : root.accent
+              color: changeMouse.containsMouse ? Color.foreground : root.accent
               font.family: root.textFont
               font.weight: Font.DemiBold
               font.pixelSize: 12
@@ -1201,7 +1201,7 @@ BarWidget {
               width: parent.width
               height: 34
               radius: 10
-              color: Qt.rgba(1, 1, 1, 0.10)
+              color: Qt.alpha(Color.foreground, 0.10)
               border.color: Qt.rgba(1, 1, 1, cityInput.activeFocus ? 0.3 : 0.1)
               TextInput {
                 id: cityInput
@@ -1210,7 +1210,7 @@ BarWidget {
                 anchors.rightMargin: 12
                 verticalAlignment: TextInput.AlignVCenter
                 horizontalAlignment: TextInput.AlignRight
-                color: "white"
+                color: Color.foreground
                 font.family: root.textFont
                 font.pixelSize: 13
                 clip: true
@@ -1224,7 +1224,7 @@ BarWidget {
                 horizontalAlignment: Text.AlignRight
                 visible: cityInput.text.length === 0
                 text: "Search for a city…"
-                color: Qt.rgba(1, 1, 1, 0.4)
+                color: Qt.alpha(Color.foreground, 0.4)
                 font.family: root.textFont
                 font.pixelSize: 13
               }
@@ -1237,7 +1237,7 @@ BarWidget {
                 width: searchCol.width
                 height: 34
                 radius: 8
-                color: cityMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.12) : "transparent"
+                color: cityMouse.containsMouse ? Qt.alpha(Color.foreground, 0.12) : "transparent"
                 Column {
                   anchors.right: parent.right
                   anchors.rightMargin: 10
@@ -1245,14 +1245,14 @@ BarWidget {
                   Text {
                     anchors.right: parent.right
                     text: modelData.name
-                    color: "white"
+                    color: Color.foreground
                     font.family: root.textFont
                     font.pixelSize: 13
                   }
                   Text {
                     anchors.right: parent.right
                     text: [modelData.admin1, modelData.country].filter(function(x) { return !!x }).join(", ")
-                    color: Qt.rgba(1, 1, 1, 0.5)
+                    color: Qt.alpha(Color.foreground, 0.5)
                     font.family: root.textFont
                     font.pixelSize: 10
                   }
@@ -1280,7 +1280,7 @@ BarWidget {
             width: 64
             height: 64
             radius: 14
-            color: "#1c1c1e"
+            color: Nasaq.Theme.glassSolid
             clip: true
             Image {
               anchors.fill: parent
@@ -1309,7 +1309,7 @@ BarWidget {
             Text {
               width: parent.width
               text: root.player ? (root.player.trackTitle || "") : ""
-              color: "white"
+              color: Color.foreground
               font.family: root.textFont
               font.weight: Font.Bold
               font.pixelSize: 15
@@ -1318,7 +1318,7 @@ BarWidget {
             Text {
               width: parent.width
               text: root.player ? (root.player.trackArtist || root.player.identity || "") : ""
-              color: Qt.rgba(1, 1, 1, 0.6)
+              color: Qt.alpha(Color.foreground, 0.6)
               font.family: root.textFont
               font.pixelSize: 13
               elide: Text.ElideRight
@@ -1361,7 +1361,7 @@ BarWidget {
               anchors.left: parent.left
               anchors.verticalCenter: parent.verticalCenter
               text: root.player ? Island.formatMediaTime(root.player.position) : ""
-              color: Qt.rgba(1, 1, 1, 0.55)
+              color: Qt.alpha(Color.foreground, 0.55)
               font.family: root.textFont
               font.pixelSize: 10
               width: 34
@@ -1373,12 +1373,12 @@ BarWidget {
               anchors.verticalCenter: parent.verticalCenter
               height: 4
               radius: 2
-              color: Qt.rgba(1, 1, 1, 0.2)
+              color: Qt.alpha(Color.foreground, 0.2)
               Rectangle {
                 width: parent.width * progress.frac
                 height: parent.height
                 radius: 2
-                color: "white"
+                color: Color.foreground
               }
               MouseArea {
                 anchors.fill: parent
@@ -1393,7 +1393,7 @@ BarWidget {
               anchors.right: parent.right
               anchors.verticalCenter: parent.verticalCenter
               text: root.player ? "-" + Island.formatMediaTime(root.player.length - root.player.position) : ""
-              color: Qt.rgba(1, 1, 1, 0.55)
+              color: Qt.alpha(Color.foreground, 0.55)
               font.family: root.textFont
               font.pixelSize: 10
             }
@@ -1414,7 +1414,7 @@ BarWidget {
             delegate: Text {
               required property var modelData
               text: modelData.icon
-              color: ctlMouse.containsMouse ? "white" : Qt.rgba(1, 1, 1, 0.85)
+              color: ctlMouse.containsMouse ? Color.foreground : Qt.alpha(Color.foreground, 0.85)
               font.family: root.iconFont
               font.pixelSize: modelData.size
               MouseArea {
@@ -1437,7 +1437,7 @@ BarWidget {
         Text {
           visible: !root.hasMedia && (root.prayerDay === null || !root.prayerEnabled)
           text: "Nothing playing"
-          color: Qt.rgba(1, 1, 1, 0.5)
+          color: Qt.alpha(Color.foreground, 0.5)
           font.family: root.textFont
           font.pixelSize: 13
         }
@@ -1450,7 +1450,7 @@ BarWidget {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
             text: "Quiet for 20 min at prayer time"
-            color: Qt.rgba(1, 1, 1, 0.7)
+            color: Qt.alpha(Color.foreground, 0.7)
             font.family: root.textFont
             font.pixelSize: 12
           }
@@ -1462,7 +1462,7 @@ BarWidget {
             width: 34
             height: 20
             radius: 10
-            color: on ? root.accent : Qt.rgba(1, 1, 1, 0.22)
+            color: on ? root.accent : Qt.alpha(Color.foreground, 0.22)
             Behavior on color { Nasaq.NColour { duration: Nasaq.Motion.micro } }
             Rectangle {
               width: 16
@@ -1470,7 +1470,7 @@ BarWidget {
               radius: 8
               y: 2
               x: quietSwitch.on ? quietSwitch.width - width - 2 : 2
-              color: "white"
+              color: Color.foreground
               Behavior on x { Nasaq.NAnim { kind: "fast" } }
             }
             MouseArea {
@@ -1483,7 +1483,7 @@ BarWidget {
         }
 
         // ── Weather (same city as the prayer times) ──
-        Rectangle { width: parent.width; height: 1; color: Qt.rgba(1, 1, 1, 0.10); visible: root.weather !== null }
+        Rectangle { width: parent.width; height: 1; color: Qt.alpha(Color.foreground, 0.10); visible: root.weather !== null }
         Item {
           visible: root.weather !== null
           width: parent.width
@@ -1506,7 +1506,7 @@ BarWidget {
                 spacing: 6
                 Text {
                   text: root.weather ? root.weather.temp + "°" : ""
-                  color: "white"
+                  color: Color.foreground
                   font.family: root.textFont
                   font.weight: Font.DemiBold
                   font.pixelSize: 24
@@ -1516,14 +1516,14 @@ BarWidget {
                   anchors.bottom: parent.bottom
                   anchors.bottomMargin: 5
                   text: root.weather ? root.weather.label : ""
-                  color: Qt.rgba(1, 1, 1, 0.75)
+                  color: Qt.alpha(Color.foreground, 0.75)
                   font.family: root.textFont
                   font.pixelSize: 13
                 }
               }
               Text {
                 text: root.weather ? "󰖎 " + root.weather.humidity + "%   󰖝 " + root.weather.wind + " km/h" : ""
-                color: Qt.rgba(1, 1, 1, 0.5)
+                color: Qt.alpha(Color.foreground, 0.5)
                 font.family: root.textFont
                 font.pixelSize: 11
               }
@@ -1542,21 +1542,21 @@ BarWidget {
                 Text {
                   anchors.horizontalCenter: parent.horizontalCenter
                   text: modelData.name
-                  color: Qt.rgba(1, 1, 1, 0.5)
+                  color: Qt.alpha(Color.foreground, 0.5)
                   font.family: root.textFont
                   font.pixelSize: 10
                 }
                 Text {
                   anchors.horizontalCenter: parent.horizontalCenter
                   text: modelData.icon
-                  color: Qt.rgba(1, 1, 1, 0.85)
+                  color: Qt.alpha(Color.foreground, 0.85)
                   font.family: root.iconFont
                   font.pixelSize: 15
                 }
                 Text {
                   anchors.horizontalCenter: parent.horizontalCenter
                   text: modelData.max + "° " + modelData.min + "°"
-                  color: Qt.rgba(1, 1, 1, 0.6)
+                  color: Qt.alpha(Color.foreground, 0.6)
                   font.family: root.textFont
                   font.pixelSize: 10
                   font.features: ({ "tnum": 1 })
@@ -1567,7 +1567,7 @@ BarWidget {
         }
 
         // ── Notifications ──
-        Rectangle { width: parent.width; height: 1; color: Qt.rgba(1, 1, 1, 0.10) }
+        Rectangle { width: parent.width; height: 1; color: Qt.alpha(Color.foreground, 0.10) }
 
         Item {
           width: parent.width
@@ -1579,7 +1579,7 @@ BarWidget {
             Text {
               anchors.verticalCenter: parent.verticalCenter
               text: "Notifications"
-              color: "white"
+              color: Color.foreground
               font.family: root.textFont
               font.weight: Font.Bold
               font.pixelSize: 14
@@ -1622,7 +1622,7 @@ BarWidget {
                   id: btnText
                   anchors.centerIn: parent
                   text: modelData.label
-                  color: "white"
+                  color: Color.foreground
                   font.family: root.textFont
                   font.pixelSize: 11
                   font.weight: Font.DemiBold
@@ -1650,7 +1650,7 @@ BarWidget {
         Text {
           visible: root.history.length === 0 || root.clearPending
           text: root.clearPending ? "Cleared. Undo is there for five seconds." : "No notifications"
-          color: Qt.rgba(1, 1, 1, 0.5)
+          color: Qt.alpha(Color.foreground, 0.5)
           font.family: root.textFont
           font.pixelSize: 12
         }
@@ -1670,7 +1670,7 @@ BarWidget {
               width: parent.width
               height: 50
               radius: 12
-              color: histMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(1, 1, 1, 0.04)
+              color: histMouse.containsMouse ? Qt.alpha(Color.foreground, 0.08) : Qt.alpha(Color.foreground, 0.04)
 
               Rectangle {
                 id: histIcon
@@ -1680,7 +1680,7 @@ BarWidget {
                 width: 34
                 height: 34
                 radius: 9
-                color: Qt.rgba(1, 1, 1, 0.10)
+                color: Qt.alpha(Color.foreground, 0.10)
                 clip: true
                 Image {
                   id: histImg
@@ -1697,7 +1697,7 @@ BarWidget {
                   anchors.centerIn: parent
                   visible: histImg.status !== Image.Ready
                   text: String(modelData.glyph || "").length > 0 ? modelData.glyph : "󰂚"
-                  color: "white"
+                  color: Color.foreground
                   font.family: root.iconFont
                   font.pixelSize: 15
                 }
@@ -1712,7 +1712,7 @@ BarWidget {
                 Text {
                   width: parent.width
                   text: String(modelData.summary || modelData.app || "")
-                  color: "white"
+                  color: Color.foreground
                   font.family: root.textFont
                   font.weight: Font.DemiBold
                   font.pixelSize: 12
@@ -1723,7 +1723,7 @@ BarWidget {
                   width: parent.width
                   visible: text.length > 0
                   text: String(modelData.body || "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ")
-                  color: Qt.rgba(1, 1, 1, 0.6)
+                  color: Qt.alpha(Color.foreground, 0.6)
                   font.family: root.textFont
                   font.pixelSize: 11
                   horizontalAlignment: Text.AlignLeft
@@ -1736,7 +1736,7 @@ BarWidget {
                 anchors.rightMargin: 6
                 anchors.verticalCenter: parent.verticalCenter
                 text: root.timeAgo(modelData.timestamp || 0)
-                color: Qt.rgba(1, 1, 1, 0.45)
+                color: Qt.alpha(Color.foreground, 0.45)
                 font.family: root.textFont
                 font.pixelSize: 10
               }
@@ -1767,7 +1767,7 @@ BarWidget {
           visible: root.history.length > root.shownCount && !root.clearPending
           anchors.horizontalCenter: parent.horizontalCenter
           text: "+" + (root.history.length - root.shownCount) + " more in All"
-          color: Qt.rgba(1, 1, 1, 0.55)
+          color: Qt.alpha(Color.foreground, 0.55)
           font.family: root.textFont
           font.pixelSize: 11
           MouseArea {

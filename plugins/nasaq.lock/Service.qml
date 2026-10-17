@@ -46,6 +46,7 @@ Item {
   // folder: settings.json motion.scale, and 0 in power saver.
   property real motionSetting: 1
   property bool nowPlayingSetting: true
+  property string textFontSetting: "IBM Plex Sans Arabic"
   readonly property real motionScale: powerProfile === "power-saver" ? 0 : Math.max(0, Math.min(1.5, motionSetting))
   FileView {
     path: (Quickshell.env("HOME") || "") + "/.config/omarchy/nasaq/settings.json"
@@ -58,6 +59,7 @@ Item {
         var m = all.motion
         root.motionSetting = m && m.scale !== undefined ? Number(m.scale) : 1
         root.nowPlayingSetting = !(all.lock && all.lock.nowPlaying === false)
+        root.textFontSetting = (all.appearance && all.appearance.textFont) || "IBM Plex Sans Arabic"
       } catch (e) {}
     }
   }
@@ -408,6 +410,7 @@ Item {
         // would load (and fail) at once, since the load is synchronous.
         capturePath: lockSurface.screen ? root.captureDir + "/" + lockSurface.screen.name + ".ppm" : ""
         motionScale: root.motionScale
+        textFont: root.textFontSetting
         showNowPlaying: root.nowPlayingSetting
         leaving: root.leaving
         surfaceShown: sessionLock.secure
@@ -448,6 +451,7 @@ Item {
       backgroundVersion: root.backgroundVersion
       capturePath: previewWindow.screen ? root.captureDir + "/" + previewWindow.screen.name + ".ppm" : ""
       motionScale: root.motionScale
+      textFont: root.textFontSetting
       showNowPlaying: root.nowPlayingSetting
       blankTimeoutMs: root.blankTimeoutMs
       captureVersion: root.captureVersion

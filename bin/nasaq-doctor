@@ -223,12 +223,12 @@ fi
 # ── 6. NASAQ plugins that failed to load in the running shell ─────────────────
 pid=$(pgrep -f '^quickshell .*omarchy/shell' | head -1)
 if [[ -n $pid ]]; then
-  since=$(ps -o lstart= -p "$pid" 2>/dev/null)
-  bad=$(journalctl --user -t omarchy-shell --since "$(date -d "$since" '+%F %T' 2>/dev/null || echo '-10 min')" --no-pager 2>/dev/null \
+  # By process id: a shell that just restarted must not inherit the previous one's errors.
+  bad=$(journalctl --user _PID="$pid" --no-pager 2>/dev/null \
     | grep -E 'plugins/nasaq\.[a-z-]+/' \
     | grep -E 'is not a type|is not installed|module .* not found|failed to load|Type .* unavailable|Cannot assign to non-existent|ReferenceError|TypeError' \
     | grep -oE 'plugins/nasaq\.[a-z-]+' | sed 's#plugins/##' | sort -u | paste -sd' ' -)
-  [[ -n $bad ]] && problem "Shell: errors from ${bad// /, } since the shell started (journalctl --user -t omarchy-shell)"
+  [[ -n $bad ]] && problem "Shell: errors from ${bad// /, } since the shell started (journalctl --user _PID=$pid)"
 fi
 
 # ── Report ────────────────────────────────────────────────────────────────────

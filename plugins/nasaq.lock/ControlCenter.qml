@@ -20,6 +20,9 @@ Item {
 
   property string textFont: ""
   property string iconFont: ""
+  // Nasaq.Theme.radiusPanel, handed in by the bar copy; this file stays free
+  // of sibling imports because the lock loads it.
+  property int panelRadius: 24
   property bool active: false
   property bool interactive: true
   property bool opened: false
@@ -994,7 +997,7 @@ Item {
       anchors.horizontalCenter: parent.horizontalCenter
       width: 40
       height: 40
-      radius: 20
+      radius: root.panelRadius
       color: pb.armed ? Color.urgent : Util.alpha(Color.foreground, pbMouse.containsMouse ? 0.24 : 0.14)
       Behavior on color { ColorAnimation { duration: root.mMicro; easing.type: Easing.BezierSpline; easing.bezierCurve: root.cDecel } }
       Glyph {
@@ -1032,7 +1035,7 @@ Item {
            : root.page === "sound" ? soundPage.implicitHeight
            : root.page === "windows" ? winLoader.implicitHeight
            : mainPage.implicitHeight) + 24
-    radius: 20
+    radius: root.panelRadius
     color: root.chromeless ? "transparent" : Util.alpha(Color.background, root.panelAlpha)
     border.color: Util.alpha(Color.foreground, 0.14)
     border.width: root.chromeless ? 0 : 1

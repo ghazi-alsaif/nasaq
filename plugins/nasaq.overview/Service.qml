@@ -25,7 +25,7 @@ Item {
   property bool open: false      // overlay mapped
   property bool shown: false     // windows in their grid spots (drives animation)
   property int selected: 0
-  readonly property string textFont: "IBM Plex Sans Arabic"
+  readonly property string textFont: Nasaq.Theme.textFont
 
   readonly property var focusedMonitor: Hyprland.focusedMonitor
   readonly property var targetScreen: {
@@ -359,9 +359,9 @@ Item {
             width: Math.round(overlay.stripH * overlay.width / overlay.height)
             height: overlay.stripH
             radius: 10
-            color: wsDelegate.isNew ? Qt.rgba(1, 1, 1, 0.08) : "#111"
+            color: wsDelegate.isNew ? Qt.alpha(Color.foreground, 0.08) : "#111"
             border.width: wsDelegate.isActive || wsDelegate.dropHover ? 2 : 1
-            border.color: wsDelegate.dropHover ? "white" : wsDelegate.isActive ? Color.accent : Qt.rgba(1, 1, 1, 0.18)
+            border.color: wsDelegate.dropHover ? Color.foreground : wsDelegate.isActive ? Color.accent : Qt.alpha(Color.foreground, 0.18)
             clip: true
             scale: thumbMouse.containsMouse || wsDelegate.dropHover ? 1.04 : 1
             Behavior on scale { Nasaq.NAnim { kind: "fast" } }
@@ -395,7 +395,7 @@ Item {
               anchors.centerIn: parent
               visible: wsDelegate.isNew
               text: "+"
-              color: Qt.rgba(1, 1, 1, 0.6)
+              color: Qt.alpha(Color.foreground, 0.6)
               font.pixelSize: 28
             }
 
@@ -411,7 +411,7 @@ Item {
           Text {
             anchors.horizontalCenter: parent.horizontalCenter
             text: wsDelegate.isNew ? "New" : "Workspace " + wsDelegate.modelData
-            color: wsDelegate.isActive ? "white" : Qt.rgba(1, 1, 1, 0.6)
+            color: wsDelegate.isActive ? Color.foreground : Qt.alpha(Color.foreground, 0.6)
             font.family: root.textFont
             font.pixelSize: 12
             font.weight: wsDelegate.isActive ? Font.DemiBold : Font.Normal
@@ -590,7 +590,7 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             width: Math.min(implicitWidth, Math.max(80, win.width - 30))
             text: win.ipc.title || win.ipc.class || ""
-            color: "white"
+            color: Color.foreground
             elide: Text.ElideRight
             font.family: root.textFont
             font.pixelSize: 12
@@ -665,7 +665,7 @@ Item {
       height: menuCol.implicitHeight + 12
       radius: 14
       color: Util.alpha(Color.background, 0.96)
-      border.color: Qt.rgba(1, 1, 1, 0.14)
+      border.color: Qt.alpha(Color.foreground, 0.14)
       onVisibleChanged: if (!visible) target = null
       Connections { target: root; function onOpenChanged() { if (!root.open) winMenu.visible = false } }
       Column {
@@ -686,12 +686,12 @@ Item {
             width: menuCol.width
             height: 32
             radius: 8
-            color: itemMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : "transparent"
+            color: itemMouse.containsMouse ? Qt.alpha(Color.foreground, 0.08) : "transparent"
             Text {
               anchors.verticalCenter: parent.verticalCenter
               x: 10
               text: modelData.label
-              color: modelData.close ? Color.urgent : "white"
+              color: modelData.close ? Color.urgent : Color.foreground
               font.family: root.textFont
               font.pixelSize: 13
             }
@@ -718,7 +718,7 @@ Item {
       anchors.centerIn: parent
       visible: root.open && root.currentWindows.length === 0
       text: "No windows on this workspace"
-      color: Qt.rgba(1, 1, 1, 0.5)
+      color: Qt.alpha(Color.foreground, 0.5)
       font.family: root.textFont
       font.pixelSize: 16
       opacity: root.shown ? 1 : 0

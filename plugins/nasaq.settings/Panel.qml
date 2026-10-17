@@ -67,7 +67,7 @@ Item {
     Rectangle {
       id: bg
       anchors.fill: parent
-      color: Qt.rgba(0.09, 0.09, 0.10, Math.max(0.80, Theme.glassAlpha))
+      color: Theme.glassSolid
       LayoutMirroring.enabled: Tr.rtl
       LayoutMirroring.childrenInherit: true
 
@@ -87,7 +87,7 @@ Item {
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         width: 250
-        color: Qt.rgba(1, 1, 1, 0.04)
+        color: Qt.alpha(Theme.text, 0.04)
         Rectangle { anchors.right: parent.right; width: 1; height: parent.height; color: Theme.divider; opacity: 0.6 }
 
         Column {
@@ -124,7 +124,7 @@ Item {
               width: parent.width
               height: visible ? 34 : 0
               radius: 8
-              color: root.page === modelData.id ? Qt.rgba(1, 1, 1, 0.12) : (navMouse.containsMouse ? Theme.hover : "transparent")
+              color: root.page === modelData.id ? Qt.alpha(Theme.text, 0.12) : (navMouse.containsMouse ? Theme.hover : "transparent")
               Behavior on color { Nasaq.NColour { duration: Nasaq.Motion.micro } }
               Row {
                 anchors.left: parent.left; anchors.leftMargin: 8
@@ -132,7 +132,7 @@ Item {
                 spacing: 10
                 Rectangle {
                   width: 22; height: 22; radius: 6
-                  color: root.page === modelData.id ? Theme.accent : Qt.rgba(1, 1, 1, 0.12)
+                  color: root.page === modelData.id ? Theme.accent : Qt.alpha(Theme.text, 0.12)
                   NGlyph { anchors.centerIn: parent; text: modelData.icon; font.pixelSize: 13; color: root.page === modelData.id ? Theme.onAccent : "white" }
                 }
                 NLabel { anchors.verticalCenter: parent.verticalCenter; text: Tr.t("page." + modelData.id); font.weight: root.page === modelData.id ? Font.DemiBold : Font.Normal }

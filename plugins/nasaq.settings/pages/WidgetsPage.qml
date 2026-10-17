@@ -86,7 +86,7 @@ NPage {
             anchors.fill: parent
             anchors.bottomMargin: 1
             radius: 10
-            color: handleMouse.drag.active ? Qt.rgba(1, 1, 1, 0.08) : "transparent"
+            color: handleMouse.drag.active ? Qt.alpha(Theme.text, 0.08) : "transparent"
           }
           NGlyph {
             id: handle
