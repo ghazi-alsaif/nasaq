@@ -25,6 +25,11 @@ NPage {
   property string spKey: ""
 
   NSection {
+    title: "WORKSPACES"
+    NRow { title: "App icons on the workspace numbers"; subtitle: "Up to three icons of the apps open on each workspace, next to its number (horizontal bars)."
+      NSwitch { checked: Settings.get("workspaces.appIcons", true) !== false; onToggled: function(c) { Settings.set("workspaces.appIcons", c) } } }
+  }
+  NSection {
     title: "SCRATCHPADS"
     note: "A scratchpad is an app that slides in over whatever you are doing with one key, and hides again with the same key. It keeps running while hidden."
     Repeater {

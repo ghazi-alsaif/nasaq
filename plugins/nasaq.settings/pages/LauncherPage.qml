@@ -5,6 +5,7 @@ import "../../nasaq.commons"
 import ".."
 
 NPage {
+  id: page
   title: Tr.t("page.launcher")
   subtitle: "Search and the Omarchy menu."
 
@@ -22,8 +23,38 @@ NPage {
       NSwitch { checked: Settings.get("launcher.preview", true); onToggled: function(c) { Settings.set("launcher.preview", c) } } }
     NRow { title: "Web search"
       NSwitch { checked: Settings.get("launcher.web", true); onToggled: function(c) { Settings.set("launcher.web", c) } } }
+    NRow { title: "Run commands"; subtitle: "Start with > to run a command, e.g. “> htop”. Enter runs it in the background, Shift+Enter in a terminal."
+      NSwitch { checked: Settings.get("launcher.commands", true); onToggled: function(c) { Settings.set("launcher.commands", c) } } }
+    NRow { title: "Tap SUPER alone to open Search"; subtitle: "A quick press and release of SUPER with nothing else. Needs the udev rule from the installer."
+      NSwitch { checked: Settings.get("launcher.superTap", true) !== false; onToggled: function(c) { Settings.set("launcher.superTap", c) } } }
     NRow { title: "Most used apps first"; subtitle: "Apps you open often and recently rank higher. Forget the history to start fresh."
       NButton { text: "Forget"; danger: true; onClicked: Sys.run("printf '{\"usage\":{}}\\n' > ~/.local/state/nasaq/spotlight.json") } }
+  }
+  function appName(id) { var e = DesktopEntries.byId ? DesktopEntries.byId(id) : null; return e && e.name ? e.name : id }
+  NSection {
+    title: "FAVOURITE APPS"
+    note: "In Search, Ctrl+D marks the selected app as a favourite (it leads the list) and Ctrl+H hides it."
+    NRow { visible: { void Settings.revision; return (Settings.get("launcher.favorites", []) || []).length === 0 }; title: "No favourites yet" }
+    Repeater {
+      model: { void Settings.revision; return Settings.get("launcher.favorites", []) || [] }
+      delegate: NRow {
+        required property string modelData
+        title: page.appName(modelData)
+        NButton { text: "Remove"; onClicked: Settings.set("launcher.favorites", (Settings.get("launcher.favorites", []) || []).filter(function(x) { return x !== modelData })) }
+      }
+    }
+  }
+  NSection {
+    title: "HIDDEN APPS"
+    NRow { visible: { void Settings.revision; return (Settings.get("launcher.hidden", []) || []).length === 0 }; title: "Nothing hidden" }
+    Repeater {
+      model: { void Settings.revision; return Settings.get("launcher.hidden", []) || [] }
+      delegate: NRow {
+        required property string modelData
+        title: page.appName(modelData)
+        NButton { text: "Show again"; onClicked: Settings.set("launcher.hidden", (Settings.get("launcher.hidden", []) || []).filter(function(x) { return x !== modelData })) }
+      }
+    }
   }
   NSection {
     title: "OMARCHY MENU"

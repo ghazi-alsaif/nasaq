@@ -343,6 +343,24 @@ BarWidget {
       }
     }
   }
+  // "Locate": the public address's rough position (ipapi.co, then ip-api.com),
+  // enough for weather and prayer times; the city search stays for precision.
+  property bool locating: false
+  Process {
+    id: locateProc
+    command: ["bash", "-c", "j=$(curl -4 -sf --max-time 8 https://ipapi.co/json/) && printf '%s' \"$j\" | python3 -c 'import json,sys;d=json.load(sys.stdin);print(json.dumps({\"name\":d.get(\"city\") or d.get(\"region\") or \"\",\"latitude\":d[\"latitude\"],\"longitude\":d[\"longitude\"]}))' && exit 0; j=$(curl -4 -sf --max-time 8 'http://ip-api.com/json/?fields=city,lat,lon') && printf '%s' \"$j\" | python3 -c 'import json,sys;d=json.load(sys.stdin);print(json.dumps({\"name\":d.get(\"city\",\"\"),\"latitude\":d[\"lat\"],\"longitude\":d[\"lon\"]}))'"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        root.locating = false
+        var r = null
+        try { r = JSON.parse(text) } catch (e) { r = null }
+        if (r && isFinite(r.latitude)) root.setLocation(r)
+        else root.showAlert("Location", "Could not find it. Check the connection.", 4000)
+      }
+    }
+  }
+  function locate() { if (locateProc.running) return; locating = true; locateProc.running = true }
   function setLocation(r) {
     var c = Object.assign({}, root.config, { city: r.name, latitude: r.latitude, longitude: r.longitude })
     root.config = c
@@ -381,14 +399,18 @@ BarWidget {
 
   // Caps Lock: the keyboard LED, read from the kernel (no Hyprland event exists).
   property bool capsKnown: false
+  readonly property bool superTap: Nasaq.Settings.get("launcher.superTap", true) !== false
   Process {
     id: capsWatch
     command: ["nasaq-keywatch"]
-    running: root.statusToasts
+    running: root.statusToasts || root.superTap
     stdout: SplitParser {
       onRead: function(line) {
+        // A lone tap on SUPER opens (or closes) Search, like a launcher key.
+        if (line === "super tap") { if (root.superTap) Quickshell.execDetached(["omarchy-shell", "-q", "nasaq.spotlight", "toggle"]); return }
         var on = line === "caps on"
         if (line !== "caps on" && line !== "caps off") return
+        if (!root.statusToasts) { root.capsKnown = true; return }
         // The first line is the state at start, not a change.
         if (root.capsKnown) root.statusToast(on ? "󰪛" : "󰬶", Nasaq.Tr.s(on ? "Caps Lock on" : "Caps Lock off"))
         root.capsKnown = true
@@ -1168,6 +1190,15 @@ BarWidget {
               color: Qt.alpha(Color.foreground, 0.6)
               font.family: root.textFont
               font.pixelSize: 12
+            }
+            Text {
+              anchors.verticalCenter: parent.verticalCenter
+              text: root.locating ? "· Locating…" : "· Locate"
+              color: locateMouse.containsMouse ? Color.foreground : root.accent
+              font.family: root.textFont
+              font.weight: Font.DemiBold
+              font.pixelSize: 12
+              MouseArea { id: locateMouse; anchors.fill: parent; anchors.margins: -6; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { leaveTimer.stop(); root.locate() } }
             }
             Text {
               anchors.verticalCenter: parent.verticalCenter
@@ -1987,6 +2018,7 @@ BarWidget {
   IpcHandler {
     target: "nasaq.island"
     function expand(): string { root.expanded = true; return "ok" }
+    function locate(): string { root.locate(); return "ok" }
     function collapse(): string { root.expanded = false; return "ok" }
     function toggle(): string { root.expanded = !root.expanded; return "ok" }
     function alert(title: string, subtitle: string): string { root.showAlert(title, subtitle, 6000); return "ok" }
