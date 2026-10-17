@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "nasaq.lock",
   "name": "Lock Screen",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "author": "NASAQ (GHS)",
   "description": "Quickshell session lock with separate password and fingerprint PAM flows.",
   "omarchy": {
